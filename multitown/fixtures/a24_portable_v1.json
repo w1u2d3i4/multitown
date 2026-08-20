@@ -1,0 +1,81 @@
+{
+  "fixture_id": "multitown-a24-portable-synthetic-v1",
+  "schema_version": "multitown-a24-portable-fixture-template-v1",
+  "shared_tensors": {
+    "action": {
+      "dtype": "int64",
+      "shape": [4],
+      "values": [0, 2, 1, 1]
+    },
+    "action_mask": {
+      "dtype": "bool",
+      "shape": [4, 3],
+      "values": [true, true, false, true, false, true, false, true, true, true, true, true]
+    },
+    "expected_log_probability": {
+      "dtype": "float32",
+      "f32_hex": ["bfa00000", "bf400000", "bfc00000", "bf000000"],
+      "shape": [4]
+    },
+    "expected_value": {
+      "dtype": "float32",
+      "f32_hex": ["3e4ccccd", "bdcccccd", "3f000000", "becccccd"],
+      "shape": [4]
+    },
+    "observation": {
+      "dtype": "float32",
+      "f32_hex": [
+        "00000000", "00000000", "00000000", "00000000",
+        "3f800000", "00000000", "00000000", "00000000",
+        "00000000", "3f800000", "00000000", "00000000",
+        "00000000", "00000000", "3f800000", "3f800000"
+      ],
+      "shape": [4, 4]
+    },
+    "rowwise_log_probability": {
+      "dtype": "float32",
+      "f32_hex": ["bfa00000", "bf400000", "bfc00000", "bf000000"],
+      "shape": [4]
+    },
+    "rowwise_value": {
+      "dtype": "float32",
+      "f32_hex": ["3e4ccccd", "bdcccccd", "3f000000", "becccccd"],
+      "shape": [4]
+    }
+  },
+  "variants": {
+    "failed": {
+      "availability": "raw-tensors",
+      "tensors": {
+        "full_batch_log_probability": {
+          "dtype": "float32",
+          "f32_hex": ["bfa00000", "bf3ffff9", "bfc00007", "befffc10"],
+          "shape": [4]
+        },
+        "full_batch_value": {
+          "dtype": "float32",
+          "f32_hex": ["3e4ccccd", "bdccccb2", "3efffff3", "beccccb9"],
+          "shape": [4]
+        }
+      }
+    },
+    "passed": {
+      "availability": "raw-tensors",
+      "tensors": {
+        "full_batch_log_probability": {
+          "dtype": "float32",
+          "f32_hex": ["bfa00000", "bf3ffff9", "bfc00007", "beffffd8"],
+          "shape": [4]
+        },
+        "full_batch_value": {
+          "dtype": "float32",
+          "f32_hex": ["3e4ccccd", "bdccccb2", "3efffff3", "beccccb9"],
+          "shape": [4]
+        }
+      }
+    },
+    "unevaluated": {
+      "availability": "actual-tensors-withheld"
+    }
+  }
+}

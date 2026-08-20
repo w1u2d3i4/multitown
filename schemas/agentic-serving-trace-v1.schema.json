@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:multitown:agentic-serving-trace:v1",
+  "title": "MultiTown agentic serving trace event v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "session_id", "turn_id", "event_type", "request_id",
+    "scheduled_offset_ms", "shared_prefix_length", "shared_prefix_length_unit",
+    "shared_prefix_request_id", "input_tokens", "output_tokens", "action",
+    "latency", "validator_state", "weak_disagreement", "budget_state", "request"
+  ],
+  "properties": {
+    "schema_version": {"const": "multitown-agentic-serving-trace-v1"},
+    "session_id": {"type": "string", "pattern": "^s_[0-9a-f]{24}$"},
+    "turn_id": {"type": "integer", "minimum": 0},
+    "event_type": {"enum": ["request", "terminal"]},
+    "request_id": {"type": ["string", "null"]},
+    "scheduled_offset_ms": {"type": "number", "minimum": 0},
+    "shared_prefix_length": {"type": "integer", "minimum": 0},
+    "shared_prefix_length_unit": {"const": "unicode_codepoints"},
+    "shared_prefix_request_id": {"type": ["string", "null"]},
+    "input_tokens": {"type": "integer", "minimum": 0},
+    "output_tokens": {"type": "integer", "minimum": 0},
+    "action": {"enum": ["stop", "delegate", "escalate", "review", "human"]},
+    "latency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["request_s", "ttft_s", "e2e_s"],
+      "properties": {
+        "request_s": {"type": ["number", "null"], "minimum": 0},
+        "ttft_s": {"type": ["number", "null"], "minimum": 0},
+        "e2e_s": {"type": ["number", "null"], "minimum": 0}
+      }
+    },
+    "validator_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["parse_valid", "hard_constraints_pass", "issue_codes"],
+      "properties": {
+        "parse_valid": {"type": "boolean"},
+        "hard_constraints_pass": {"type": "boolean"},
+        "issue_codes": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "weak_disagreement": {"type": ["boolean", "null"]},
+    "budget_state": {
+      "type": "object",
+      "required": [
+        "mode", "token_limit", "latency_limit_s", "tokens_used",
+        "latency_used_s", "exceeded"
+      ]
+    },
+    "request": {"type": ["object", "null"]}
+  }
+}

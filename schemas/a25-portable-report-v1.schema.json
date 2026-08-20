@@ -1,0 +1,781 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://multitown.dev/schemas/a25-portable-report-v1.json",
+  "title": "MultiTown A25 portable checker report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "status",
+    "reason_code",
+    "bundle_id",
+    "checker",
+    "verified_materials",
+    "verified_subjects",
+    "derived_gates",
+    "claims"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "multitown-a25-portable-report-v1"
+    },
+    "status": {
+      "enum": [
+        "VERIFIED_SAMPLE",
+        "CONSISTENT_BUNDLE",
+        "CONTRACT_FAILED"
+      ]
+    },
+    "reason_code": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]*$"
+    },
+    "bundle_id": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "checker": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version",
+        "policy_id"
+      ],
+      "properties": {
+        "name": {
+          "const": "multitown-a25-portable-checker"
+        },
+        "version": {
+          "const": "1.0.0"
+        },
+        "policy_id": {
+          "const": "multitown-a25-common-state-gradient-micro-v1"
+        }
+      }
+    },
+    "verified_materials": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/verifiedContractDescriptor"
+        },
+        {
+          "$ref": "#/$defs/verifiedCommonStateDescriptor"
+        }
+      ],
+      "items": false
+    },
+    "verified_subjects": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/verifiedObservationsDescriptor"
+        }
+      ],
+      "items": false
+    },
+    "derived_gates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "typed_payload",
+        "common_prestate",
+        "gradient_decomposition"
+      ],
+      "properties": {
+        "typed_payload": {
+          "$ref": "#/$defs/typedPayloadGate"
+        },
+        "common_prestate": {
+          "$ref": "#/$defs/commonPrestateGate"
+        },
+        "gradient_decomposition": {
+          "$ref": "#/$defs/gradientGate"
+        }
+      }
+    },
+    "claims": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_only",
+        "golden_identity_pinned",
+        "typed_payload_rehashed",
+        "explicit_update_rng_state_bytes_rehashed",
+        "torch_rng_sequence_reproduced",
+        "autograd_reexecuted",
+        "optimizer_step_reexecuted",
+        "training_reexecuted",
+        "authenticated_provenance",
+        "freshness_attested",
+        "full_numerical_q0_qualified",
+        "q1_mechanism_qualified",
+        "performance_claim_supported",
+        "safety_claim_supported"
+      ],
+      "properties": {
+        "artifact_only": {
+          "const": true
+        },
+        "golden_identity_pinned": {
+          "type": "boolean"
+        },
+        "typed_payload_rehashed": {
+          "const": true
+        },
+        "explicit_update_rng_state_bytes_rehashed": {
+          "const": true
+        },
+        "torch_rng_sequence_reproduced": {
+          "const": false
+        },
+        "autograd_reexecuted": {
+          "const": false
+        },
+        "optimizer_step_reexecuted": {
+          "const": false
+        },
+        "training_reexecuted": {
+          "const": false
+        },
+        "authenticated_provenance": {
+          "const": false
+        },
+        "freshness_attested": {
+          "const": false
+        },
+        "full_numerical_q0_qualified": {
+          "const": false
+        },
+        "q1_mechanism_qualified": {
+          "const": false
+        },
+        "performance_claim_supported": {
+          "const": false
+        },
+        "safety_claim_supported": {
+          "const": false
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "VERIFIED_SAMPLE"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "reason_code": {
+            "const": "OK"
+          },
+          "claims": {
+            "properties": {
+              "golden_identity_pinned": {
+                "const": true
+              }
+            }
+          },
+          "derived_gates": {
+            "$ref": "#/$defs/passedDerivedGates"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "CONSISTENT_BUNDLE"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "reason_code": {
+            "const": "OK"
+          },
+          "claims": {
+            "properties": {
+              "golden_identity_pinned": {
+                "const": false
+              }
+            }
+          },
+          "derived_gates": {
+            "$ref": "#/$defs/passedDerivedGates"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "CONTRACT_FAILED"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "reason_code": {
+            "enum": [
+              "COMMON_PRESTATE_MISMATCH",
+              "AUX_SEMANTICS_FAILED",
+              "GRADIENT_DECOMPOSITION_FAILED"
+            ]
+          },
+          "claims": {
+            "properties": {
+              "golden_identity_pinned": {
+                "const": false
+              }
+            }
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "reason_code": {
+                  "const": "COMMON_PRESTATE_MISMATCH"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "derived_gates": {
+                  "properties": {
+                    "common_prestate": {
+                      "properties": {
+                        "passed": {
+                          "const": false
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "reason_code": {
+                  "const": "AUX_SEMANTICS_FAILED"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "derived_gates": {
+                  "properties": {
+                    "gradient_decomposition": {
+                      "properties": {
+                        "passed": {
+                          "const": false
+                        },
+                        "aux_semantics_passed": {
+                          "const": false
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "reason_code": {
+                  "const": "GRADIENT_DECOMPOSITION_FAILED"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "derived_gates": {
+                  "properties": {
+                    "gradient_decomposition": {
+                      "properties": {
+                        "passed": {
+                          "const": false
+                        },
+                        "aux_semantics_passed": {
+                          "const": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "$defs": {
+    "bundleDigest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "verifiedDescriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "path",
+        "size",
+        "sha256"
+      ],
+      "properties": {
+        "name": {
+          "enum": [
+            "contract",
+            "common-state",
+            "observations"
+          ]
+        },
+        "path": {
+          "enum": [
+            "contract.json",
+            "common-state.safetensors",
+            "observations.safetensors"
+          ]
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 16777216
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "verifiedContractDescriptor": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/verifiedDescriptor"
+        },
+        {
+          "properties": {
+            "name": {
+              "const": "contract"
+            },
+            "path": {
+              "const": "contract.json"
+            }
+          }
+        }
+      ]
+    },
+    "verifiedCommonStateDescriptor": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/verifiedDescriptor"
+        },
+        {
+          "properties": {
+            "name": {
+              "const": "common-state"
+            },
+            "path": {
+              "const": "common-state.safetensors"
+            }
+          }
+        }
+      ]
+    },
+    "verifiedObservationsDescriptor": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/verifiedDescriptor"
+        },
+        {
+          "properties": {
+            "name": {
+              "const": "observations"
+            },
+            "path": {
+              "const": "observations.safetensors"
+            }
+          }
+        }
+      ]
+    },
+    "typedPayloadGate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "passed",
+        "common_tensor_count",
+        "observation_tensor_count",
+        "payload_bytes"
+      ],
+      "properties": {
+        "passed": {
+          "const": true
+        },
+        "common_tensor_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4096
+        },
+        "observation_tensor_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4096
+        },
+        "payload_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16777216
+        }
+      }
+    },
+    "componentDigests": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model",
+        "optimizer",
+        "rng"
+      ],
+      "properties": {
+        "model": {
+          "$ref": "#/$defs/bundleDigest"
+        },
+        "optimizer": {
+          "$ref": "#/$defs/bundleDigest"
+        },
+        "rng": {
+          "$ref": "#/$defs/bundleDigest"
+        }
+      }
+    },
+    "cellDigest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cell_id",
+        "digests",
+        "matches_common"
+      ],
+      "properties": {
+        "cell_id": {
+          "type": "string",
+          "pattern": "^F[01][01]$"
+        },
+        "digests": {
+          "$ref": "#/$defs/componentDigests"
+        },
+        "matches_common": {
+          "type": "boolean"
+        }
+      }
+    },
+    "commonPrestateGate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "passed",
+        "digest_spec",
+        "common_digests",
+        "cells"
+      ],
+      "properties": {
+        "passed": {
+          "type": "boolean"
+        },
+        "digest_spec": {
+          "const": "multitown-a25-semantic-tensor-record-v1"
+        },
+        "common_digests": {
+          "$ref": "#/$defs/componentDigests"
+        },
+        "cells": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/cellDigestF00"
+            },
+            {
+              "$ref": "#/$defs/cellDigestF01"
+            },
+            {
+              "$ref": "#/$defs/cellDigestF10"
+            },
+            {
+              "$ref": "#/$defs/cellDigestF11"
+            }
+          ],
+          "items": false
+        }
+      }
+    },
+    "gradientCell": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cell_id",
+        "beta_f32_hex",
+        "aux_semantics",
+        "aux_semantics_passed",
+        "parameter_count",
+        "passed"
+      ],
+      "properties": {
+        "cell_id": {
+          "type": "string",
+          "pattern": "^F[01][01]$"
+        },
+        "beta_f32_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}$"
+        },
+        "aux_semantics": {
+          "enum": [
+            "required",
+            "forbidden"
+          ]
+        },
+        "aux_semantics_passed": {
+          "type": "boolean"
+        },
+        "parameter_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1024
+        },
+        "passed": {
+          "type": "boolean"
+        }
+      }
+    },
+    "gradientGate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "passed",
+        "aux_semantics_passed",
+        "cells"
+      ],
+      "properties": {
+        "passed": {
+          "type": "boolean"
+        },
+        "aux_semantics_passed": {
+          "type": "boolean"
+        },
+        "cells": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/gradientCellF00"
+            },
+            {
+              "$ref": "#/$defs/gradientCellF01"
+            },
+            {
+              "$ref": "#/$defs/gradientCellF10"
+            },
+            {
+              "$ref": "#/$defs/gradientCellF11"
+            }
+          ],
+          "items": false
+        }
+      }
+    },
+    "cellDigestF00": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/cellDigest"
+        },
+        {
+          "properties": {
+            "cell_id": {
+              "const": "F00"
+            }
+          }
+        }
+      ]
+    },
+    "cellDigestF01": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/cellDigest"
+        },
+        {
+          "properties": {
+            "cell_id": {
+              "const": "F01"
+            }
+          }
+        }
+      ]
+    },
+    "cellDigestF10": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/cellDigest"
+        },
+        {
+          "properties": {
+            "cell_id": {
+              "const": "F10"
+            }
+          }
+        }
+      ]
+    },
+    "cellDigestF11": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/cellDigest"
+        },
+        {
+          "properties": {
+            "cell_id": {
+              "const": "F11"
+            }
+          }
+        }
+      ]
+    },
+    "gradientCellF00": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/gradientCell"
+        },
+        {
+          "properties": {
+            "cell_id": {
+              "const": "F00"
+            },
+            "beta_f32_hex": {
+              "const": "00000000"
+            },
+            "aux_semantics": {
+              "const": "forbidden"
+            }
+          }
+        }
+      ]
+    },
+    "gradientCellF01": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/gradientCell"
+        },
+        {
+          "properties": {
+            "cell_id": {
+              "const": "F01"
+            },
+            "beta_f32_hex": {
+              "const": "3e800000"
+            },
+            "aux_semantics": {
+              "const": "required"
+            }
+          }
+        }
+      ]
+    },
+    "gradientCellF10": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/gradientCell"
+        },
+        {
+          "properties": {
+            "cell_id": {
+              "const": "F10"
+            },
+            "beta_f32_hex": {
+              "const": "00000000"
+            },
+            "aux_semantics": {
+              "const": "forbidden"
+            }
+          }
+        }
+      ]
+    },
+    "gradientCellF11": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/gradientCell"
+        },
+        {
+          "properties": {
+            "cell_id": {
+              "const": "F11"
+            },
+            "beta_f32_hex": {
+              "const": "3f000000"
+            },
+            "aux_semantics": {
+              "const": "required"
+            }
+          }
+        }
+      ]
+    },
+    "passedDerivedGates": {
+      "properties": {
+        "typed_payload": {
+          "properties": {
+            "passed": {
+              "const": true
+            }
+          }
+        },
+        "common_prestate": {
+          "properties": {
+            "passed": {
+              "const": true
+            }
+          }
+        },
+        "gradient_decomposition": {
+          "properties": {
+            "passed": {
+              "const": true
+            },
+            "aux_semantics_passed": {
+              "const": true
+            }
+          }
+        }
+      }
+    }
+  }
+}

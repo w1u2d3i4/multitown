@@ -1,0 +1,130 @@
+[project]
+name = "multitown"
+dynamic = ["version"]
+description = "Runtime toolkit for cost-aware multi-agent organization and control"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.12"
+dependencies = [
+  "httpx>=0.28,<1",
+  "matplotlib>=3.9,<4",
+  "numpy>=2,<3",
+  "pandas>=2.2,<4",
+  "psutil>=6,<8",
+]
+
+[project.optional-dependencies]
+reproduction = [
+  "pyarrow>=20,<26",
+  "scikit-learn>=1.7,<2",
+]
+dev = [
+  "build>=1.3,<2",
+  "jsonschema>=4.25,<5",
+  "pytest>=8.4,<10",
+  "rfc3339-validator>=0.1.4,<0.2",
+  "ruff>=0.16,<0.17",
+  "twine==7.0.0",
+]
+rl = [
+  "torch>=2.10,<2.14",
+]
+verify = [
+  "rfc8785>=0.1.4,<0.2",
+  "safetensors>=0.8,<0.9",
+]
+
+[project.scripts]
+multitown-bench = "multitown.runner:main"
+multitown-advanced-bench = "multitown.advanced_runner:main"
+multitown-a6-bench = "multitown.a6_runner:main"
+multitown-report = "multitown.report:main"
+multitown-status = "multitown.status:main"
+multitown-analysis = "multitown.analysis:main"
+multitown-validate = "multitown.validate:main"
+multitown-legacy-replay = "multitown.legacy_replay:main"
+multitown-freeze-artifacts = "multitown.provenance:main"
+multitown-third-party-audit = "multitown.third_party_audit:main"
+multitown-prepare-masbench = "multitown.masbench_prepare:main"
+multitown-run-masbench = "multitown.masbench_runner:main"
+multitown-route-masbench = "multitown.masbench_routing:main"
+multitown-report-masbench = "multitown.masbench_report:main"
+multitown-run-silo-subset = "multitown.silo_subset:main"
+multitown-freeze-scenarios = "multitown.scenario_freeze:main"
+multitown-collect-counterfactuals = "multitown.counterfactual_runner:main"
+multitown-fit-a7 = "multitown.a7_train:main"
+multitown-run-a7 = "multitown.a7_runner:main"
+multitown-tune-a8 = "multitown.a8_tune:main"
+multitown-run-a8 = "multitown.a8_runner:main"
+multitown-report-a78 = "multitown.a78_report:main"
+multitown-audit-records = "multitown.record_audit:main"
+multitown-export-a8-trace = "multitown.serving_trace:export_main"
+multitown-validate-serving-trace = "multitown.serving_trace:validate_main"
+multitown-nanovllm-replay = "multitown.nanovllm_replay:main"
+multitown-run-a9-offline = "multitown.a9_fitted_q:main"
+multitown-freeze-long-horizon = "multitown.long_horizon_env:main"
+multitown-a10-ppo = "multitown.ppo_controller:main"
+multitown-a11-live-model = "multitown.live_model_env:main"
+multitown-a11-live-ppo = "multitown.live_model_ppo:main"
+multitown-probe-model-cost = "multitown.model_cost_probe:main"
+multitown-audit-specialists = "multitown.specialist_gate:main"
+multitown-freeze-semantic-tasks = "multitown.semantic_tasks:main"
+multitown-probe-semantic-models = "multitown.semantic_model_probe:main"
+multitown-report-semantic-probe = "multitown.semantic_probe_report:main"
+multitown-freeze-semantic-sequences = "multitown.semantic_sequence_env:main"
+multitown-report-semantic-sequences = "multitown.semantic_sequence_report:main"
+multitown-export-stateful-private-trace = "multitown.stateful_artifacts:export_main"
+multitown-validate-stateful-private-trace = "multitown.stateful_artifacts:validate_main"
+multitown-a15-authority-bench = "multitown.stateful_authority_bench:main"
+multitown-stateful-belief-plan = "multitown.stateful_belief_planner:main"
+multitown-stateful-reachability = "multitown.stateful_reachability:main"
+multitown-stateful-surface-audit = "multitown.stateful_surface_audit:main"
+multitown-stateful-action-partition-audit = "multitown.stateful_action_partition_audit:main"
+multitown-g2-search = "multitown.g2_search:main"
+multitown-g2-resource-campaign = "multitown.g2_resource_campaign:main"
+multitown-g2-failed-cas-campaign = "multitown.g2_failed_cas_campaign:main"
+multitown-g2-exact-replay-campaign = "multitown.g2_exact_replay_campaign:main"
+multitown-g2-mutation-suite = "multitown.g2_mutation_suite:main"
+multitown-freeze-a9-train = "multitown.a9_long_horizon_env:main"
+multitown-a9-ppo-oof = "multitown.a9_ppo_oof:main"
+multitown-a9-review-shield = "multitown.a9_safety_development:main"
+multitown-a22-adaptive = "multitown.a22_runner:main"
+multitown-a22-report = "multitown.a22_report:main"
+multitown-a23-cr-ppo = "multitown.a23_runner:main"
+multitown-pq1-qualify = "multitown.pq1_runner:main"
+multitown-a24-cr-ppo = "multitown.a24_runner:main"
+multitown-a24-monitor = "multitown.a24_monitor:main"
+multitown-a24-finalize-orphan = "multitown.a24_orphan_finalizer:main"
+multitown-a24-verify = "multitown.a24_verifier:main"
+multitown-a24-portable-fixture = "multitown.a24_portable_fixture:main"
+multitown-a25-numerical = "multitown.a25_full_numerical_q0_runner:main"
+multitown-a25-check-contract = "multitown.a25_independent_verifier:main"
+multitown-a25-portable-checker = "multitown.a25_portable_checker:main"
+multitown-a27-tail-diagnostic = "multitown.a27_tail_diagnostic:main"
+multitown-audit-public-release = "multitown.public_release:main"
+
+[build-system]
+requires = ["hatchling==1.32.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "regex"
+path = "multitown/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["multitown"]
+
+[tool.hatch.build.targets.sdist]
+ignore-vcs = true
+include = [
+  "/.gitignore",
+  "/LICENSE",
+  "/README.md",
+  "/multitown",
+  "/pyproject.toml",
+  "/schemas",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

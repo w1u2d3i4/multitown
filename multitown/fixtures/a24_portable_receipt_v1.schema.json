@@ -1,0 +1,691 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:multitown-bench:schema:a24-portable-receipt:v1",
+  "title": "MultiTown A24 portable verification receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "receipt_id", "core", "metadata"],
+  "properties": {
+    "schema_version": {"const": "multitown-a24-portable-receipt-v1"},
+    "receipt_id": {"$ref": "#/$defs/sha256"},
+    "core": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile", "subject", "policy", "verifier", "runtime", "evaluation",
+        "tensor_summary", "numerical", "capabilities", "limitations"
+      ],
+      "properties": {
+        "profile": {"const": "portable-a24-numerical-semantics-v1"},
+        "subject": {"oneOf": [{"$ref": "#/$defs/subject"}, {"type": "null"}]},
+        "policy": {"oneOf": [{"$ref": "#/$defs/policy"}, {"type": "null"}]},
+        "verifier": {"$ref": "#/$defs/verifier"},
+        "runtime": {"$ref": "#/$defs/runtime"},
+        "evaluation": {"$ref": "#/$defs/evaluation"},
+        "tensor_summary": {"oneOf": [{"$ref": "#/$defs/tensorSummary"}, {"type": "null"}]},
+        "numerical": {
+          "oneOf": [
+            {"$ref": "#/$defs/completedNumerical"},
+            {"$ref": "#/$defs/unevaluatedNumerical"},
+            {"$ref": "#/$defs/errorNumerical"}
+          ]
+        },
+        "capabilities": {"$ref": "#/$defs/capabilities"},
+        "limitations": {
+          "type": "array",
+          "prefixItems": [
+            {"const": "synthetic non-evidentiary fixture"},
+            {"const": "not A24 training, safety, or performance evidence"},
+            {"const": "not independent experimental reproduction or replication"},
+            {"const": "no transition, inference, or optimizer-update replay"},
+            {"const": "unsigned self-reported receipt"}
+          ],
+          "items": false,
+          "minItems": 5,
+          "maxItems": 5
+        }
+      },
+      "allOf": [{
+        "oneOf": [
+          {"$ref": "#/$defs/completedPassedCoreState"},
+          {"$ref": "#/$defs/completedFailedCoreState"},
+          {"$ref": "#/$defs/unevaluatedCoreState"},
+          {"$ref": "#/$defs/errorCoreState"}
+        ]
+      }]
+    },
+    "metadata": {"$ref": "#/$defs/metadata"}
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "reasonCodes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "ALL_NUMERICAL_GATES_PASSED",
+          "ROWWISE_LOG_PROBABILITY_NOT_EXACT",
+          "ROWWISE_VALUE_NOT_EXACT",
+          "FULL_BATCH_LOG_TOLERANCE_EXCEEDED",
+          "FULL_BATCH_VALUE_TOLERANCE_EXCEEDED",
+          "PROBABILITY_RATIO_DRIFT_EXCEEDED",
+          "FULL_BATCH_ACTUAL_TENSORS_WITHHELD",
+          "CONCURRENT_OBSERVATION",
+          "OPERATIONAL_ERROR"
+        ]
+      }
+    },
+    "completedFailureReasons": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "ROWWISE_LOG_PROBABILITY_NOT_EXACT",
+          "ROWWISE_VALUE_NOT_EXACT",
+          "FULL_BATCH_LOG_TOLERANCE_EXCEEDED",
+          "FULL_BATCH_VALUE_TOLERANCE_EXCEEDED",
+          "PROBABILITY_RATIO_DRIFT_EXCEEDED"
+        ]
+      }
+    },
+    "completedPassedCoreState": {
+      "type": "object",
+      "properties": {
+        "subject": {
+          "allOf": [
+            {"$ref": "#/$defs/subject"},
+            {"properties": {"variant": {"const": "passed"}}}
+          ]
+        },
+        "policy": {"$ref": "#/$defs/policy"},
+        "tensor_summary": {"$ref": "#/$defs/tensorSummary"},
+        "evaluation": {
+          "properties": {
+            "evaluation_status": {"const": "COMPLETED"},
+            "outcome": {"const": "PASSED"},
+            "reason_codes": {
+              "type": "array",
+              "prefixItems": [{"const": "ALL_NUMERICAL_GATES_PASSED"}],
+              "items": false,
+              "minItems": 1,
+              "maxItems": 1
+            }
+          }
+        },
+        "numerical": {
+          "allOf": [
+            {"$ref": "#/$defs/completedNumerical"},
+            {"properties": {
+              "outcome": {"const": "PASSED"},
+              "reason_codes": {
+                "type": "array",
+                "prefixItems": [{"const": "ALL_NUMERICAL_GATES_PASSED"}],
+                "items": false,
+                "minItems": 1,
+                "maxItems": 1
+              },
+              "gates": {"properties": {
+                "rowwise_log_probability_exact": {"const": true},
+                "rowwise_value_exact": {"const": true},
+                "full_batch_log_within_frozen_tolerance": {"const": true},
+                "full_batch_value_within_frozen_tolerance": {"const": true},
+                "probability_ratio_drift_within_threshold": {"const": true}
+              }}
+            }}
+          ]
+        },
+        "capabilities": {
+          "properties": {
+            "portable_tensor_structure_verified": {"const": true},
+            "raw_numerical_recomputation": {"const": true}
+          }
+        }
+      }
+    },
+    "completedFailedCoreState": {
+      "type": "object",
+      "properties": {
+        "subject": {
+          "allOf": [
+            {"$ref": "#/$defs/subject"},
+            {"properties": {"variant": {"const": "failed"}}}
+          ]
+        },
+        "policy": {"$ref": "#/$defs/policy"},
+        "tensor_summary": {"$ref": "#/$defs/tensorSummary"},
+        "evaluation": {
+          "properties": {
+            "evaluation_status": {"const": "COMPLETED"},
+            "outcome": {"const": "FAILED"},
+            "reason_codes": {"$ref": "#/$defs/completedFailureReasons"}
+          }
+        },
+        "numerical": {
+          "allOf": [
+            {"$ref": "#/$defs/completedNumerical"},
+            {"properties": {
+              "outcome": {"const": "FAILED"},
+              "reason_codes": {"$ref": "#/$defs/completedFailureReasons"},
+              "gates": {
+                "not": {"properties": {
+                  "rowwise_log_probability_exact": {"const": true},
+                  "rowwise_value_exact": {"const": true},
+                  "full_batch_log_within_frozen_tolerance": {"const": true},
+                  "full_batch_value_within_frozen_tolerance": {"const": true},
+                  "probability_ratio_drift_within_threshold": {"const": true}
+                }}
+              }
+            }}
+          ]
+        },
+        "capabilities": {
+          "properties": {
+            "portable_tensor_structure_verified": {"const": true},
+            "raw_numerical_recomputation": {"const": true}
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"numerical": {"properties": {"gates": {"properties": {"rowwise_log_probability_exact": {"const": false}}}}}}},
+          "then": {"properties": {
+            "evaluation": {"properties": {"reason_codes": {"contains": {"const": "ROWWISE_LOG_PROBABILITY_NOT_EXACT"}, "minContains": 1, "maxContains": 1}}},
+            "numerical": {"properties": {"reason_codes": {"contains": {"const": "ROWWISE_LOG_PROBABILITY_NOT_EXACT"}, "minContains": 1, "maxContains": 1}}}
+          }},
+          "else": {"properties": {
+            "evaluation": {"properties": {"reason_codes": {"not": {"contains": {"const": "ROWWISE_LOG_PROBABILITY_NOT_EXACT"}}}}},
+            "numerical": {"properties": {"reason_codes": {"not": {"contains": {"const": "ROWWISE_LOG_PROBABILITY_NOT_EXACT"}}}}}
+          }}
+        },
+        {
+          "if": {"properties": {"numerical": {"properties": {"gates": {"properties": {"rowwise_value_exact": {"const": false}}}}}}},
+          "then": {"properties": {
+            "evaluation": {"properties": {"reason_codes": {"contains": {"const": "ROWWISE_VALUE_NOT_EXACT"}, "minContains": 1, "maxContains": 1}}},
+            "numerical": {"properties": {"reason_codes": {"contains": {"const": "ROWWISE_VALUE_NOT_EXACT"}, "minContains": 1, "maxContains": 1}}}
+          }},
+          "else": {"properties": {
+            "evaluation": {"properties": {"reason_codes": {"not": {"contains": {"const": "ROWWISE_VALUE_NOT_EXACT"}}}}},
+            "numerical": {"properties": {"reason_codes": {"not": {"contains": {"const": "ROWWISE_VALUE_NOT_EXACT"}}}}}
+          }}
+        },
+        {
+          "if": {"properties": {"numerical": {"properties": {"gates": {"properties": {"full_batch_log_within_frozen_tolerance": {"const": false}}}}}}},
+          "then": {"properties": {
+            "evaluation": {"properties": {"reason_codes": {"contains": {"const": "FULL_BATCH_LOG_TOLERANCE_EXCEEDED"}, "minContains": 1, "maxContains": 1}}},
+            "numerical": {"properties": {"reason_codes": {"contains": {"const": "FULL_BATCH_LOG_TOLERANCE_EXCEEDED"}, "minContains": 1, "maxContains": 1}}}
+          }},
+          "else": {"properties": {
+            "evaluation": {"properties": {"reason_codes": {"not": {"contains": {"const": "FULL_BATCH_LOG_TOLERANCE_EXCEEDED"}}}}},
+            "numerical": {"properties": {"reason_codes": {"not": {"contains": {"const": "FULL_BATCH_LOG_TOLERANCE_EXCEEDED"}}}}}
+          }}
+        },
+        {
+          "if": {"properties": {"numerical": {"properties": {"gates": {"properties": {"full_batch_value_within_frozen_tolerance": {"const": false}}}}}}},
+          "then": {"properties": {
+            "evaluation": {"properties": {"reason_codes": {"contains": {"const": "FULL_BATCH_VALUE_TOLERANCE_EXCEEDED"}, "minContains": 1, "maxContains": 1}}},
+            "numerical": {"properties": {"reason_codes": {"contains": {"const": "FULL_BATCH_VALUE_TOLERANCE_EXCEEDED"}, "minContains": 1, "maxContains": 1}}}
+          }},
+          "else": {"properties": {
+            "evaluation": {"properties": {"reason_codes": {"not": {"contains": {"const": "FULL_BATCH_VALUE_TOLERANCE_EXCEEDED"}}}}},
+            "numerical": {"properties": {"reason_codes": {"not": {"contains": {"const": "FULL_BATCH_VALUE_TOLERANCE_EXCEEDED"}}}}}
+          }}
+        },
+        {
+          "if": {"properties": {"numerical": {"properties": {"gates": {"properties": {"probability_ratio_drift_within_threshold": {"const": false}}}}}}},
+          "then": {"properties": {
+            "evaluation": {"properties": {"reason_codes": {"contains": {"const": "PROBABILITY_RATIO_DRIFT_EXCEEDED"}, "minContains": 1, "maxContains": 1}}},
+            "numerical": {"properties": {"reason_codes": {"contains": {"const": "PROBABILITY_RATIO_DRIFT_EXCEEDED"}, "minContains": 1, "maxContains": 1}}}
+          }},
+          "else": {"properties": {
+            "evaluation": {"properties": {"reason_codes": {"not": {"contains": {"const": "PROBABILITY_RATIO_DRIFT_EXCEEDED"}}}}},
+            "numerical": {"properties": {"reason_codes": {"not": {"contains": {"const": "PROBABILITY_RATIO_DRIFT_EXCEEDED"}}}}}
+          }}
+        }
+      ]
+    },
+    "unevaluatedCoreState": {
+      "type": "object",
+      "properties": {
+        "subject": {
+          "allOf": [
+            {"$ref": "#/$defs/subject"},
+            {"properties": {"variant": {"const": "unevaluated"}}}
+          ]
+        },
+        "policy": {"$ref": "#/$defs/policy"},
+        "tensor_summary": {"$ref": "#/$defs/tensorSummary"},
+        "evaluation": {
+          "properties": {
+            "evaluation_status": {"const": "UNEVALUATED"},
+            "outcome": {"const": "UNEVALUATED"},
+            "reason_codes": {
+              "type": "array",
+              "prefixItems": [{"const": "FULL_BATCH_ACTUAL_TENSORS_WITHHELD"}],
+              "items": false,
+              "minItems": 1,
+              "maxItems": 1
+            }
+          }
+        },
+        "numerical": {"$ref": "#/$defs/unevaluatedNumerical"},
+        "capabilities": {
+          "properties": {
+            "portable_tensor_structure_verified": {"const": true},
+            "raw_numerical_recomputation": {"const": false}
+          }
+        }
+      }
+    },
+    "errorCoreState": {
+      "type": "object",
+      "properties": {
+        "subject": {"type": "null"},
+        "policy": {"type": "null"},
+        "tensor_summary": {"type": "null"},
+        "evaluation": {
+          "properties": {
+            "evaluation_status": {"const": "ERROR"},
+            "outcome": {"const": "ERROR"},
+            "reason_codes": {
+              "type": "array",
+              "prefixItems": [{"enum": ["CONCURRENT_OBSERVATION", "OPERATIONAL_ERROR"]}],
+              "items": false,
+              "minItems": 1,
+              "maxItems": 1
+            }
+          }
+        },
+        "numerical": {"$ref": "#/$defs/errorNumerical"},
+        "capabilities": {
+          "properties": {
+            "portable_tensor_structure_verified": {"const": false},
+            "raw_numerical_recomputation": {"const": false},
+            "producer_exact_initialization_reconstruction": {"const": false},
+            "transition_derivation_replayed": {"const": false},
+            "inference_reexecution": {"const": false},
+            "optimizer_update_reexecution": {"const": false},
+            "results_reproduced": {"const": false},
+            "formal_evidence_accepted": {"const": false}
+          }
+        }
+      },
+      "oneOf": [
+        {"properties": {
+          "evaluation": {"properties": {"reason_codes": {
+            "type": "array", "prefixItems": [{"const": "CONCURRENT_OBSERVATION"}],
+            "items": false, "minItems": 1, "maxItems": 1
+          }}},
+          "numerical": {"properties": {"reason_codes": {
+            "type": "array", "prefixItems": [{"const": "CONCURRENT_OBSERVATION"}],
+            "items": false, "minItems": 1, "maxItems": 1
+          }}}
+        }},
+        {"properties": {
+          "evaluation": {"properties": {"reason_codes": {
+            "type": "array", "prefixItems": [{"const": "OPERATIONAL_ERROR"}],
+            "items": false, "minItems": 1, "maxItems": 1
+          }}},
+          "numerical": {"properties": {"reason_codes": {
+            "type": "array", "prefixItems": [{"const": "OPERATIONAL_ERROR"}],
+            "items": false, "minItems": 1, "maxItems": 1
+          }}}
+        }}
+      ]
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fixture_id", "variant", "origin", "evidence_level",
+        "contains_real_multitown_episode", "derived_from_private_artifact",
+        "experiment_run", "inference_reexecution",
+        "optimizer_update_reexecution", "results_reproduced",
+        "formal_execution_authorized", "scientific_claims_permitted",
+        "artifact_snapshot_sha256", "manifest_sha256"
+      ],
+      "properties": {
+        "fixture_id": {"const": "multitown-a24-portable-synthetic-v1"},
+        "variant": {"enum": ["failed", "passed", "unevaluated"]},
+        "origin": {"const": "synthetic"},
+        "evidence_level": {"const": "NON_EVIDENTIARY_FIXTURE"},
+        "contains_real_multitown_episode": {"const": false},
+        "derived_from_private_artifact": {"const": false},
+        "experiment_run": {"const": false},
+        "inference_reexecution": {"const": false},
+        "optimizer_update_reexecution": {"const": false},
+        "results_reproduced": {"const": false},
+        "formal_execution_authorized": {"const": false},
+        "scientific_claims_permitted": {"const": false},
+        "artifact_snapshot_sha256": {"$ref": "#/$defs/sha256"},
+        "manifest_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["policy_id", "policy_sha256"],
+      "properties": {
+        "policy_id": {"const": "multitown-a24-portable-synthetic-policy-v1"},
+        "policy_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "verifier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "verifier_id", "verifier_version", "source_files", "template_sha256",
+        "canonicalization_id", "receipt_id_domain", "receipt_schema"
+      ],
+      "properties": {
+        "verifier_id": {"const": "multitown-a24-portable-verifier"},
+        "verifier_version": {"const": "multitown-a24-portable-verifier-v1"},
+        "source_files": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["multitown/a24_contract.py", "multitown/a24_portable_fixture.py"],
+          "properties": {
+            "multitown/a24_contract.py": {"$ref": "#/$defs/sha256"},
+            "multitown/a24_portable_fixture.py": {"$ref": "#/$defs/sha256"}
+          }
+        },
+        "template_sha256": {"$ref": "#/$defs/sha256"},
+        "canonicalization_id": {"const": "rfc8785-jcs-v1"},
+        "receipt_id_domain": {"const": "multitown-a24-portable-receipt-core-v1"},
+        "receipt_schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schema_id", "schema_sha256"],
+          "properties": {
+            "schema_id": {"const": "urn:multitown-bench:schema:a24-portable-receipt:v1"},
+            "schema_sha256": {"$ref": "#/$defs/sha256"}
+          }
+        }
+      }
+    },
+    "evaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evaluation_status", "outcome", "reason_codes"],
+      "properties": {
+        "evaluation_status": {"enum": ["COMPLETED", "UNEVALUATED", "ERROR"]},
+        "outcome": {"enum": ["PASSED", "FAILED", "UNEVALUATED", "ERROR"]},
+        "reason_codes": {"$ref": "#/$defs/reasonCodes"}
+      }
+    },
+    "tensorSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tensor_count", "tensor_bytes", "tensor_specs_sha256",
+        "safetensors_file_sha256", "safetensors_header_bytes",
+        "safetensors_header_sha256", "safetensors_structure_valid"
+      ],
+      "properties": {
+        "tensor_count": {"type": "integer", "minimum": 1},
+        "tensor_bytes": {"type": "integer", "minimum": 1},
+        "tensor_specs_sha256": {"$ref": "#/$defs/sha256"},
+        "safetensors_file_sha256": {"$ref": "#/$defs/sha256"},
+        "safetensors_header_bytes": {"type": "integer", "minimum": 1},
+        "safetensors_header_sha256": {"$ref": "#/$defs/sha256"},
+        "safetensors_structure_valid": {"const": true}
+      }
+    },
+    "differenceSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "within_frozen_tolerance", "max_abs", "p50_abs", "p95_abs",
+        "p99_abs", "max_relative", "max_tolerance_ratio", "max_ulp"
+      ],
+      "properties": {
+        "within_frozen_tolerance": {"type": "boolean"},
+        "max_abs": {"type": "number", "minimum": 0},
+        "p50_abs": {"type": "number", "minimum": 0},
+        "p95_abs": {"type": "number", "minimum": 0},
+        "p99_abs": {"type": "number", "minimum": 0},
+        "max_relative": {"type": "number", "minimum": 0},
+        "max_tolerance_ratio": {"type": "number", "minimum": 0},
+        "max_ulp": {"type": "integer", "minimum": 0}
+      }
+    },
+    "completedNumerical": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evaluation_status", "outcome", "reason_codes",
+        "raw_numerical_recomputation", "sample_count", "population_sha256",
+        "algorithms", "gates", "log_probability", "value",
+        "probability_ratio", "legacy_log_probability_diagnostic"
+      ],
+      "properties": {
+        "evaluation_status": {"const": "COMPLETED"},
+        "outcome": {"enum": ["PASSED", "FAILED"]},
+        "reason_codes": {"$ref": "#/$defs/reasonCodes"},
+        "raw_numerical_recomputation": {"const": true},
+        "sample_count": {"const": 4},
+        "population_sha256": {"$ref": "#/$defs/sha256"},
+        "algorithms": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "comparison", "reference_operand", "input_dtype",
+            "accumulator_dtype", "gate_evaluation_dtype", "quantile_method", "quantile_algorithm",
+            "ulp_algorithm", "nonfinite_policy", "equal_nan"
+          ],
+          "properties": {
+            "comparison": {"const": "abs_actual_expected_le_atol_plus_rtol_abs_expected"},
+            "reference_operand": {"const": "expected"},
+            "input_dtype": {"const": "float32"},
+            "accumulator_dtype": {"const": "float64"},
+            "gate_evaluation_dtype": {"const": "float32"},
+            "quantile_method": {"const": "linear"},
+            "quantile_algorithm": {"const": "Hyndman-Fan-type-7"},
+            "ulp_algorithm": {"const": "ordered-ieee754-binary32-distance-v1"},
+            "nonfinite_policy": {"const": "reject"},
+            "equal_nan": {"const": false}
+          }
+        },
+        "gates": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "rowwise_log_probability_exact", "rowwise_value_exact",
+            "full_batch_log_within_frozen_tolerance",
+            "full_batch_value_within_frozen_tolerance",
+            "probability_ratio_drift_within_threshold"
+          ],
+          "properties": {
+            "rowwise_log_probability_exact": {"type": "boolean"},
+            "rowwise_value_exact": {"type": "boolean"},
+            "full_batch_log_within_frozen_tolerance": {"type": "boolean"},
+            "full_batch_value_within_frozen_tolerance": {"type": "boolean"},
+            "probability_ratio_drift_within_threshold": {"type": "boolean"}
+          }
+        },
+        "log_probability": {"$ref": "#/$defs/differenceSummary"},
+        "value": {"$ref": "#/$defs/differenceSummary"},
+        "probability_ratio": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["formula", "max_drift", "within_threshold"],
+          "properties": {
+            "formula": {"const": "max_abs_exp_actual_log_minus_expected_log_minus_one"},
+            "max_drift": {"type": "number", "minimum": 0},
+            "within_threshold": {"type": "boolean"}
+          }
+        },
+        "legacy_log_probability_diagnostic": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "acceptance_gate", "exceedances", "max_tolerance_ratio"
+          ],
+          "properties": {
+            "acceptance_gate": {"const": false},
+            "exceedances": {"type": "integer", "minimum": 0},
+            "max_tolerance_ratio": {"type": "number", "minimum": 0}
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "gates": {
+                "properties": {
+                  "full_batch_log_within_frozen_tolerance": {"const": true}
+                },
+                "required": ["full_batch_log_within_frozen_tolerance"]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "log_probability": {
+                "properties": {"within_frozen_tolerance": {"const": true}},
+                "required": ["within_frozen_tolerance"]
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "log_probability": {
+                "properties": {"within_frozen_tolerance": {"const": false}},
+                "required": ["within_frozen_tolerance"]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "gates": {
+                "properties": {
+                  "full_batch_value_within_frozen_tolerance": {"const": true}
+                },
+                "required": ["full_batch_value_within_frozen_tolerance"]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "properties": {"within_frozen_tolerance": {"const": true}},
+                "required": ["within_frozen_tolerance"]
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "value": {
+                "properties": {"within_frozen_tolerance": {"const": false}},
+                "required": ["within_frozen_tolerance"]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "unevaluatedNumerical": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evaluation_status", "outcome", "reason_codes", "raw_numerical_recomputation"
+      ],
+      "properties": {
+        "evaluation_status": {"const": "UNEVALUATED"},
+        "outcome": {"const": "UNEVALUATED"},
+        "reason_codes": {
+          "type": "array",
+          "prefixItems": [{"const": "FULL_BATCH_ACTUAL_TENSORS_WITHHELD"}],
+          "items": false,
+          "minItems": 1,
+          "maxItems": 1
+        },
+        "raw_numerical_recomputation": {"const": false}
+      }
+    },
+    "errorNumerical": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evaluation_status", "outcome", "reason_codes", "raw_numerical_recomputation"
+      ],
+      "properties": {
+        "evaluation_status": {"const": "ERROR"},
+        "outcome": {"const": "ERROR"},
+        "reason_codes": {
+          "type": "array",
+          "prefixItems": [{"enum": ["CONCURRENT_OBSERVATION", "OPERATIONAL_ERROR"]}],
+          "items": false,
+          "minItems": 1,
+          "maxItems": 1
+        },
+        "raw_numerical_recomputation": {"const": false}
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "portable_tensor_structure_verified", "raw_numerical_recomputation",
+        "producer_exact_initialization_reconstruction", "transition_derivation_replayed",
+        "inference_reexecution", "optimizer_update_reexecution",
+        "results_reproduced", "formal_evidence_accepted"
+      ],
+      "properties": {
+        "portable_tensor_structure_verified": {"type": "boolean"},
+        "raw_numerical_recomputation": {"type": "boolean"},
+        "producer_exact_initialization_reconstruction": {"const": false},
+        "transition_derivation_replayed": {"const": false},
+        "inference_reexecution": {"const": false},
+        "optimizer_update_reexecution": {"const": false},
+        "results_reproduced": {"const": false},
+        "formal_evidence_accepted": {"const": false}
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "python_implementation", "python_version", "platform_system",
+        "platform_machine", "numpy_version", "rfc8785_version", "safetensors_version"
+      ],
+      "properties": {
+        "python_implementation": {"type": "string", "minLength": 1},
+        "python_version": {"type": "string", "minLength": 1},
+        "platform_system": {"type": "string", "minLength": 1},
+        "platform_machine": {"type": "string", "minLength": 1},
+        "numpy_version": {"type": "string", "minLength": 1},
+        "rfc8785_version": {"type": "string", "minLength": 1},
+        "safetensors_version": {"type": "string", "minLength": 1}
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "generated_at_utc", "receipt_id_scope", "signature",
+        "signature_scheme", "self_reported_not_an_external_attestation",
+        "not_in_toto_or_dsse_envelope"
+      ],
+      "properties": {
+        "generated_at_utc": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "Z$"
+        },
+        "receipt_id_scope": {"const": "domain-separated RFC 8785 JCS core; metadata excluded"},
+        "signature": {"type": "null"},
+        "signature_scheme": {"type": "null"},
+        "self_reported_not_an_external_attestation": {"const": true},
+        "not_in_toto_or_dsse_envelope": {"const": true}
+      }
+    }
+  }
+}

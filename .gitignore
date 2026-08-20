@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments and local editor state
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+.idea/
+.vscode/
+
+# Raw benchmark output is retained on the experiment host and indexed by
+# versioned SHA-256 manifests under records/.  Do not put hundreds of MB of
+# JSONL, monitoring logs, or generated plots into the source repository.
+artifacts/
+interrupted-attempts/
+
+# External repositories are pinned in records/third-party-lock.json rather
+# than vendored into this repository.
+third_party/
+
+# Local scratch and generated normalized trajectories
+scratch/
+*.tmp
+*.partial

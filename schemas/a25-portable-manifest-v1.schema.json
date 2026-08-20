@@ -1,0 +1,306 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://multitown.dev/schemas/a25-portable-manifest-v1.json",
+  "title": "MultiTown A25 portable manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "profile",
+    "bundle_id",
+    "schemas",
+    "materials",
+    "subjects",
+    "claims"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "multitown-a25-portable-manifest-v1"
+    },
+    "profile": {
+      "const": "multitown-a25-common-state-gradient-micro-v1"
+    },
+    "bundle_id": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "schemas": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/manifestSchemaDescriptor"
+        },
+        {
+          "$ref": "#/$defs/contractSchemaDescriptor"
+        },
+        {
+          "$ref": "#/$defs/reportSchemaDescriptor"
+        }
+      ],
+      "items": false
+    },
+    "materials": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/contractDescriptor"
+        },
+        {
+          "$ref": "#/$defs/commonStateDescriptor"
+        }
+      ],
+      "items": false
+    },
+    "subjects": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/observationsDescriptor"
+        }
+      ],
+      "items": false
+    },
+    "claims": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "typed_payload_rehashed",
+        "per_cell_prestate_recomputed",
+        "gradient_decomposition_recomputed",
+        "torch_rng_sequence_reproduced",
+        "autograd_reexecuted",
+        "optimizer_step_reexecuted",
+        "authenticated_provenance",
+        "freshness_attested"
+      ],
+      "properties": {
+        "typed_payload_rehashed": {
+          "const": true
+        },
+        "per_cell_prestate_recomputed": {
+          "const": true
+        },
+        "gradient_decomposition_recomputed": {
+          "const": true
+        },
+        "torch_rng_sequence_reproduced": {
+          "const": false
+        },
+        "autograd_reexecuted": {
+          "const": false
+        },
+        "optimizer_step_reexecuted": {
+          "const": false
+        },
+        "authenticated_provenance": {
+          "const": false
+        },
+        "freshness_attested": {
+          "const": false
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "schemaDescriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "id",
+        "sha256"
+      ],
+      "properties": {
+        "name": {
+          "enum": [
+            "manifest",
+            "contract",
+            "report"
+          ]
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^https://multitown\\.dev/schemas/a25-portable-(manifest|contract|report)-v1\\.json$"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "manifestSchemaDescriptor": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/schemaDescriptor"
+        },
+        {
+          "properties": {
+            "name": {
+              "const": "manifest"
+            },
+            "id": {
+              "const": "https://multitown.dev/schemas/a25-portable-manifest-v1.json"
+            }
+          }
+        }
+      ]
+    },
+    "contractSchemaDescriptor": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/schemaDescriptor"
+        },
+        {
+          "properties": {
+            "name": {
+              "const": "contract"
+            },
+            "id": {
+              "const": "https://multitown.dev/schemas/a25-portable-contract-v1.json"
+            }
+          }
+        }
+      ]
+    },
+    "reportSchemaDescriptor": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/schemaDescriptor"
+        },
+        {
+          "properties": {
+            "name": {
+              "const": "report"
+            },
+            "id": {
+              "const": "https://multitown.dev/schemas/a25-portable-report-v1.json"
+            }
+          }
+        }
+      ]
+    },
+    "digest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sha256"
+      ],
+      "properties": {
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "fileDescriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "path",
+        "media_type",
+        "size",
+        "digest"
+      ],
+      "properties": {
+        "name": {
+          "enum": [
+            "contract",
+            "common-state",
+            "observations"
+          ]
+        },
+        "path": {
+          "enum": [
+            "contract.json",
+            "common-state.safetensors",
+            "observations.safetensors"
+          ]
+        },
+        "media_type": {
+          "enum": [
+            "application/vnd.multitown.a25.contract.v1+json",
+            "application/vnd.multitown.a25.state.v1+safetensors",
+            "application/vnd.multitown.a25.observations.v1+safetensors"
+          ]
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 16777216
+        },
+        "digest": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "contractDescriptor": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/fileDescriptor"
+        },
+        {
+          "properties": {
+            "name": {
+              "const": "contract"
+            },
+            "path": {
+              "const": "contract.json"
+            },
+            "media_type": {
+              "const": "application/vnd.multitown.a25.contract.v1+json"
+            }
+          }
+        }
+      ]
+    },
+    "commonStateDescriptor": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/fileDescriptor"
+        },
+        {
+          "properties": {
+            "name": {
+              "const": "common-state"
+            },
+            "path": {
+              "const": "common-state.safetensors"
+            },
+            "media_type": {
+              "const": "application/vnd.multitown.a25.state.v1+safetensors"
+            }
+          }
+        }
+      ]
+    },
+    "observationsDescriptor": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/fileDescriptor"
+        },
+        {
+          "properties": {
+            "name": {
+              "const": "observations"
+            },
+            "path": {
+              "const": "observations.safetensors"
+            },
+            "media_type": {
+              "const": "application/vnd.multitown.a25.observations.v1+safetensors"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

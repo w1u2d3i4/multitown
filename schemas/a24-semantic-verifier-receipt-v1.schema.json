@@ -1,0 +1,142 @@
+{
+  "$id": "urn:multitown-bench:schema:a24-semantic-verifier-receipt:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "core": {
+      "additionalProperties": false,
+      "properties": {
+        "counts": {
+          "additionalProperties": false,
+          "properties": {
+            "calibration_rows": {"minimum": 0, "type": "integer"},
+            "files_and_directories": {"minimum": 1, "type": "integer"},
+            "fits": {"minimum": 1, "type": "integer"},
+            "optimizer_updates": {"minimum": 1, "type": "integer"},
+            "outer_rows": {"const": 0},
+            "training_episode_draws": {"minimum": 1, "type": "integer"}
+          },
+          "required": ["files_and_directories", "fits", "optimizer_updates", "training_episode_draws", "calibration_rows", "outer_rows"],
+          "type": "object"
+        },
+        "decision": {
+          "additionalProperties": false,
+          "properties": {
+            "calibration_evidence_evaluable": {"const": false},
+            "calibration_gate_recomputed": {"const": true},
+            "checkpoint_weights_only_reconstruction": {"const": true},
+            "execution_transition_derivation_replayed": {"const": false},
+            "fit_log_chain_valid": {"const": true},
+            "formal_evidence_accepted": {"const": false},
+            "formal_terminal_valid": {"const": false},
+            "inference_reexecution": {"const": false},
+            "inventory_valid": {"const": true},
+            "optimizer_update_reexecution": {"const": false},
+            "outer_performance_evaluable": {"const": false},
+            "result_recomputed": {"const": true},
+            "results_reproduced": {"const": false},
+            "artifact_semantic_recomputation_valid": {"const": true}
+          },
+          "required": ["inventory_valid", "artifact_semantic_recomputation_valid", "checkpoint_weights_only_reconstruction", "fit_log_chain_valid", "calibration_gate_recomputed", "result_recomputed", "execution_transition_derivation_replayed", "inference_reexecution", "optimizer_update_reexecution", "results_reproduced", "formal_terminal_valid", "calibration_evidence_evaluable", "outer_performance_evaluable", "formal_evidence_accepted"],
+          "type": "object"
+        },
+        "limitations": {
+          "items": {"minLength": 1, "type": "string"},
+          "minItems": 1,
+          "type": "array"
+        },
+        "recomputed": {
+          "additionalProperties": false,
+          "properties": {
+            "calibration_gate_sha256": {"$ref": "#/$defs/sha256"},
+            "calibration_rows_sha256": {"$ref": "#/$defs/sha256"},
+            "checkpoint_summaries_sha256": {"$ref": "#/$defs/sha256"},
+            "fit_receipts_sha256": {"$ref": "#/$defs/sha256"},
+            "outer_rows_sha256": {"type": "null"},
+            "preflight_signature": {"$ref": "#/$defs/sha256"},
+            "result_sha256": {"$ref": "#/$defs/sha256"},
+            "statistics_sha256": {"type": "null"}
+          },
+          "required": ["preflight_signature", "fit_receipts_sha256", "checkpoint_summaries_sha256", "calibration_rows_sha256", "calibration_gate_sha256", "outer_rows_sha256", "statistics_sha256", "result_sha256"],
+          "type": "object"
+        },
+        "target": {
+          "additionalProperties": false,
+          "properties": {
+            "artifact_snapshot_sha256": {"$ref": "#/$defs/sha256"},
+            "evidence_level": {"const": "ARTIFACT_SEMANTICS_VERIFIED"},
+            "expect": {"const": "smoke"},
+            "formal_lock_observed_absent": {"const": true},
+            "manifest_sha256": {"$ref": "#/$defs/sha256"},
+            "manifest_terminal_state": {"const": "NON_EVIDENTIARY_SMOKE"},
+            "profile": {"const": "host-private-gate-negative-v1"},
+            "protocol_sha256": {"$ref": "#/$defs/sha256"},
+            "run_contract_sha256": {"$ref": "#/$defs/sha256"},
+            "source_revision": {"pattern": "^[0-9a-f]{40}$", "type": "string"},
+            "source_set_sha256": {"$ref": "#/$defs/sha256"}
+          },
+          "required": ["expect", "profile", "evidence_level", "artifact_snapshot_sha256", "manifest_sha256", "manifest_terminal_state", "source_revision", "source_set_sha256", "protocol_sha256", "run_contract_sha256", "formal_lock_observed_absent"],
+          "type": "object"
+        },
+        "trusted_policy": {
+          "additionalProperties": false,
+          "properties": {
+            "policy_id": {"minLength": 1, "type": "string"},
+            "policy_sha256": {"$ref": "#/$defs/sha256"},
+            "trusted_files_sha256": {"$ref": "#/$defs/sha256"}
+          },
+          "required": ["policy_id", "policy_sha256", "trusted_files_sha256"],
+          "type": "object"
+        },
+        "verifier": {
+          "additionalProperties": false,
+          "properties": {
+            "profile": {"const": "host-private-gate-negative-v1"},
+            "runtime": {
+              "additionalProperties": false,
+              "properties": {
+                "numpy": {"minLength": 1, "type": "string"},
+                "platform": {"minLength": 1, "type": "string"},
+                "python": {"minLength": 1, "type": "string"},
+                "torch": {"minLength": 1, "type": "string"}
+              },
+              "required": ["python", "platform", "numpy", "torch"],
+              "type": "object"
+            },
+            "source_dirty": {"type": "boolean"},
+            "source_files": {
+              "additionalProperties": {"$ref": "#/$defs/sha256"},
+              "minProperties": 3,
+              "type": "object"
+            },
+            "source_revision": {"pattern": "^[0-9a-f]{40}$", "type": "string"},
+            "source_set_sha256": {"$ref": "#/$defs/sha256"},
+            "version": {"const": "multitown-a24-semantic-verifier-v1"}
+          },
+          "required": ["version", "profile", "source_revision", "source_dirty", "source_files", "source_set_sha256", "runtime"],
+          "type": "object"
+        }
+      },
+      "required": ["target", "trusted_policy", "verifier", "recomputed", "counts", "decision", "limitations"],
+      "type": "object"
+    },
+    "envelope": {
+      "additionalProperties": false,
+      "properties": {
+        "generated_at_utc": {"format": "date-time", "pattern": "Z$", "type": "string"},
+        "self_reported_not_an_external_attestation": {"const": true},
+        "signature": {"type": "null"},
+        "signature_scheme": {"type": "null"}
+      },
+      "required": ["generated_at_utc", "signature", "signature_scheme", "self_reported_not_an_external_attestation"],
+      "type": "object"
+    },
+    "schema_version": {"const": "multitown-a24-semantic-verifier-receipt-v1"},
+    "verification_id": {"$ref": "#/$defs/sha256"}
+  },
+  "required": ["schema_version", "verification_id", "core", "envelope"],
+  "type": "object",
+  "$defs": {
+    "sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"}
+  }
+}

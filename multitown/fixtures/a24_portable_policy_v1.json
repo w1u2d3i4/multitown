@@ -1,0 +1,116 @@
+{
+  "allowed_fixture_id": "multitown-a24-portable-synthetic-v1",
+  "allowed_variants": ["failed", "passed", "unevaluated"],
+  "fixture_cases": {
+    "failed": {
+      "availability": "raw-tensors",
+      "diagnostic_sha256": "4ded62b73bc78b14fedc474dc99872da899990432eee31cffb37d2fc76e42b3a",
+      "expected_outcome": "FAILED",
+      "subject_sha256": "a2e5bb8be6b5db7fefec972d51d66e5be410b6ce7d8e7f3a61e0d1bc496996fb",
+      "tensor_raw_sha256": {
+        "action": "11515bb1dc1d330e1ad1c6d5b81628c858efca806cc689f5df1dcae50c6b64e1",
+        "action_mask": "c87567413eeaac3b88dbd0d095b99f33a3526c606d4fa7198b8bf9d32ed6c942",
+        "expected_log_probability": "c27a89868d2a4344ed4efe06841e79b82f3fff67ff4de3c825b62b0e6a27bb54",
+        "expected_value": "020ce31c43f8a0d6d2c93b64bc01f6fbddbd77acf694d11126c0abf4ad7ea494",
+        "full_batch_log_probability": "34184ffca436c579bb198cda397e3898f335a7e0644863c304f6a08a7e77691f",
+        "full_batch_value": "01e1d621f27613f7fd47e22b146eeb1cf2198fddc4f1ff173a0fee86e805a08d",
+        "observation": "23e09433e00b3a69f380372033323ad8fafcc7540a5e2f8b27a9790a33d8bc36",
+        "rowwise_log_probability": "c27a89868d2a4344ed4efe06841e79b82f3fff67ff4de3c825b62b0e6a27bb54",
+        "rowwise_value": "020ce31c43f8a0d6d2c93b64bc01f6fbddbd77acf694d11126c0abf4ad7ea494"
+      }
+    },
+    "passed": {
+      "availability": "raw-tensors",
+      "diagnostic_sha256": "4ded62b73bc78b14fedc474dc99872da899990432eee31cffb37d2fc76e42b3a",
+      "expected_outcome": "PASSED",
+      "subject_sha256": "067d4d1b15c9d8eecb94197ffb2437fbc83bfc670cb65a88c611963e22ce2153",
+      "tensor_raw_sha256": {
+        "action": "11515bb1dc1d330e1ad1c6d5b81628c858efca806cc689f5df1dcae50c6b64e1",
+        "action_mask": "c87567413eeaac3b88dbd0d095b99f33a3526c606d4fa7198b8bf9d32ed6c942",
+        "expected_log_probability": "c27a89868d2a4344ed4efe06841e79b82f3fff67ff4de3c825b62b0e6a27bb54",
+        "expected_value": "020ce31c43f8a0d6d2c93b64bc01f6fbddbd77acf694d11126c0abf4ad7ea494",
+        "full_batch_log_probability": "d9e7bca2f7ee469bf4e3b5f8eba2d77aeeeeeee7d76a6dfe110c1f960e0586cb",
+        "full_batch_value": "01e1d621f27613f7fd47e22b146eeb1cf2198fddc4f1ff173a0fee86e805a08d",
+        "observation": "23e09433e00b3a69f380372033323ad8fafcc7540a5e2f8b27a9790a33d8bc36",
+        "rowwise_log_probability": "c27a89868d2a4344ed4efe06841e79b82f3fff67ff4de3c825b62b0e6a27bb54",
+        "rowwise_value": "020ce31c43f8a0d6d2c93b64bc01f6fbddbd77acf694d11126c0abf4ad7ea494"
+      }
+    },
+    "unevaluated": {
+      "availability": "actual-tensors-withheld",
+      "diagnostic_sha256": "d03d35b60b7bae2f2f8a9116217e0c42e11a4d6b7e1d3ea21500885dfee3715d",
+      "expected_outcome": "UNEVALUATED",
+      "subject_sha256": "f9742f5f10f09d31ad79519e91dab7867fd479843ddad4ba6ccb736742415fb7",
+      "tensor_raw_sha256": {
+        "action": "11515bb1dc1d330e1ad1c6d5b81628c858efca806cc689f5df1dcae50c6b64e1",
+        "action_mask": "c87567413eeaac3b88dbd0d095b99f33a3526c606d4fa7198b8bf9d32ed6c942",
+        "expected_log_probability": "c27a89868d2a4344ed4efe06841e79b82f3fff67ff4de3c825b62b0e6a27bb54",
+        "expected_value": "020ce31c43f8a0d6d2c93b64bc01f6fbddbd77acf694d11126c0abf4ad7ea494",
+        "observation": "23e09433e00b3a69f380372033323ad8fafcc7540a5e2f8b27a9790a33d8bc36",
+        "rowwise_log_probability": "c27a89868d2a4344ed4efe06841e79b82f3fff67ff4de3c825b62b0e6a27bb54",
+        "rowwise_value": "020ce31c43f8a0d6d2c93b64bc01f6fbddbd77acf694d11126c0abf4ad7ea494"
+      }
+    }
+  },
+  "limits": {
+    "artifact_max_bytes": 4194304,
+    "file_max_bytes": 2097152,
+    "numerical_max_points": 1024,
+    "safetensors_header_max_bytes": 65536,
+    "tensor_max_bytes": 1048576,
+    "tensor_max_count": 16
+  },
+  "numerical_policy": {
+    "equal_nan": false,
+    "full_batch": {
+      "atol_decimal": "0.00001",
+      "comparison": "abs_actual_expected_le_atol_plus_rtol_abs_expected",
+      "evaluation_dtype": "float32",
+      "reference_operand": "expected",
+      "rtol_decimal": "0.0000013"
+    },
+    "legacy_diagnostic": {
+      "acceptance_gate": false,
+      "atol_decimal": "0.0000001",
+      "rtol_decimal": "0.000001",
+      "tolerance_dtype": "float32"
+    },
+    "nonfinite_policy": "reject",
+    "probability_ratio": {
+      "evaluation_dtype": "float32",
+      "formula": "max_abs_exp_actual_log_minus_expected_log_minus_one",
+      "threshold_decimal": "0.00002"
+    },
+    "summary": {
+      "accumulator_dtype": "float64",
+      "axis": "flattened",
+      "input_dtype": "float32",
+      "quantile_algorithm": "Hyndman-Fan-type-7",
+      "quantile_method": "linear",
+      "quantiles": [0.5, 0.95, 0.99],
+      "relative_denominator": "max_abs_expected_float32_tiny",
+      "ulp_algorithm": "ordered-ieee754-binary32-distance-v1",
+      "weights": null
+    },
+    "transition_count": 4
+  },
+  "policy_id": "multitown-a24-portable-synthetic-policy-v1",
+  "profile": "portable-a24-numerical-semantics-v1",
+  "schema_version": "multitown-a24-portable-policy-v1",
+  "template_sha256": "1eb86f168528f0b227f01bed8768b1d8e433d845de2d779d316a27ed54c0be29",
+  "tensor_contracts": {
+    "base": {
+      "action": {"dtype": "int64", "shape": [4]},
+      "action_mask": {"dtype": "bool", "shape": [4, 3]},
+      "expected_log_probability": {"dtype": "float32", "shape": [4]},
+      "expected_value": {"dtype": "float32", "shape": [4]},
+      "observation": {"dtype": "float32", "shape": [4, 4]},
+      "rowwise_log_probability": {"dtype": "float32", "shape": [4]},
+      "rowwise_value": {"dtype": "float32", "shape": [4]}
+    },
+    "evaluated": {
+      "full_batch_log_probability": {"dtype": "float32", "shape": [4]},
+      "full_batch_value": {"dtype": "float32", "shape": [4]}
+    }
+  }
+}

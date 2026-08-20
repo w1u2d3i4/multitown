@@ -1,0 +1,452 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://multitown.dev/schemas/a25-portable-contract-v1.json",
+  "title": "MultiTown A25 portable contract v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "profile",
+    "digest_spec",
+    "numeric_spec",
+    "limits",
+    "state_components",
+    "gradient_parameters",
+    "cells",
+    "invariants"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "multitown-a25-portable-contract-v1"
+    },
+    "profile": {
+      "const": "multitown-a25-common-state-gradient-micro-v1"
+    },
+    "digest_spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "algorithm",
+        "record_encoding",
+        "name_order",
+        "dtype_codes",
+        "domains"
+      ],
+      "properties": {
+        "algorithm": {
+          "const": "sha256"
+        },
+        "record_encoding": {
+          "const": "multitown-a25-semantic-tensor-record-v1"
+        },
+        "name_order": {
+          "const": "bytewise-ascii"
+        },
+        "dtype_codes": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "F32",
+            "I64",
+            "U8"
+          ],
+          "properties": {
+            "F32": {
+              "const": 1
+            },
+            "I64": {
+              "const": 2
+            },
+            "U8": {
+              "const": 3
+            }
+          }
+        },
+        "domains": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "model",
+            "optimizer",
+            "rng"
+          ],
+          "properties": {
+            "model": {
+              "const": "multitown:a25:model-state:v1\u0000"
+            },
+            "optimizer": {
+              "const": "multitown:a25:optimizer-state:v1\u0000"
+            },
+            "rng": {
+              "const": "multitown:a25:explicit-update-rng-state:v1\u0000"
+            }
+          }
+        }
+      }
+    },
+    "numeric_spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "beta_encoding",
+        "tolerance_encoding",
+        "atol_f64_hex",
+        "rtol_f64_hex",
+        "evaluation",
+        "fused_multiply_add",
+        "subnormal_mode",
+        "negative_zero",
+        "finite_only",
+        "beta_zero_aux",
+        "beta_positive_aux",
+        "beta_zero_total"
+      ],
+      "properties": {
+        "beta_encoding": {
+          "const": "ieee754-binary32-big-endian-hex"
+        },
+        "tolerance_encoding": {
+          "const": "ieee754-binary64-big-endian-hex"
+        },
+        "atol_f64_hex": {
+          "$ref": "#/$defs/hex64"
+        },
+        "rtol_f64_hex": {
+          "$ref": "#/$defs/hex64"
+        },
+        "evaluation": {
+          "const": "round_f32(round_f32(base)+round_f32(round_f32(beta)*round_f32(aux)))"
+        },
+        "fused_multiply_add": {
+          "const": false
+        },
+        "subnormal_mode": {
+          "const": "preserve"
+        },
+        "negative_zero": {
+          "const": "allowed"
+        },
+        "finite_only": {
+          "const": true
+        },
+        "beta_zero_aux": {
+          "const": "forbidden"
+        },
+        "beta_positive_aux": {
+          "const": "required"
+        },
+        "beta_zero_total": {
+          "const": "bitwise-equal-base"
+        }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_core_file_bytes",
+        "max_total_tensor_payload_bytes",
+        "max_safetensors_header_bytes",
+        "max_tensors",
+        "max_rank",
+        "max_dimension",
+        "max_cells",
+        "max_state_components",
+        "max_gradient_parameters"
+      ],
+      "properties": {
+        "max_core_file_bytes": {
+          "const": 16777216
+        },
+        "max_total_tensor_payload_bytes": {
+          "const": 16777216
+        },
+        "max_safetensors_header_bytes": {
+          "const": 1048576
+        },
+        "max_tensors": {
+          "const": 4096
+        },
+        "max_rank": {
+          "const": 8
+        },
+        "max_dimension": {
+          "const": 1048576
+        },
+        "max_cells": {
+          "const": 64
+        },
+        "max_state_components": {
+          "const": 1024
+        },
+        "max_gradient_parameters": {
+          "const": 1024
+        }
+      }
+    },
+    "state_components": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1024,
+      "items": {
+        "$ref": "#/$defs/stateComponent"
+      }
+    },
+    "gradient_parameters": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1024,
+      "items": {
+        "$ref": "#/$defs/tensorSemantic"
+      }
+    },
+    "cells": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/cellF00"
+        },
+        {
+          "$ref": "#/$defs/cellF01"
+        },
+        {
+          "$ref": "#/$defs/cellF10"
+        },
+        {
+          "$ref": "#/$defs/cellF11"
+        }
+      ],
+      "items": false
+    },
+    "invariants": {
+      "const": [
+        "common-prestate-component-digests-equal",
+        "gradient-decomposition-f32-v1",
+        "beta-zero-aux-absent-v1"
+      ]
+    }
+  },
+  "$defs": {
+    "hex32": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}$"
+    },
+    "hex64": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{16}$"
+    },
+    "semanticName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[A-Za-z0-9._/-]+$"
+    },
+    "shape": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 1048576
+      }
+    },
+    "tensorSemantic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "dtype",
+        "shape"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/semanticName"
+        },
+        "dtype": {
+          "const": "F32"
+        },
+        "shape": {
+          "$ref": "#/$defs/shape"
+        }
+      }
+    },
+    "stateComponent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "component",
+        "name",
+        "dtype",
+        "shape"
+      ],
+      "properties": {
+        "component": {
+          "enum": [
+            "model",
+            "optimizer",
+            "rng"
+          ]
+        },
+        "name": {
+          "$ref": "#/$defs/semanticName"
+        },
+        "dtype": {
+          "enum": [
+            "F32",
+            "I64",
+            "U8"
+          ]
+        },
+        "shape": {
+          "$ref": "#/$defs/shape"
+        }
+      }
+    },
+    "cell": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cell_id",
+        "arm_id",
+        "stress_id",
+        "beta_f32_hex",
+        "prestate_namespace",
+        "gradient_step_namespace",
+        "aux_semantics"
+      ],
+      "properties": {
+        "cell_id": {
+          "type": "string",
+          "pattern": "^F[01][01]$"
+        },
+        "arm_id": {
+          "$ref": "#/$defs/semanticName"
+        },
+        "stress_id": {
+          "$ref": "#/$defs/semanticName"
+        },
+        "beta_f32_hex": {
+          "$ref": "#/$defs/hex32"
+        },
+        "prestate_namespace": {
+          "$ref": "#/$defs/semanticName"
+        },
+        "gradient_step_namespace": {
+          "$ref": "#/$defs/semanticName"
+        },
+        "aux_semantics": {
+          "enum": [
+            "required",
+            "forbidden"
+          ]
+        }
+      }
+    },
+    "cellF00": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/cell"
+        },
+        {
+          "properties": {
+            "cell_id": {
+              "const": "F00"
+            },
+            "beta_f32_hex": {
+              "const": "00000000"
+            },
+            "prestate_namespace": {
+              "const": "cells/F00/pre"
+            },
+            "gradient_step_namespace": {
+              "const": "cells/F00/steps/000"
+            },
+            "aux_semantics": {
+              "const": "forbidden"
+            }
+          }
+        }
+      ]
+    },
+    "cellF01": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/cell"
+        },
+        {
+          "properties": {
+            "cell_id": {
+              "const": "F01"
+            },
+            "beta_f32_hex": {
+              "const": "3e800000"
+            },
+            "prestate_namespace": {
+              "const": "cells/F01/pre"
+            },
+            "gradient_step_namespace": {
+              "const": "cells/F01/steps/000"
+            },
+            "aux_semantics": {
+              "const": "required"
+            }
+          }
+        }
+      ]
+    },
+    "cellF10": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/cell"
+        },
+        {
+          "properties": {
+            "cell_id": {
+              "const": "F10"
+            },
+            "beta_f32_hex": {
+              "const": "00000000"
+            },
+            "prestate_namespace": {
+              "const": "cells/F10/pre"
+            },
+            "gradient_step_namespace": {
+              "const": "cells/F10/steps/000"
+            },
+            "aux_semantics": {
+              "const": "forbidden"
+            }
+          }
+        }
+      ]
+    },
+    "cellF11": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/cell"
+        },
+        {
+          "properties": {
+            "cell_id": {
+              "const": "F11"
+            },
+            "beta_f32_hex": {
+              "const": "3f000000"
+            },
+            "prestate_namespace": {
+              "const": "cells/F11/pre"
+            },
+            "gradient_step_namespace": {
+              "const": "cells/F11/steps/000"
+            },
+            "aux_semantics": {
+              "const": "required"
+            }
+          }
+        }
+      ]
+    }
+  }
+}
