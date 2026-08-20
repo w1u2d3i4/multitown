@@ -121,6 +121,7 @@ include = [
   "/.gitignore",
   "/LICENSE",
   "/README.md",
+  "/README_ZH.md",
   "/multitown",
   "/pyproject.toml",
   "/schemas",
