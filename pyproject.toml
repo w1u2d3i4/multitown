@@ -119,6 +119,7 @@ packages = ["multitown"]
 ignore-vcs = true
 include = [
   "/.gitignore",
+  "/demo",
   "/LICENSE",
   "/README.md",
   "/README_ZH.md",

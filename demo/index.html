@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="MultiTown Arena — a deterministic replay of two AI organizations solving the same task."
+    />
+    <title>MultiTown Arena</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main id="arena" aria-label="MultiTown Arena replay">
+      <header class="topbar">
+        <a class="brand" href="../README.md" aria-label="MultiTown home">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span>
+            <strong>MULTITOWN</strong>
+            <small>AGENT ORGANIZATION ARENA</small>
+          </span>
+        </a>
+        <div class="topbar-center">
+          <span class="live-dot" aria-hidden="true"></span>
+          DETERMINISTIC REPLAY
+          <span class="divider">/</span>
+          NO API KEY
+        </div>
+        <div class="controls" aria-label="Replay controls">
+          <button id="restart" type="button" title="Restart replay" aria-label="Restart replay">↺</button>
+          <button id="play-toggle" type="button" aria-label="Pause replay">PAUSE</button>
+        </div>
+      </header>
+
+      <section class="challenge" aria-labelledby="challenge-title">
+        <div>
+          <span class="eyebrow">THE $1 AI COMPANY CHALLENGE</span>
+          <h1 id="challenge-title">Same task. Two organizations. Which town wins?</h1>
+        </div>
+        <div class="work-order">
+          <span>WORK ORDER</span>
+          <strong>#MT-DEMO</strong>
+          <em>HIGH PRIORITY</em>
+        </div>
+      </section>
+
+      <section class="battlefield" aria-label="A4 and A8 organization comparison">
+        <article class="town town-a4" data-town="a4">
+          <div class="town-heading">
+            <div>
+              <span class="town-code">A4</span>
+              <span class="town-name">FIXED ORGANIZATION</span>
+            </div>
+            <span class="town-state" data-field="a4-state">READY</span>
+          </div>
+          <div class="town-map">
+            <svg class="route-map" viewBox="0 0 420 210" aria-hidden="true">
+              <path class="route route-1" d="M44 105 L126 105 L126 51 L211 51" />
+              <path class="route route-2" d="M126 105 L126 161 L211 161" />
+              <path class="route route-3" d="M211 51 L298 51 L298 105 L376 105" />
+              <path class="route route-4" d="M211 161 L298 161 L298 105" />
+            </svg>
+            <div class="building intake" style="--x: 5%; --y: 36%">
+              <span class="building-icon">IN</span><b>DISPATCH</b><small>broadcast</small>
+            </div>
+            <div class="building worker" style="--x: 34%; --y: 4%">
+              <span class="building-icon">W</span><b>WORKER</b><small>small model</small>
+            </div>
+            <div class="building specialist" style="--x: 34%; --y: 58%">
+              <span class="building-icon">S</span><b>SPECIALIST</b><small>strong model</small>
+            </div>
+            <div class="building review" style="--x: 71%; --y: 35%">
+              <span class="building-icon">R</span><b>REVIEW</b><small>always-on</small>
+            </div>
+            <div class="task-packet" data-packet="a4"><span>01</span></div>
+            <div class="agent agent-1" style="--x: 49%; --y: 34%">W</div>
+            <div class="agent agent-2" style="--x: 49%; --y: 79%">S</div>
+            <div class="queue" data-field="a4-queue"><i></i><i></i><i></i></div>
+          </div>
+          <div class="town-console">
+            <span class="console-prompt">A4://</span>
+            <span data-field="a4-event">Awaiting work order…</span>
+          </div>
+        </article>
+
+        <div class="versus" aria-hidden="true"><span>VS</span></div>
+
+        <article class="town town-a8" data-town="a8">
+          <div class="town-heading">
+            <div>
+              <span class="town-code">A8</span>
+              <span class="town-name">ADAPTIVE ORGANIZATION</span>
+            </div>
+            <span class="town-state" data-field="a8-state">READY</span>
+          </div>
+          <div class="town-map">
+            <svg class="route-map" viewBox="0 0 420 210" aria-hidden="true">
+              <path class="route route-1" d="M44 105 L126 105 L126 51 L211 51" />
+              <path class="route route-2" d="M126 105 L126 161 L211 161" />
+              <path class="route route-3" d="M211 51 L298 51 L298 105 L376 105" />
+              <path class="route route-4" d="M211 161 L298 161 L298 105" />
+            </svg>
+            <div class="building intake" style="--x: 5%; --y: 36%">
+              <span class="building-icon">IN</span><b>ROUTER</b><small>budget gate</small>
+            </div>
+            <div class="building worker" style="--x: 34%; --y: 4%">
+              <span class="building-icon">W</span><b>WORKER</b><small>small model</small>
+            </div>
+            <div class="building specialist" style="--x: 34%; --y: 58%">
+              <span class="building-icon">E</span><b>EXPERT</b><small>on demand</small>
+            </div>
+            <div class="building review" style="--x: 71%; --y: 35%">
+              <span class="building-icon">V</span><b>VALIDATOR</b><small>confidence gate</small>
+            </div>
+            <div class="task-packet" data-packet="a8"><span>01</span></div>
+            <div class="agent agent-1" style="--x: 49%; --y: 34%">W</div>
+            <div class="agent agent-2" style="--x: 49%; --y: 79%">E</div>
+            <div class="queue" data-field="a8-queue"><i></i><i></i><i></i></div>
+          </div>
+          <div class="town-console">
+            <span class="console-prompt">A8://</span>
+            <span data-field="a8-event">Awaiting work order…</span>
+          </div>
+        </article>
+      </section>
+
+      <section class="scoreboard" aria-label="Benchmark scoreboard">
+        <div class="score-controller a4-score">
+          <span>A4 BASELINE</span>
+          <div><strong data-field="a4-success">67.22%</strong><small>SUCCESS</small></div>
+          <div><strong data-field="a4-token">100%</strong><small>TOKEN INDEX</small></div>
+        </div>
+        <div class="play-by-play">
+          <div class="timeline"><i data-field="timeline-fill"></i></div>
+          <span data-field="clock">00:00</span>
+          <strong data-field="headline">PRIORITY TASK INBOUND</strong>
+          <small data-field="detail">Both organizations receive the same work order.</small>
+        </div>
+        <div class="score-controller a8-score">
+          <span>A8 CONTROLLER</span>
+          <div><strong data-field="a8-success">78.89%</strong><small>SUCCESS</small></div>
+          <div><strong data-field="a8-token">23.46%</strong><small>TOKEN INDEX</small></div>
+        </div>
+      </section>
+
+      <footer>
+        <span>180 HELD-OUT SYNTHETIC SCENARIOS</span>
+        <strong>A8: +11.67 PP SUCCESS · −76.54% TOKENS VS A4</strong>
+        <span>REAL METRICS · DETERMINISTIC DEMO</span>
+      </footer>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>

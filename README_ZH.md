@@ -2,13 +2,35 @@
 
 [English](README.md) | [简体中文](README_ZH.md)
 
-MultiTown 是一个用于研究成本感知多智能体组织与序列控制的 Python
-运行时工具包。项目包含确定性环境、组织控制器、路由与安全组件、轨迹工具和机器可读
-Schema。
+<p align="center">
+  <img src="demo/assets/multitown-arena.gif" alt="MultiTown Arena：A4 与 A8 两种 AI 组织处理同一个任务" width="960" />
+</p>
+
+<p align="center">
+  <strong>AI Agent 的模拟城市——建立一家 AI 公司，看它花钱、质检、升级并动态调整。</strong>
+</p>
+
+MultiTown 是一个 **AI 组织数字孪生** 与 Python 运行时。Arena 把原本不可见的任务
+路由、模型调用、结果验证、升级处理、Token 消耗和最终结果变成一座可以观看和比较的
+小镇。
 
 本仓库是仅包含代码和简明审计结果摘要的公开版本，刻意排除了原始实验记录、生成的
 结果文件、模型 Checkpoint、Benchmark 数据集、内部过程文档、中断运行以及私有开发
 Git 历史。
+
+## 启动 Arena
+
+内置回放不需要模型、API Key、前端构建或网络请求：
+
+```bash
+git clone https://github.com/w1u2d3i4/multitown.git
+cd multitown
+python3 -m http.server 8000 --directory demo
+```
+
+打开 <http://127.0.0.1:8000>。界面中的 Benchmark 聚合指标来自冻结实测结果；动画
+工单是解释控制流程的确定性演示场景，不是某一条原始实验轨迹。自动生成 GIF 的命令
+见 [`demo/`](demo/)。
 
 ## 代表性 Benchmark 结果
 

@@ -2,15 +2,38 @@
 
 [English](README.md) | [简体中文](README_ZH.md)
 
-MultiTown is a Python runtime toolkit for studying cost-aware multi-agent
-organization and sequential control. It contains deterministic environments,
-organization controllers, routing and safety components, trace tooling, and
-machine-readable schemas.
+<p align="center">
+  <img src="demo/assets/multitown-arena.gif" alt="MultiTown Arena: A4 and A8 AI organizations solve the same task" width="960" />
+</p>
+
+<p align="center">
+  <strong>SimCity for AI agents — build an AI company, watch it spend, validate, escalate, and adapt.</strong>
+</p>
+
+MultiTown is an **AI organization digital twin** and Python runtime for studying
+cost-aware multi-agent control. Its Arena turns otherwise invisible routing,
+model calls, validation, escalation, token use, and results into a town you can
+watch and compare.
 
 This repository is a code-only public surface with concise, audited result
 summaries. It intentionally excludes raw experiment records, generated result
 files, model checkpoints, benchmark datasets, internal process notes,
 interrupted runs, and the private development Git history.
+
+## Launch the Arena
+
+The bundled replay runs without a model, API key, build step, or network call:
+
+```bash
+git clone https://github.com/w1u2d3i4/multitown.git
+cd multitown
+python3 -m http.server 8000 --directory demo
+```
+
+Open <http://127.0.0.1:8000>. The displayed benchmark aggregates are measured
+frozen results. The animated work order is a deterministic explanatory scenario,
+not a raw experimental episode. See [`demo/`](demo/) for the automatic GIF
+generation command.
 
 ## Selected benchmark results
 
