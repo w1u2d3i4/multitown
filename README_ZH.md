@@ -2,6 +2,11 @@
 
 [English](README.md) | [简体中文](README_ZH.md)
 
+> [!IMPORTANT]
+> 当前是实验性的 **`agentic-rl` 分支**。请先阅读
+> [Agentic RL 中文介绍](docs/agentic-rl.zh-CN.md)；稳定的 Arena 与通用运行时位于
+> [`main`](https://github.com/w1u2d3i4/multitown/tree/main) 分支。
+
 <p align="center">
   <img src="demo/assets/multitown-arena.gif" alt="MultiTown Arena：A4 与 A8 两种 AI 组织处理同一个任务" width="960" />
 </p>

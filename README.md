@@ -2,6 +2,12 @@
 
 [English](README.md) | [简体中文](README_ZH.md)
 
+> [!IMPORTANT]
+> You are viewing the experimental **`agentic-rl` branch**. Start with the
+> [Agentic RL overview](docs/agentic-rl.md), or return to
+> [`main`](https://github.com/w1u2d3i4/multitown/tree/main) for the stable Arena
+> and runtime surface.
+
 <p align="center">
   <img src="demo/assets/multitown-arena.gif" alt="MultiTown Arena: A4 and A8 AI organizations solve the same task" width="960" />
 </p>
