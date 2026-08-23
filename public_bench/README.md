@@ -14,18 +14,30 @@ never merged across the two tracks.
   TeamBench-90 test list.
 - Secondary data lock: MultiAgentBench/MARBLE, five domains and 500 released
   configurations. No MARBLE headline result is claimed here.
-- Compared systems:
-  - **A4-TB:** fixed strong Planner → weak Executor → independent strong
-    Verifier, with a frozen remediation budget;
-  - **A8-TB:** weak-first execution, non-oracle runtime checks, selective
-    Planner/Verifier activation and candidate rollback after failed review.
 
-The `-TB` suffix means an architecture adapted to TeamBench's engineering role
-contract. A4-TB/A8-TB scores are not the synthetic A4/A8 scores.
+## What the names mean
+
+`A4` and `A8` are experiment IDs, not model names, version numbers or rankings.
+The `-TB` suffix means that an organization has been adapted to TeamBench's
+software-engineering role contract. These scores are therefore not the
+synthetic MultiTown A4/A8 scores.
+
+In that role contract, the **Planner** writes a task plan, the **Executor** edits
+code and runs tools, and the **Verifier** independently checks the result and
+may request one repair:
+
+- **A4-TB — fixed full team:** always call a strong Planner, a weak Executor and
+  an independent strong Verifier, with a frozen one-loop remediation budget.
+- **A8-TB — selective team:** start with the weak Executor, check the candidate
+  with a deterministic public runtime validator, and activate the strong
+  Planner or Verifier only when that evidence says more work is needed. A failed
+  review can roll back to the best valid candidate.
+
+Neither controller can inspect hidden grader outcomes when making a decision.
 
 ## Frozen formal result
 
-| Metric | A4-TB | A8-TB |
+| Metric | A4-TB — fixed full team | A8-TB — selective team |
 | --- | ---: | ---: |
 | Fully passed | 14 / 89 | 11 / 89 |
 | Pass rate | 15.73% | 12.36% |

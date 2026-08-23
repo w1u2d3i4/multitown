@@ -8,7 +8,7 @@
 > The stable Arena remains on [`main`](https://github.com/w1u2d3i4/multitown/tree/main).
 
 <p align="center">
-  <img src="demo/assets/multitown-arena.gif" alt="MultiTown Arena: A4 and A8 AI organizations solve the same task" width="960" />
+  <img src="demo/assets/multitown-arena.gif" alt="MultiTown Arena: fixed and adaptive AI organizations solve the same task" width="960" />
 </p>
 
 <p align="center">
@@ -24,6 +24,29 @@ This repository is a code-only public surface with concise, audited result
 summaries. It intentionally excludes raw experiment records, generated result
 files, model checkpoints, benchmark datasets, internal process notes,
 interrupted runs, and the private development Git history.
+
+## How to read A0–A8
+
+The `A` numbers are experiment IDs for different AI organization designs. They
+are **not model versions or rankings**: a larger number does not automatically
+mean a better system. A “weak” or “strong” agent below means the economical or
+more capable model assigned to that role in the frozen experiment.
+
+| ID | Plain-language name | What happens on each task |
+| --- | --- | --- |
+| A0 | Single economical agent | One weak-model agent solves the task alone. |
+| A1 | Single strong agent | One strong-model agent solves the task alone. |
+| A2 | Small-agent vote | Four weak-model agents solve independently; a deterministic vote selects the answer. |
+| A3 | Manager-led team | A strong leader plans, three weak workers propose solutions, and the strong model integrates them. |
+| A4 | Fixed full team | A strong Planner, three weak Workers and an independent strong Verifier are always called. |
+| A5 | Rule-based adaptive team | Weak agents start the work; fixed rules decide whether to escalate to a strong model and optionally verify. |
+| A6 | Statistical pre-task router | Before execution, cross-fitted scenario statistics select one complete A0–A5 organization under a budget. |
+| A7 | Learned pre-task router | Before execution, a learned predictor estimates quality, tokens and latency from safe task features, then selects an A0–A5 organization. |
+| A8 | Execution-time adaptive controller | Start with one economical agent, validate its result, and call another worker, a strong specialist or review only when the current evidence requires it. |
+
+A6 and A7 choose the whole organization **before** the task runs. A8 can change
+the organization **while** the task is running. A8 is a deterministic selective-
+delegation policy, not a trained reinforcement-learning policy.
 
 ## Launch the Arena
 
@@ -47,7 +70,14 @@ organization ideas on 89 currently evaluable tasks from TeamBench's public test
 list. Its scores are deliberately kept separate from the synthetic MultiTown
 results below.
 
-| Metric | A4-TB fixed Planner–Executor–Verifier | A8-TB selective controller |
+Here, Planner writes the work plan, Executor edits code and runs tools, and
+Verifier independently checks the result. **A4-TB always activates all three
+roles**. **A8-TB starts with the economical Executor and activates the stronger
+Planner or Verifier only when a public runtime validator finds that extra work
+is needed.** The `-TB` suffix means “adapted to TeamBench”; these are not the
+same implementations or scores as synthetic A4 and A8.
+
+| Metric | A4-TB — fixed full team | A8-TB — selective team |
 | --- | ---: | ---: |
 | Fully passed | 14 / 89 | 11 / 89 |
 | Mean partial score | 0.63375 | 0.58251 |
@@ -60,12 +90,14 @@ A8-TB reduced mean tokens by **37.06%** and monitored energy by **14.48%**,
 but its paired partial-score difference was **−0.05124** (95% paired bootstrap
 CI **[−0.08951, −0.01678]**). The cost gate passed and the quality
 non-inferiority gate failed, so A8-TB is not presented as a replacement for
-A4-TB. See the [formal record](public_bench/records/TEAMBENCH_TEST_V1.2.md).
+A4-TB. In plain language: the selective team saved compute, but lost too much
+task quality to qualify as an acceptable replacement under the frozen rule.
+See the [formal record](public_bench/records/TEAMBENCH_TEST_V1.2.md).
 
 ## Selected benchmark results
 
-The strongest frozen MultiTown result is the deterministic A8 execution-time
-controller on the 180-scenario held-out split:
+The strongest frozen MultiTown result is A8, the deterministic “start cheap and
+escalate only when needed” controller, on the 180-scenario held-out split:
 
 | Controller | Success | Tokens per decision | Mean E2E latency | p95 E2E latency |
 | --- | ---: | ---: | ---: | ---: |
@@ -73,11 +105,11 @@ controller on the 180-scenario held-out split:
 
 Under the preregistered paired comparison:
 
-- A8 improved success over A4 by **11.67 percentage points** (95% paired
+- A8 improved success over the A4 fixed full team by **11.67 percentage points** (95% paired
   bootstrap CI: **+4.44 to +18.89**) while using **76.54% fewer tokens**.
-- A8 improved success over A7 by **11.11 percentage points** (95% paired
+- A8 improved success over the A7 learned pre-task router by **11.11 percentage points** (95% paired
   bootstrap CI: **+4.44 to +17.78**) while using **54.58% fewer tokens**.
-- The earlier A6 budget router matched the observed A4 accuracy level while
+- The earlier A6 statistical pre-task router matched the observed A4 accuracy level while
   reducing tokens per decision by **24.63%** and mean latency by **31.79%**;
   its accuracy interval crossed zero, so this is an efficiency result rather
   than evidence that A6 is more accurate.
@@ -90,12 +122,16 @@ MultiTown population; they do not establish general multi-agent superiority.
 
 MultiTown retains both positive optimization results and safety failures:
 
+The later A9 and A22 labels are chronological research IDs for attempts to
+learn the control policy. They are not language-model versions, and they do not
+replace A8 unless they pass the stated quality, cost and safety checks.
+
 | Study | Main result | Required interpretation |
 | --- | --- | --- |
-| A9-v1 offline fitted-Q | 75.00% success vs 72.22% for the matched A8 baseline | Difference interval crossed zero; no significant advantage claim |
-| A9-v2 masked PPO | Success 23.83% → 34.00%; +10.17 pp (95% CI +7.87 to +12.47); tokens −25.41% | Train-only controller result; unsafe episodes rose 15.73% → 66.00% |
-| A9-v3 hard-shield diagnostic | Unsafe episodes 66.00% → 5.84% | Autonomous success fell 34.00% → 0%; safety–utility negative result |
-| A22 constrained-PPO follow-up | 60 fits, 345,600 rollouts, 36,000 calibration rows and 9,000 outer rows | Measured safety margins recovered, but success noninferiority was not stable and tokens increased |
+| A9-v1 — offline fitted-Q controller | 75.00% success vs 72.22% for the matched A8 baseline | Difference interval crossed zero; no significant advantage claim |
+| A9-v2 — masked PPO controller | Success 23.83% → 34.00%; +10.17 pp (95% CI +7.87 to +12.47); tokens −25.41% | Train-only controller result; unsafe episodes rose 15.73% → 66.00% |
+| A9-v3 — hard review shield | Unsafe episodes 66.00% → 5.84% | Autonomous success fell 34.00% → 0%; safety–utility negative result |
+| A22 — constrained-PPO follow-up | 60 fits, 345,600 rollouts, 36,000 calibration rows and 9,000 outer rows | Measured safety margins recovered, but success noninferiority was not stable and tokens increased |
 
 The historical A10 long-horizon run is not listed as a positive result because
 a later audit found that policy-visible fields deterministically revealed the

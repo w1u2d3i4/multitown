@@ -8,7 +8,7 @@
 > [`main`](https://github.com/w1u2d3i4/multitown/tree/main) 分支。
 
 <p align="center">
-  <img src="demo/assets/multitown-arena.gif" alt="MultiTown Arena：A4 与 A8 两种 AI 组织处理同一个任务" width="960" />
+  <img src="demo/assets/multitown-arena.gif" alt="MultiTown Arena：固定组织与动态组织处理同一个任务" width="960" />
 </p>
 
 <p align="center">
@@ -22,6 +22,26 @@ MultiTown 是一个 **AI 组织数字孪生** 与 Python 运行时。Arena 把�
 本仓库是仅包含代码和简明审计结果摘要的公开版本，刻意排除了原始实验记录、生成的
 结果文件、模型 Checkpoint、Benchmark 数据集、内部过程文档、中断运行以及私有开发
 Git 历史。
+
+## A0–A8 到底是什么
+
+`A` 编号只是不同 AI 组织方案的实验编号，**不是模型版本，也不代表数字越大越强**。
+下表中的“弱模型”和“强模型”，分别指冻结实验中承担经济型角色和高能力角色的模型。
+
+| 编号 | 通俗名称 | 每个任务如何执行 |
+| --- | --- | --- |
+| A0 | 单个经济型 Agent | 一个弱模型 Agent 独立完成任务。 |
+| A1 | 单个强 Agent | 一个强模型 Agent 独立完成任务。 |
+| A2 | 小模型投票组 | 四个弱模型 Agent 独立作答，再由确定性投票选出答案。 |
+| A3 | 经理带队组织 | 强模型负责规划，三个弱模型提出方案，再由强模型整合。 |
+| A4 | 固定完整团队 | 每次都调用一个强 Planner、三个弱 Worker 和一个独立强 Verifier。 |
+| A5 | 规则式动态团队 | 先让弱模型工作，再由固定规则决定是否升级给强模型并选择性复核。 |
+| A6 | 任务前统计路由器 | 任务开始前，根据交叉拟合的场景统计和预算，从 A0–A5 中选择一套完整组织。 |
+| A7 | 任务前学习型路由器 | 任务开始前，根据安全的任务特征预测质量、Token 和延迟，再从 A0–A5 中选择组织。 |
+| A8 | 执行期动态控制器 | 先让一个经济型 Agent 尝试并验证；只有证据表明有必要时，才追加 Worker、强专家或复核。 |
+
+A6、A7 都是在任务执行**之前**一次性选好组织；A8 可以在任务执行**过程中**根据验证
+结果改变组织。A8 是确定性的选择性委派策略，不是训练得到的强化学习策略。
 
 ## 启动 Arena
 
@@ -42,7 +62,13 @@ python3 -m http.server 8000 --directory demo
 `public_bench/` 子项目在 TeamBench 公开测试列表中当前可评测的 89 个任务上，对比固定
 组织与执行期选择控制器。该结果与下方 MultiTown 合成任务结果严格分开，不合并分数。
 
-| 指标 | A4-TB 固定 Planner–Executor–Verifier | A8-TB 选择性控制器 |
+在这里，Planner 负责编写计划，Executor 负责修改代码和调用工具，Verifier 负责独立
+检查结果。**A4-TB 每次都启用全部三个角色**；**A8-TB 先让经济型 Executor 执行，
+只有公开运行时验证器发现有必要时，才启用更强的 Planner 或 Verifier**。`-TB` 表示
+“针对 TeamBench 角色协议的适配版”，它们和合成任务里的 A4/A8 不是同一实现，也不
+共用分数。
+
+| 指标 | A4-TB——固定完整团队 | A8-TB——选择性团队 |
 | --- | ---: | ---: |
 | 完全通过 | 14 / 89 | 11 / 89 |
 | 平均部分分 | 0.63375 | 0.58251 |
@@ -54,12 +80,13 @@ python3 -m http.server 8000 --directory demo
 A8-TB 将平均 Token 减少 **37.06%**、监控能耗减少 **14.48%**，但 A8−A4
 配对部分分差为 **−0.05124**，95% 配对 Bootstrap CI 为
 **[−0.08951, −0.01678]**。成本门通过、质量非劣门失败，因此不能将当前 A8-TB
-宣传为 A4-TB 的替代方案。详见[正式记录](public_bench/records/TEAMBENCH_TEST_V1.2.md)。
+宣传为 A4-TB 的替代方案。通俗来说：选择性团队节省了算力，但损失的任务质量超过
+冻结规则允许的范围。详见[正式记录](public_bench/records/TEAMBENCH_TEST_V1.2.md)。
 
 ## 代表性 Benchmark 结果
 
-MultiTown 当前最强的冻结结果来自 A8 确定性执行期控制器，它在 180 条 held-out
-场景上的结果为：
+MultiTown 当前最强的冻结结果来自 A8，即“先用便宜方案，必要时才升级”的确定性
+执行期控制器。它在 180 条 held-out 场景上的结果为：
 
 | 控制器 | 成功率 | 每次决策 Token | 平均端到端延迟 | p95 端到端延迟 |
 | --- | ---: | ---: | ---: | ---: |
@@ -67,11 +94,11 @@ MultiTown 当前最强的冻结结果来自 A8 确定性执行期控制器，它
 
 按照预注册的配对比较口径：
 
-- A8 相对 A4 的成功率提高 **11.67 个百分点**，95% 配对 Bootstrap CI 为
+- A8 相对 A4 固定完整团队的成功率提高 **11.67 个百分点**，95% 配对 Bootstrap CI 为
   **+4.44 至 +18.89**，同时 Token 减少 **76.54%**；
-- A8 相对 A7 的成功率提高 **11.11 个百分点**，95% 配对 Bootstrap CI 为
+- A8 相对 A7 任务前学习型路由器的成功率提高 **11.11 个百分点**，95% 配对 Bootstrap CI 为
   **+4.44 至 +17.78**，同时 Token 减少 **54.58%**；
-- 更早的 A6 预算路由器在观测到的 A4 准确率水平下，将每次决策 Token 减少
+- 更早的 A6 任务前统计路由器在观测到的 A4 准确率水平下，将每次决策 Token 减少
   **24.63%**、平均延迟减少 **31.79%**。其准确率区间跨零，因此这里只将它解释为
   效率结果，不能声称 A6 更准确。
 
@@ -82,12 +109,15 @@ MultiTown 合成任务集和本地 Qwen/llama.cpp 推理，不能外推为通用
 
 MultiTown 同时保留优化收益和安全失败：
 
+后续的 A9、A22 是学习型控制器尝试的时间顺序研究编号，不是大模型版本；只有同时
+通过质量、成本和安全门，它们才能替代 A8。
+
 | 实验 | 主要结果 | 必须保留的解释边界 |
 | --- | --- | --- |
-| A9-v1 offline fitted-Q | 成功率 75.00%，对应 A8 基线为 72.22% | 差值区间跨零，不能声称显著优于 A8 |
-| A9-v2 masked PPO | 成功率 23.83% → 34.00%，提高 10.17 pp（95% CI +7.87 至 +12.47），Token −25.41% | 仅为 train-only 控制器结果；unsafe episode 从 15.73% 上升至 66.00% |
-| A9-v3 hard-shield diagnostic | unsafe episode 从 66.00% 降至 5.84% | autonomous success 从 34.00% 降至 0%，属于安全—效用负结果 |
-| A22 constrained-PPO follow-up | 60 次拟合、345,600 条 rollout、36,000 条 calibration row、9,000 条 outer row | 所测安全边界恢复，但 success noninferiority 不稳定且 Token 增加 |
+| A9-v1——离线 fitted-Q 控制器 | 成功率 75.00%，对应 A8 基线为 72.22% | 差值区间跨零，不能声称显著优于 A8 |
+| A9-v2——带动作屏蔽的 PPO 控制器 | 成功率 23.83% → 34.00%，提高 10.17 pp（95% CI +7.87 至 +12.47），Token −25.41% | 仅为 train-only 控制器结果；unsafe episode 从 15.73% 上升至 66.00% |
+| A9-v3——强制复核安全盾 | unsafe episode 从 66.00% 降至 5.84% | autonomous success 从 34.00% 降至 0%，属于安全—效用负结果 |
+| A22——约束 PPO 后续实验 | 60 次拟合、345,600 条 rollout、36,000 条 calibration row、9,000 条 outer row | 所测安全边界恢复，但 success noninferiority 不稳定且 Token 增加 |
 
 历史 A10 long-horizon 结果没有作为正结果展示，因为后续审计发现策略可见字段能够
 确定性泄露正确动作。A23 因 snapshot binding 失败而失效，Stage W 的 CR 轴为 inert。
