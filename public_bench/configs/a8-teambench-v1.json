@@ -1,0 +1,23 @@
+{
+  "schema_version": "general-mas-a8-controller-v2",
+  "early_stop_threshold": 0.75,
+  "post_plan_verifier_skip_threshold": 0.85,
+  "high_risk_categories": [
+    "Adversarial",
+    "Cross-System Integration",
+    "Data Engineering",
+    "Distributed Systems",
+    "Long-Horizon",
+    "Multi-language",
+    "Operations",
+    "Security"
+  ],
+  "high_risk_difficulties": [
+    "expert"
+  ],
+  "require_successful_command_for_early_stop": true,
+  "max_remediation_loops": 1,
+  "a4_max_remediation_loops": 1,
+  "preserve_initial_candidate": true,
+  "guided_remediation_without_reverification": true
+}

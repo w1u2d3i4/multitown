@@ -1,0 +1,419 @@
+{
+  "schema_version": "general-mas-teambench-comparison-v2",
+  "public_release_note": "Machine-local replacement paths were rewritten as repository-relative logical paths; aggregate metrics and raw-input SHA-256 values are unchanged.",
+  "paired_tasks": 89,
+  "task_ids_sha256": "f1e99c3f7348c18c779652aeed8ece98e0786c90dd6f058b69838860b8919b04",
+  "A4": {
+    "n": 89,
+    "passes": 14,
+    "pass_rate": 0.15730337078651685,
+    "mean_partial_score": 0.633745692883895,
+    "mean_tokens": 108381.34831460674,
+    "median_tokens": 114438.0,
+    "p95_tokens": 156559.2,
+    "total_tokens": 9645940,
+    "mean_latency_s": 93.37096881823649,
+    "median_latency_s": 72.19944252201822,
+    "p95_latency_s": 134.97546130739494,
+    "total_latency_s": 8310.016224823048,
+    "routes": {
+      "fixed_full": 14,
+      "fixed_full_with_remediation": 75
+    },
+    "role_activations": {
+      "executor": 164,
+      "planner": 89,
+      "verifier": 164
+    },
+    "invocation_errors": 0
+  },
+  "A8": {
+    "n": 89,
+    "passes": 11,
+    "pass_rate": 0.12359550561797752,
+    "mean_partial_score": 0.5825097378277153,
+    "mean_tokens": 68218.32584269663,
+    "median_tokens": 73465.0,
+    "p95_tokens": 111029.2,
+    "total_tokens": 6071431,
+    "mean_latency_s": 85.20686244879741,
+    "median_latency_s": 58.14572956803022,
+    "p95_latency_s": 165.1143365671973,
+    "total_latency_s": 7583.410757942969,
+    "routes": {
+      "planner_executor_stop": 10,
+      "strong_review": 1,
+      "strong_review_failed_fallback_initial": 35,
+      "strong_review_failed_fallback_planned": 26,
+      "weak_early_stop": 17
+    },
+    "role_activations": {
+      "executor": 161,
+      "planner": 72,
+      "verifier": 62
+    },
+    "invocation_errors": 0
+  },
+  "paired_partial_difference_a8_minus_a4": {
+    "mean": -0.05123595505617978,
+    "ci95_lower": -0.08951241573033707,
+    "ci95_upper": -0.016775674157303393
+  },
+  "paired_partial_outcomes": {
+    "a8_better": 12,
+    "tied": 57,
+    "a4_better": 20
+  },
+  "mcnemar": {
+    "a4_pass_a8_fail": 6,
+    "a4_fail_a8_pass": 3,
+    "discordant": 9,
+    "two_sided_exact_p": 0.5078125
+  },
+  "mean_token_reduction": 0.3705713491893998,
+  "gpu_energy_wh": {
+    "A4": 101.0407001275696,
+    "A8": 86.40610533988297
+  },
+  "system_monitoring": {
+    "A4": {
+      "samples": 1650,
+      "duration_s": 8309.550668072014,
+      "cpu_percent": {
+        "mean": 4.493757575757576,
+        "p95": 6.2,
+        "max": 18.5
+      },
+      "ram_used_gib": {
+        "mean": 51.80286432439631,
+        "p95": 52.092366790771486,
+        "max": 52.545230865478516
+      },
+      "gpu_util_percent": {
+        "mean": 68.77030303030303,
+        "p95": 96.0,
+        "max": 96.0
+      },
+      "gpu_power_w": {
+        "mean": 43.740678787878785,
+        "p95": 73.50549999999997,
+        "max": 88.85
+      },
+      "gpu_temperature_c": {
+        "mean": 67.29757575757576,
+        "p95": 78.0,
+        "max": 82.0
+      },
+      "energy_wh": 101.0407001275696
+    },
+    "A8": {
+      "samples": 1542,
+      "duration_s": 7764.363354397996,
+      "cpu_percent": {
+        "mean": 4.139948119325552,
+        "p95": 6.0,
+        "max": 20.8
+      },
+      "ram_used_gib": {
+        "mean": 51.77053217263228,
+        "p95": 52.0248743057251,
+        "max": 52.564910888671875
+      },
+      "gpu_util_percent": {
+        "mean": 62.35473411154345,
+        "p95": 95.0,
+        "max": 96.0
+      },
+      "gpu_power_w": {
+        "mean": 40.01540856031128,
+        "p95": 67.27,
+        "max": 89.9
+      },
+      "gpu_temperature_c": {
+        "mean": 64.61608300907912,
+        "p95": 76.0,
+        "max": 83.0
+      },
+      "energy_wh": 86.40610533988297
+    }
+  },
+  "preregistered_gate": {
+    "partial_ci_lower_at_least_minus_0_02": false,
+    "token_reduction_at_least_0_30": true,
+    "passed": false
+  },
+  "invocation_error_rows": [],
+  "inputs": {
+    "a4_results_sha256": "6f23f129f28adc858d968d3c9d678a5bb86e73843887c4705a34081d8ce25c31",
+    "a8_results_sha256": "a43794cd4d9de9eb120d2859db603cfcf3030951c40d729fd622a4d9d584e980",
+    "a4_config": {
+      "schema_version": "general-mas-teambench-run-v1",
+      "method": "A4",
+      "split": "test",
+      "tasks": [
+        "TRAP1_spec_conflict",
+        "TRAP5_security_theater",
+        "TRAP6_deprecated_api",
+        "CR4_api_review",
+        "CR6_review_checklist",
+        "CR1_review_respond",
+        "CROSS1_api_contract",
+        "CROSS2_schema_evolution",
+        "CROSS3_protocol_bridge",
+        "D6_data_reconcile",
+        "D3_schema_migration",
+        "D4_data_pipeline",
+        "D5_query_optimize",
+        "D7_etl_reconciliation",
+        "DIST1_queue_race",
+        "DIST2_consensus_partition",
+        "SYNTH1_distributed_debug",
+        "GH1006_spaCy_13068",
+        "GH1007_spaCy_13040",
+        "GH1011_great_expectati_8062",
+        "INC6_deadlock",
+        "INC10_rollback_plan",
+        "INC1_cascade_failure",
+        "INC2_data_corruption",
+        "INC3_memory_leak",
+        "INC4_dns_miscfg",
+        "IR2_misinformation_trap",
+        "IR3_multi_source",
+        "IR4_temporal",
+        "INT1_pipeline_repair",
+        "LH2_budgeted_workflow",
+        "LH5_data_migration",
+        "LH4_staged_deploy",
+        "CROSS6_grpc_rest_bridge",
+        "JS2_xss_sanitize",
+        "MULTI2_microservice_debug",
+        "NEG1_tradeoff_config",
+        "LH3_multi_service",
+        "O6_perf_tuning",
+        "TRAP3_metric_mirage",
+        "CROSS7_config_drift",
+        "MULTI5_deploy_pipeline",
+        "API1_version_compat",
+        "GH14_celery_chain_fail",
+        "INFRA2_cicd_repair",
+        "TS1_type_mismatch",
+        "GH103_redis-py_3998",
+        "GH112_redis-py_3996",
+        "GH121_quart_302",
+        "GH128_mitmproxy_8046",
+        "GH12_click_envvar_flag",
+        "GH136_mitmproxy_8054",
+        "GH139_marshmallow_2894",
+        "GH13_starlette_bg_block",
+        "GH140_marshmallow_2874",
+        "GH141_urllib3_3736",
+        "GH143_mitmproxy_8095",
+        "PIPE2_data_pipeline",
+        "PIPE3_msg_queue",
+        "PIPE3_stream_processing",
+        "P2_spec_arbitration",
+        "P3_access_control",
+        "P4_data_retention",
+        "RDS10_survey_analysis",
+        "RDS11_survivorship_bias",
+        "RDS12_simpsons_income",
+        "CRYPTO1_nonce_reuse",
+        "CRYPTO3_cert_chain",
+        "CRYPTO4_kdf_migration",
+        "SEC8_dependency_audit",
+        "CRYPTO5_tls_config",
+        "CRYPTO6_token_validation",
+        "GO1_concurrency_fix",
+        "SCALE1_codebase_migration",
+        "GH10_retry_backoff",
+        "GH11_middleware_order",
+        "GH1_flask_session_ctx",
+        "GH2_click_flag_value",
+        "SPEC5_config_system",
+        "SPEC2_api_design",
+        "GH7_fixture_scope_leak",
+        "TEST2_regression",
+        "TEST3_integration",
+        "TEST4_property",
+        "RDS13_smote_leakage",
+        "RDS14_housing_leakage",
+        "RDS15_taxi_circular",
+        "RDS16_retail_phacking",
+        "RDS17_macro_spurious"
+      ],
+      "split_sha256": "376c01ba6c78819bc22b53b9ba6561b5cae5e4db9133b7f307e834755b964809",
+      "source": {
+        "revision": "b8b348e50e3212c4da397845361012c55d6a82cc",
+        "dirty": false
+      },
+      "docker_image": "general-mas-runner:0.1",
+      "docker_image_id": "sha256:d218bef3a99b863f630a66bca9a8d8b7bd0e6218078bcf856bf374a14ad06397",
+      "controller": {
+        "schema_version": "general-mas-a4-controller-v1",
+        "a4_max_remediation_loops": 1
+      },
+      "strong": {
+        "endpoint": "http://127.0.0.1:8000/v1",
+        "model": "qwen-game"
+      },
+      "weak": {
+        "endpoint": "http://127.0.0.1:8001/v1",
+        "model": "qwen-mm-backup"
+      },
+      "max_tokens": 2048,
+      "temperature": 0.0
+    },
+    "a8_config": {
+      "schema_version": "general-mas-teambench-run-v1",
+      "method": "A8",
+      "split": "test",
+      "tasks": [
+        "TRAP1_spec_conflict",
+        "TRAP5_security_theater",
+        "TRAP6_deprecated_api",
+        "CR4_api_review",
+        "CR6_review_checklist",
+        "CR1_review_respond",
+        "CROSS1_api_contract",
+        "CROSS2_schema_evolution",
+        "CROSS3_protocol_bridge",
+        "D6_data_reconcile",
+        "D3_schema_migration",
+        "D4_data_pipeline",
+        "D5_query_optimize",
+        "D7_etl_reconciliation",
+        "DIST1_queue_race",
+        "DIST2_consensus_partition",
+        "SYNTH1_distributed_debug",
+        "GH1006_spaCy_13068",
+        "GH1007_spaCy_13040",
+        "GH1011_great_expectati_8062",
+        "INC6_deadlock",
+        "INC10_rollback_plan",
+        "INC1_cascade_failure",
+        "INC2_data_corruption",
+        "INC3_memory_leak",
+        "INC4_dns_miscfg",
+        "IR2_misinformation_trap",
+        "IR3_multi_source",
+        "IR4_temporal",
+        "INT1_pipeline_repair",
+        "LH2_budgeted_workflow",
+        "LH5_data_migration",
+        "LH4_staged_deploy",
+        "CROSS6_grpc_rest_bridge",
+        "JS2_xss_sanitize",
+        "MULTI2_microservice_debug",
+        "NEG1_tradeoff_config",
+        "LH3_multi_service",
+        "O6_perf_tuning",
+        "TRAP3_metric_mirage",
+        "CROSS7_config_drift",
+        "MULTI5_deploy_pipeline",
+        "API1_version_compat",
+        "GH14_celery_chain_fail",
+        "INFRA2_cicd_repair",
+        "TS1_type_mismatch",
+        "GH103_redis-py_3998",
+        "GH112_redis-py_3996",
+        "GH121_quart_302",
+        "GH128_mitmproxy_8046",
+        "GH12_click_envvar_flag",
+        "GH136_mitmproxy_8054",
+        "GH139_marshmallow_2894",
+        "GH13_starlette_bg_block",
+        "GH140_marshmallow_2874",
+        "GH141_urllib3_3736",
+        "GH143_mitmproxy_8095",
+        "PIPE2_data_pipeline",
+        "PIPE3_msg_queue",
+        "PIPE3_stream_processing",
+        "P2_spec_arbitration",
+        "P3_access_control",
+        "P4_data_retention",
+        "RDS10_survey_analysis",
+        "RDS11_survivorship_bias",
+        "RDS12_simpsons_income",
+        "CRYPTO1_nonce_reuse",
+        "CRYPTO3_cert_chain",
+        "CRYPTO4_kdf_migration",
+        "SEC8_dependency_audit",
+        "CRYPTO5_tls_config",
+        "CRYPTO6_token_validation",
+        "GO1_concurrency_fix",
+        "SCALE1_codebase_migration",
+        "GH10_retry_backoff",
+        "GH11_middleware_order",
+        "GH1_flask_session_ctx",
+        "GH2_click_flag_value",
+        "SPEC5_config_system",
+        "SPEC2_api_design",
+        "GH7_fixture_scope_leak",
+        "TEST2_regression",
+        "TEST3_integration",
+        "TEST4_property",
+        "RDS13_smote_leakage",
+        "RDS14_housing_leakage",
+        "RDS15_taxi_circular",
+        "RDS16_retail_phacking",
+        "RDS17_macro_spurious"
+      ],
+      "split_sha256": "376c01ba6c78819bc22b53b9ba6561b5cae5e4db9133b7f307e834755b964809",
+      "source": {
+        "revision": "b8b348e50e3212c4da397845361012c55d6a82cc",
+        "dirty": false
+      },
+      "docker_image": "general-mas-runner:0.1",
+      "docker_image_id": "sha256:d218bef3a99b863f630a66bca9a8d8b7bd0e6218078bcf856bf374a14ad06397",
+      "controller": {
+        "schema_version": "general-mas-a8-controller-v2",
+        "early_stop_threshold": 0.75,
+        "post_plan_verifier_skip_threshold": 0.85,
+        "high_risk_categories": [
+          "Adversarial",
+          "Cross-System Integration",
+          "Data Engineering",
+          "Distributed Systems",
+          "Long-Horizon",
+          "Multi-language",
+          "Operations",
+          "Security"
+        ],
+        "high_risk_difficulties": [
+          "expert"
+        ],
+        "require_successful_command_for_early_stop": true,
+        "max_remediation_loops": 1,
+        "a4_max_remediation_loops": 1,
+        "preserve_initial_candidate": true,
+        "guided_remediation_without_reverification": true
+      },
+      "strong": {
+        "endpoint": "http://127.0.0.1:8000/v1",
+        "model": "qwen-game"
+      },
+      "weak": {
+        "endpoint": "http://127.0.0.1:8001/v1",
+        "model": "qwen-mm-backup"
+      },
+      "max_tokens": 2048,
+      "temperature": 0.0
+    },
+    "a8_replacement_manifest": {
+      "schema_version": "general-mas-result-replacement-v1",
+      "public_release_note": "Machine-local paths were rewritten as repository-relative logical paths; raw result files remain excluded and their SHA-256 values are unchanged.",
+      "replacements": [
+        {
+          "task_id": "INC6_deadlock",
+          "original_results": "artifacts/teambench-test-a8-v1.2-t0/results.jsonl",
+          "original_sha256": "422a18ad46c512a9562883a001c53194e4b6db3eaa84c114ff9a9d0930ea3f75",
+          "retry_results": "artifacts/teambench-test-a8-v1.2-t0-retry-inc6/results.jsonl",
+          "retry_sha256": "e8932cf715bba74eeffecd9fbc1b4a28fee33792cb1b76b059cd917fa7b3a717",
+          "source_error": "TypeError: can't concat str to bytes",
+          "reason": "Infrastructure-only retry after TimeoutExpired bytes/str normalization; controller, split, models, and temperature unchanged."
+        }
+      ],
+      "merged_results_sha256": "a43794cd4d9de9eb120d2859db603cfcf3030951c40d729fd622a4d9d584e980"
+    }
+  }
+}

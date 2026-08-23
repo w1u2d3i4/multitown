@@ -1,0 +1,11 @@
+{
+  "schema_version": "general-mas-teambench-manifest-v1",
+  "upstream_revision": "d185aef1916fd86a9ba554d581fd256319a973af",
+  "source_dataset_sha256": "a9dad391b466f93d1855684e0d6afca58ad04b8ceb2d38056256d64325874be3",
+  "official_test_sha256": "7306caac1343ae2b3498c8326418d74f6ae7e1177c466b5335d2df73e8b0f8a1",
+  "split_sha256": "8504c4f69ccd439a9d5840f5c22ca1355e454cb87370f3918f4b21f1c32d2e42",
+  "counts": {
+    "dev": 30,
+    "test": 89
+  }
+}

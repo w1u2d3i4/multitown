@@ -1,0 +1,41 @@
+{
+  "schema_version": "general-mas-upstream-lock-v1",
+  "locked_at_utc": "2026-08-10T19:00:00Z",
+  "upstreams": {
+    "TeamBench": {
+      "url": "https://github.com/ybkim95/TeamBench.git",
+      "revision": "d185aef1916fd86a9ba554d581fd256319a973af",
+      "commit_time": "2026-05-18T15:13:10+00:00",
+      "license": "MIT",
+      "license_sha256": "0c0d65e201383b8ff6f4265fc09d03278e5308ec1bb9541d5cc96647505aaadc",
+      "tasks_tree_git": "27bad8ecb45660fa14553d2f3090d4bd1abe6a29",
+      "dataset": {
+        "path": "shared/teambench_dataset.json",
+        "rows": 931,
+        "sha256": "a9dad391b466f93d1855684e0d6afca58ad04b8ceb2d38056256d64325874be3"
+      },
+      "official_test": {
+        "path": "leaderboard/data/leaderboard_90_tasks.json",
+        "rows": 90,
+        "currently_evaluable": 89,
+        "sha256": "7306caac1343ae2b3498c8326418d74f6ae7e1177c466b5335d2df73e8b0f8a1",
+        "excluded_upstream_task": "GH120_redis-py_3863"
+      }
+    },
+    "MultiAgentBench_MARBLE": {
+      "url": "https://github.com/ulab-uiuc/MARBLE.git",
+      "revision": "8d60fa17b5596b44458a52d4296061b9fc13d6f2",
+      "commit_time": "2025-08-02T23:37:06-05:00",
+      "license": "MIT",
+      "license_sha256": "389d00652aaea7a870e1128c95df7171580f347856b3993f8a0890f1a1cf09ae",
+      "data_tree_git": "b2ad19baa8f018733ef89ecef722c0d37df5216b",
+      "datasets": {
+        "bargaining": {"rows": 100, "sha256": "786b03c4a7c20ba67ae59860ad6c01dd8bb4ce0528ae08515f921320488c1547"},
+        "coding": {"rows": 100, "sha256": "7189bb38cb1c099dfa42c55af9b56ad4d177df986ff0f357160928e9d401d48b"},
+        "database": {"rows": 100, "sha256": "e1128d946d49c4943849a758b0c2d22a1af57b7a71c43694107813d8a1542631"},
+        "minecraft": {"rows": 100, "sha256": "232785cbd492eff0fbb821db4db7415f5cf1f01a1326e7deaffe9f59a6f1d08d"},
+        "research": {"rows": 100, "sha256": "1c7583f1ee0583ac12a625fb5c19de7b5983344dde89a2254c1782d6309310e9"}
+      }
+    }
+  }
+}

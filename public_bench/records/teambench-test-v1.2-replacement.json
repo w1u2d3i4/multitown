@@ -1,0 +1,16 @@
+{
+  "schema_version": "general-mas-result-replacement-v1",
+  "public_release_note": "Machine-local paths were rewritten as repository-relative logical paths; raw result files remain excluded and their SHA-256 values are unchanged.",
+  "replacements": [
+    {
+      "task_id": "INC6_deadlock",
+      "original_results": "artifacts/teambench-test-a8-v1.2-t0/results.jsonl",
+      "original_sha256": "422a18ad46c512a9562883a001c53194e4b6db3eaa84c114ff9a9d0930ea3f75",
+      "retry_results": "artifacts/teambench-test-a8-v1.2-t0-retry-inc6/results.jsonl",
+      "retry_sha256": "e8932cf715bba74eeffecd9fbc1b4a28fee33792cb1b76b059cd917fa7b3a717",
+      "source_error": "TypeError: can't concat str to bytes",
+      "reason": "Infrastructure-only retry after TimeoutExpired bytes/str normalization; controller, split, models, and temperature unchanged."
+    }
+  ],
+  "merged_results_sha256": "a43794cd4d9de9eb120d2859db603cfcf3030951c40d729fd622a4d9d584e980"
+}

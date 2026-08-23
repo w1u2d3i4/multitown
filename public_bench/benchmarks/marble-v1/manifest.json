@@ -1,0 +1,32 @@
+{
+  "schema_version": "general-mas-marble-manifest-v1",
+  "upstream_revision": "8d60fa17b5596b44458a52d4296061b9fc13d6f2",
+  "domains": {
+    "bargaining": {
+      "path": "multiagentbench/bargaining/bargaining_main.jsonl",
+      "rows": 100,
+      "sha256": "786b03c4a7c20ba67ae59860ad6c01dd8bb4ce0528ae08515f921320488c1547"
+    },
+    "coding": {
+      "path": "multiagentbench/coding/coding_main.jsonl",
+      "rows": 100,
+      "sha256": "7189bb38cb1c099dfa42c55af9b56ad4d177df986ff0f357160928e9d401d48b"
+    },
+    "database": {
+      "path": "multiagentbench/database/database_main.jsonl",
+      "rows": 100,
+      "sha256": "e1128d946d49c4943849a758b0c2d22a1af57b7a71c43694107813d8a1542631"
+    },
+    "minecraft": {
+      "path": "multiagentbench/minecraft/minecraft_main.jsonl",
+      "rows": 100,
+      "sha256": "232785cbd492eff0fbb821db4db7415f5cf1f01a1326e7deaffe9f59a6f1d08d"
+    },
+    "research": {
+      "path": "multiagentbench/research/research_main.jsonl",
+      "rows": 100,
+      "sha256": "1c7583f1ee0583ac12a625fb5c19de7b5983344dde89a2254c1782d6309310e9"
+    }
+  },
+  "manifest_sha256": "af6716c873bf1c134958c28a2ae53bc504817065527e8a6871a56d9c21245dc0"
+}

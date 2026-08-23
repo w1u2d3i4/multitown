@@ -2,6 +2,11 @@
 
 [English](README.md) | [简体中文](README_ZH.md)
 
+> [!IMPORTANT]
+> You are viewing the **`public-bench` branch**. It adds the isolated
+> [TeamBench public-data track](public_bench/) and its compact formal record.
+> The stable Arena remains on [`main`](https://github.com/w1u2d3i4/multitown/tree/main).
+
 <p align="center">
   <img src="demo/assets/multitown-arena.gif" alt="MultiTown Arena: A4 and A8 AI organizations solve the same task" width="960" />
 </p>
@@ -34,6 +39,28 @@ Open <http://127.0.0.1:8000>. The displayed benchmark aggregates are measured
 frozen results. The animated work order is a deterministic explanatory scenario,
 not a raw experimental episode. See [`demo/`](demo/) for the automatic GIF
 generation command.
+
+## Public TeamBench transfer result
+
+The `public_bench/` subproject evaluates the same fixed and selective
+organization ideas on 89 currently evaluable tasks from TeamBench's public test
+list. Its scores are deliberately kept separate from the synthetic MultiTown
+results below.
+
+| Metric | A4-TB fixed Planner–Executor–Verifier | A8-TB selective controller |
+| --- | ---: | ---: |
+| Fully passed | 14 / 89 | 11 / 89 |
+| Mean partial score | 0.63375 | 0.58251 |
+| Mean tokens/task | 108,381 | 68,218 |
+| Median latency/task | 72.20 s | 58.15 s |
+| p95 latency/task | 134.98 s | 165.11 s |
+| Monitored energy | 101.04 Wh | 86.41 Wh |
+
+A8-TB reduced mean tokens by **37.06%** and monitored energy by **14.48%**,
+but its paired partial-score difference was **−0.05124** (95% paired bootstrap
+CI **[−0.08951, −0.01678]**). The cost gate passed and the quality
+non-inferiority gate failed, so A8-TB is not presented as a replacement for
+A4-TB. See the [formal record](public_bench/records/TEAMBENCH_TEST_V1.2.md).
 
 ## Selected benchmark results
 
@@ -140,7 +167,9 @@ Included:
 
 - `multitown/`: runtime implementation;
 - `schemas/`: public machine-readable contracts;
-- `tests/`: selected runtime tests.
+- `tests/`: selected runtime tests;
+- `public_bench/`: isolated TeamBench adapter, frozen task IDs, compact paired
+  results, sandbox definition and tests on this branch only.
 
 Excluded by design:
 

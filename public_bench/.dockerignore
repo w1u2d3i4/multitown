@@ -1,0 +1,4 @@
+*
+!docker/
+!docker/runner.Dockerfile
+!docker/requirements.lock.txt

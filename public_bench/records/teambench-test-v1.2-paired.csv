@@ -1,0 +1,90 @@
+task_id,category,difficulty,a4_passed,a8_passed,a4_partial,a8_partial,partial_diff_a8_minus_a4,a4_tokens,a8_tokens,token_diff_a8_minus_a4,a4_latency_s,a8_latency_s,latency_diff_s_a8_minus_a4,a4_route,a8_route
+TRAP1_spec_conflict,Adversarial,hard,True,True,1.0,1.0,0.0,125728,85099,-40629,82.89342438901076,95.10643553102273,12.213011142011965,fixed_full_with_remediation,strong_review
+TRAP5_security_theater,Adversarial,hard,False,False,0.57,0.57,0.0,126741,99577,-27164,52.28388709999854,71.40351986399037,19.11963276399183,fixed_full_with_remediation,strong_review_failed_fallback_initial
+TRAP6_deprecated_api,Adversarial,hard,True,False,1.0,0.3,-0.7,90822,57648,-33174,86.59331387898419,70.79471754099359,-15.798596337990602,fixed_full_with_remediation,strong_review_failed_fallback_initial
+CR4_api_review,Code Review,hard,False,False,0.81,0.19,-0.6200000000000001,161490,114201,-47289,104.34791377800866,56.50145496299956,-47.8464588150091,fixed_full_with_remediation,strong_review_failed_fallback_planned
+CR6_review_checklist,Code Review,hard,False,False,0.82,0.91,0.09000000000000008,105796,31969,-73827,109.82125143700978,63.134525558998575,-46.6867258780112,fixed_full_with_remediation,weak_early_stop
+CR1_review_respond,Code Review,medium,True,False,1.0,0.62,-0.38,50155,17533,-32622,62.92604968501837,20.63210407999577,-42.2939456050226,fixed_full,weak_early_stop
+CROSS1_api_contract,Cross-System Integration,hard,False,False,0.3,0.4,0.10000000000000003,109159,76245,-32914,77.74262117399485,70.82197202701354,-6.9206491469813045,fixed_full_with_remediation,strong_review_failed_fallback_planned
+CROSS2_schema_evolution,Cross-System Integration,hard,False,False,0.9167,0.5833,-0.3333999999999999,68613,76613,8000,91.67179042100906,94.18275196498143,2.510961543972371,fixed_full,strong_review_failed_fallback_initial
+CROSS3_protocol_bridge,Cross-System Integration,hard,True,True,1.0,1.0,0.0,79718,77244,-2474,71.42682482799864,76.65983617698657,5.2330113489879295,fixed_full,strong_review_failed_fallback_planned
+D6_data_reconcile,Data Engineering,expert,False,False,0.78,0.94,0.15999999999999992,166439,134854,-31585,92.81571786900167,97.36996672899113,4.554248859989457,fixed_full_with_remediation,strong_review_failed_fallback_planned
+D3_schema_migration,Data Engineering,hard,False,False,0.91,0.64,-0.27,89662,64029,-25633,91.75123937000171,59.147487415000796,-32.60375195500092,fixed_full_with_remediation,strong_review_failed_fallback_initial
+D4_data_pipeline,Data Engineering,hard,False,False,0.59,0.59,0.0,156363,111064,-45299,74.4094116310007,58.795686486992054,-15.61372514400864,fixed_full_with_remediation,strong_review_failed_fallback_initial
+D5_query_optimize,Data Engineering,hard,False,False,0.67,0.67,0.0,137585,102075,-35510,72.35278786098934,52.98129558400251,-19.371492276986828,fixed_full_with_remediation,strong_review_failed_fallback_initial
+D7_etl_reconciliation,Data Engineering,hard,False,False,0.9,0.8,-0.09999999999999998,157492,124466,-33026,98.9307691869908,149.58039157098392,50.64962238399312,fixed_full_with_remediation,strong_review_failed_fallback_initial
+DIST1_queue_race,Distributed Systems,expert,False,False,0.0833,0.4167,0.33340000000000003,127716,110977,-16739,85.03869379402022,107.54180434899172,22.5031105549715,fixed_full_with_remediation,strong_review_failed_fallback_planned
+DIST2_consensus_partition,Distributed Systems,expert,False,False,0.4167,0.4167,0.0,116458,84634,-31824,60.55373092199443,63.78692828299245,3.2331973609980196,fixed_full_with_remediation,strong_review_failed_fallback_initial
+SYNTH1_distributed_debug,Distributed Systems,expert,False,False,0.09,0.09,0.0,106959,73283,-33676,94.00761863999651,59.297183261980535,-34.71043537801597,fixed_full_with_remediation,strong_review_failed_fallback_planned
+GH1006_spaCy_13068,Other,medium,False,False,0.4,0.4,0.0,151909,24709,-127200,64.1595618739957,11.795171554986155,-52.364390319009544,fixed_full_with_remediation,weak_early_stop
+GH1007_spaCy_13040,Other,medium,False,False,0.4,0.4,0.0,127362,84700,-42662,49.897712019010214,36.18203567399178,-13.715676345018437,fixed_full_with_remediation,strong_review_failed_fallback_planned
+GH1011_great_expectati_8062,Other,medium,False,False,0.4,0.4,0.0,133494,91033,-42461,68.90627113101073,62.020104227005504,-6.886166904005222,fixed_full_with_remediation,strong_review_failed_fallback_initial
+INC6_deadlock,Incident Response,expert,False,False,0.67,0.75,0.07999999999999996,129704,99295,-30409,67.69745534699177,371.552664635994,303.85520928900223,fixed_full_with_remediation,strong_review_failed_fallback_initial
+INC10_rollback_plan,Incident Response,hard,False,False,0.4,0.4,0.0,59378,50494,-8884,43.669545067998115,47.39181102800649,3.7222659600083716,fixed_full,planner_executor_stop
+INC1_cascade_failure,Incident Response,hard,False,False,0.9,0.9,0.0,76051,22279,-53772,69.31207281499519,28.406096869002795,-40.905975945992395,fixed_full,weak_early_stop
+INC2_data_corruption,Incident Response,hard,False,True,0.9,1.0,0.09999999999999998,156690,36161,-120529,69.17126695299521,11.75263821898261,-57.4186287340126,fixed_full_with_remediation,weak_early_stop
+INC3_memory_leak,Incident Response,hard,False,True,0.83,1.0,0.17000000000000004,123515,56605,-66910,79.01793441400514,57.23740726700635,-21.780527146998793,fixed_full_with_remediation,planner_executor_stop
+INC4_dns_miscfg,Incident Response,hard,True,True,1.0,1.0,0.0,40824,19165,-21659,45.074102955986746,18.586690040974645,-26.4874129150121,fixed_full,weak_early_stop
+IR2_misinformation_trap,Information Retrieval,hard,False,False,0.29,0.29,0.0,58424,40305,-18119,46.64782661999925,36.45870571798878,-10.189120902010472,fixed_full_with_remediation,strong_review_failed_fallback_initial
+IR3_multi_source,Information Retrieval,hard,False,False,0.77,0.77,0.0,74527,48159,-26368,55.879096771997865,44.38328657200327,-11.495810199994594,fixed_full_with_remediation,strong_review_failed_fallback_initial
+IR4_temporal,Information Retrieval,hard,False,False,0.73,0.73,0.0,86409,56915,-29494,56.22925523901358,49.87143048300641,-6.357824756007176,fixed_full_with_remediation,strong_review_failed_fallback_initial
+INT1_pipeline_repair,Integration,hard,False,False,0.75,0.83,0.07999999999999996,128699,43950,-84749,103.08345388399903,49.56735561098321,-53.516098273015814,fixed_full_with_remediation,planner_executor_stop
+LH2_budgeted_workflow,Long-Horizon,expert,False,False,0.17,0.1,-0.07,82316,66144,-16172,79.10213518701494,48.89828248298727,-30.203852704027668,fixed_full_with_remediation,strong_review_failed_fallback_planned
+LH5_data_migration,Long-Horizon,expert,False,False,0.09,0.09,0.0,140278,93417,-46861,75.10831915200106,54.656504401005805,-20.451814750995254,fixed_full_with_remediation,strong_review_failed_fallback_planned
+LH4_staged_deploy,Long-Horizon,hard,False,False,0.21,0.07,-0.13999999999999999,151297,108428,-42869,112.60183250100818,126.55007973202737,13.948247231019195,fixed_full_with_remediation,strong_review_failed_fallback_initial
+CROSS6_grpc_rest_bridge,Multi-language,hard,True,True,1.0,1.0,0.0,53222,65505,12283,58.66145380100352,63.90558516600868,5.24413136500516,fixed_full,strong_review_failed_fallback_initial
+JS2_xss_sanitize,Multi-language,hard,False,False,0.8,0.28,-0.52,152911,105153,-47758,941.7092502889864,1394.2805876570055,452.57133736801916,fixed_full_with_remediation,strong_review_failed_fallback_initial
+MULTI2_microservice_debug,Multi-language,hard,False,False,0.7,0.6,-0.09999999999999998,60203,64804,4601,74.13789785699919,73.33519167499617,-0.8027061820030212,fixed_full,strong_review_failed_fallback_planned
+NEG1_tradeoff_config,Negotiation,hard,False,False,0.5,0.3,-0.2,125881,89942,-35939,113.65052758701495,112.42673114399076,-1.2237964430241846,fixed_full_with_remediation,strong_review_failed_fallback_planned
+LH3_multi_service,Operations,expert,True,False,1.0,0.65,-0.35,149745,118519,-31226,159.49754352099262,214.0421711060044,54.54462758501177,fixed_full_with_remediation,strong_review_failed_fallback_planned
+O6_perf_tuning,Operations,expert,False,False,0.85,0.46,-0.38999999999999996,95856,68739,-27117,74.07091133401264,91.73940581001807,17.668494476005435,fixed_full_with_remediation,strong_review_failed_fallback_initial
+TRAP3_metric_mirage,Operations,expert,False,False,0.4,0.4,0.0,109437,85351,-24086,76.29546643199865,88.57205842301482,12.276591991016176,fixed_full_with_remediation,strong_review_failed_fallback_initial
+CROSS7_config_drift,Operations,hard,False,False,0.6,0.6,0.0,120816,90013,-30803,70.41418228900875,57.63867133198073,-12.775510957028018,fixed_full_with_remediation,strong_review_failed_fallback_initial
+MULTI5_deploy_pipeline,Operations,hard,False,False,0.7,0.8,0.10000000000000009,74291,60706,-13585,79.02949087601155,93.58361837099073,14.554127494979184,fixed_full_with_remediation,strong_review_failed_fallback_planned
+API1_version_compat,Other,hard,False,True,0.9,1.0,0.09999999999999998,157091,31338,-125753,141.367389350984,39.360669307992794,-102.00672004299122,fixed_full_with_remediation,weak_early_stop
+GH14_celery_chain_fail,Other,hard,False,False,0.67,0.67,0.0,39076,27432,-11644,46.15916962499614,33.33199303300353,-12.827176591992611,fixed_full,weak_early_stop
+INFRA2_cicd_repair,Other,hard,False,False,0.9,0.9,0.0,39462,60891,21429,48.03279206500156,81.18856065100408,33.15576858600252,fixed_full,strong_review_failed_fallback_initial
+TS1_type_mismatch,Other,hard,False,False,0.7,0.7,0.0,93932,23063,-70869,705.1749275089824,175.4702998980065,-529.7046276109759,fixed_full_with_remediation,weak_early_stop
+GH103_redis-py_3998,Other,medium,False,False,0.75,0.75,0.0,150582,91322,-59260,59.03370159599581,45.63123566302238,-13.402465932973428,fixed_full_with_remediation,strong_review_failed_fallback_planned
+GH112_redis-py_3996,Other,medium,False,False,0.62,0.62,0.0,69775,12488,-57287,53.22800750998431,9.167326413007686,-44.06068109697662,fixed_full_with_remediation,weak_early_stop
+GH121_quart_302,Other,medium,False,False,0.62,0.38,-0.24,138480,81966,-56514,58.511578069010284,68.67752725700848,10.165949187998194,fixed_full_with_remediation,strong_review_failed_fallback_planned
+GH128_mitmproxy_8046,Other,medium,False,False,0.5,0.5,0.0,112233,77985,-34248,75.25870308297453,56.20649519201834,-19.052207890956197,fixed_full_with_remediation,strong_review_failed_fallback_planned
+GH12_click_envvar_flag,Other,medium,False,False,0.88,0.88,0.0,32357,15859,-16498,46.719445749011356,25.615827836008975,-21.10361791300238,fixed_full,weak_early_stop
+GH136_mitmproxy_8054,Other,medium,False,False,0.44,0.44,0.0,107022,73465,-33557,57.9619428809965,47.53638941500685,-10.425553465989651,fixed_full_with_remediation,strong_review_failed_fallback_initial
+GH139_marshmallow_2894,Other,medium,False,False,0.56,0.56,0.0,119464,19086,-100378,47.60093667899491,11.150683433981612,-36.4502532450133,fixed_full_with_remediation,weak_early_stop
+GH13_starlette_bg_block,Other,medium,False,False,0.83,0.83,0.0,60944,51698,-9246,59.49246583401691,83.58248519999324,24.09001936597633,fixed_full,planner_executor_stop
+GH140_marshmallow_2874,Other,medium,False,False,0.5,0.5,0.0,118309,81930,-36379,60.78021664600237,43.722189735999564,-17.05802691000281,fixed_full_with_remediation,strong_review_failed_fallback_initial
+GH141_urllib3_3736,Other,medium,False,False,0.5,0.5,0.0,140833,87471,-53362,57.75114470999688,45.057346970017534,-12.693797739979345,fixed_full_with_remediation,strong_review_failed_fallback_initial
+GH143_mitmproxy_8095,Other,medium,False,False,0.45,0.45,0.0,143330,25955,-117375,63.453239338996354,12.375678587995935,-51.07756075100042,fixed_full_with_remediation,weak_early_stop
+PIPE2_data_pipeline,Pipeline,hard,False,False,0.8,0.8,0.0,60412,34562,-25850,57.90883144599502,44.134594614995876,-13.774236830999143,fixed_full,planner_executor_stop
+PIPE3_msg_queue,Pipeline,hard,False,False,0.85,0.85,0.0,137107,103773,-33334,78.76252487799502,62.800431459007086,-15.962093418987934,fixed_full_with_remediation,strong_review_failed_fallback_planned
+PIPE3_stream_processing,Pipeline,hard,True,False,1.0,0.3,-0.7,126383,23563,-102820,122.76833480698406,40.739111407019664,-82.0292233999644,fixed_full_with_remediation,weak_early_stop
+P2_spec_arbitration,Policy,hard,False,False,0.0,0.0,0.0,54535,38365,-16170,45.2878496159974,36.8217023559846,-8.466147260012804,fixed_full_with_remediation,strong_review_failed_fallback_initial
+P3_access_control,Policy,hard,False,False,0.45,0.45,0.0,59308,71140,11832,43.08795698400354,115.0454045739898,71.95744758998626,fixed_full_with_remediation,strong_review_failed_fallback_initial
+P4_data_retention,Policy,hard,False,False,0.57,0.57,0.0,91457,76332,-15125,54.47269060299732,57.10460576499463,2.6319151619973127,fixed_full_with_remediation,strong_review_failed_fallback_initial
+RDS10_survey_analysis,Other,hard,False,False,0.0,0.0,0.0,69301,43793,-25508,56.946420591004426,34.666689724021126,-22.2797308669833,fixed_full_with_remediation,strong_review_failed_fallback_initial
+RDS11_survivorship_bias,Other,hard,False,False,0.3333333333333333,0.3333333333333333,0.0,115715,56591,-59124,76.2126111619873,51.41744251199998,-24.795168649987318,fixed_full_with_remediation,planner_executor_stop
+RDS12_simpsons_income,Other,hard,False,False,0.3333333333333333,0.3333333333333333,0.0,132371,55080,-77291,82.48797858200851,52.05110612898716,-30.43687245302135,fixed_full_with_remediation,planner_executor_stop
+CRYPTO1_nonce_reuse,Security,expert,False,False,0.9,0.9,0.0,114326,87268,-27058,103.84405395199428,83.71260940900538,-20.131444542988902,fixed_full_with_remediation,strong_review_failed_fallback_planned
+CRYPTO3_cert_chain,Security,expert,False,False,0.5,0.7,0.19999999999999996,110438,78700,-31738,64.15465305000544,88.29542725501233,24.140774205006892,fixed_full_with_remediation,strong_review_failed_fallback_initial
+CRYPTO4_kdf_migration,Security,expert,True,False,1.0,0.75,-0.25,129049,77206,-51843,98.46794013399631,73.30551085798652,-25.16242927600979,fixed_full_with_remediation,strong_review_failed_fallback_planned
+SEC8_dependency_audit,Security,expert,False,False,0.92,0.92,0.0,96449,65174,-31275,125.38756924201152,90.4653015230142,-34.92226771899732,fixed_full_with_remediation,strong_review_failed_fallback_initial
+CRYPTO5_tls_config,Security,hard,False,False,0.6,0.6,0.0,113906,76330,-37576,57.85568487900309,57.43803423299687,-0.4176506460062228,fixed_full_with_remediation,strong_review_failed_fallback_initial
+CRYPTO6_token_validation,Security,hard,False,False,0.9,0.6,-0.30000000000000004,127338,88945,-38393,117.94971697998699,145.0186399149825,27.0689229349955,fixed_full_with_remediation,strong_review_failed_fallback_initial
+GO1_concurrency_fix,Software Eng.,expert,False,False,0.38,0.38,0.0,111722,78759,-32963,152.27826693700626,116.47199034199002,-35.80627659501624,fixed_full_with_remediation,strong_review_failed_fallback_planned
+SCALE1_codebase_migration,Software Eng.,expert,False,False,0.5,0.57,0.06999999999999995,111840,68520,-43320,91.61542076099431,74.74693362598191,-16.8684871350124,fixed_full_with_remediation,strong_review_failed_fallback_planned
+GH10_retry_backoff,Software Eng.,hard,True,True,1.0,1.0,0.0,118216,48776,-69440,91.74375577899627,45.48533510699053,-46.25842067200574,fixed_full_with_remediation,planner_executor_stop
+GH11_middleware_order,Software Eng.,hard,True,True,1.0,1.0,0.0,113253,79379,-33874,83.1763384930091,46.241142118989956,-36.93519637401914,fixed_full_with_remediation,strong_review_failed_fallback_planned
+GH1_flask_session_ctx,Software Eng.,hard,False,False,0.88,0.88,0.0,116460,79590,-36870,66.5569641579932,52.139423521002755,-14.417540636990452,fixed_full_with_remediation,strong_review_failed_fallback_initial
+GH2_click_flag_value,Software Eng.,hard,False,False,0.7,0.7,0.0,125091,91369,-33722,53.20900709199486,46.498172041989164,-6.710835050005699,fixed_full_with_remediation,strong_review_failed_fallback_initial
+SPEC5_config_system,Specification,hard,False,False,0.79,0.47,-0.32000000000000006,143384,93838,-49546,120.03007168200566,112.21284617698984,-7.817225505015813,fixed_full_with_remediation,strong_review_failed_fallback_planned
+SPEC2_api_design,Specification,medium,False,False,0.5,0.42,-0.08000000000000002,141210,34256,-106954,124.95881952700438,34.497744786029216,-90.46107474097516,fixed_full_with_remediation,weak_early_stop
+GH7_fixture_scope_leak,Testing,hard,True,True,1.0,1.0,0.0,114438,27409,-87029,70.45564202600508,24.711292208987288,-45.74434981701779,fixed_full_with_remediation,weak_early_stop
+TEST2_regression,Testing,hard,True,True,1.0,1.0,0.0,36698,18619,-18079,55.93406517000403,39.920194414036814,-16.01387075596722,fixed_full,weak_early_stop
+TEST3_integration,Testing,hard,True,False,1.0,0.92,-0.07999999999999996,125388,67978,-57410,90.4104254989943,192.74722437601304,102.33679887701874,fixed_full_with_remediation,planner_executor_stop
+TEST4_property,Testing,hard,False,False,0.86,0.86,0.0,105096,92768,-12328,77.48004175699316,148.635310364014,71.15526860702084,fixed_full_with_remediation,strong_review_failed_fallback_initial
+RDS13_smote_leakage,Other,hard,False,False,0.16666666666666666,0.16666666666666666,0.0,127052,81216,-45836,72.19944252201822,58.80342053301865,-13.396021988999564,fixed_full_with_remediation,strong_review_failed_fallback_planned
+RDS14_housing_leakage,Other,hard,False,False,0.0,0.0,0.0,118398,90075,-28323,62.58334032300627,58.22270840400597,-4.360631919000298,fixed_full_with_remediation,strong_review_failed_fallback_planned
+RDS15_taxi_circular,Other,medium,False,False,0.0,0.0,0.0,100360,80344,-20016,63.93175958300708,58.14572956803022,-5.786030014976859,fixed_full_with_remediation,strong_review_failed_fallback_planned
+RDS16_retail_phacking,Other,hard,False,False,0.16666666666666666,0.16666666666666666,0.0,125226,109458,-15768,70.09656094401726,93.73832113394747,23.64176018993021,fixed_full_with_remediation,strong_review_failed_fallback_initial
+RDS17_macro_spurious,Other,hard,False,False,0.16666666666666666,0.16666666666666666,0.0,110988,58304,-52684,54.644213135004975,56.529302306007594,1.885089171002619,fixed_full_with_remediation,planner_executor_stop

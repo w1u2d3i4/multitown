@@ -2,6 +2,11 @@
 
 [English](README.md) | [简体中文](README_ZH.md)
 
+> [!IMPORTANT]
+> 当前是 **`public-bench` 分支**，新增了相互隔离的
+> [TeamBench 公开数据评测](public_bench/)及紧凑正式记录。稳定 Arena 仍位于
+> [`main`](https://github.com/w1u2d3i4/multitown/tree/main) 分支。
+
 <p align="center">
   <img src="demo/assets/multitown-arena.gif" alt="MultiTown Arena：A4 与 A8 两种 AI 组织处理同一个任务" width="960" />
 </p>
@@ -31,6 +36,25 @@ python3 -m http.server 8000 --directory demo
 打开 <http://127.0.0.1:8000>。界面中的 Benchmark 聚合指标来自冻结实测结果；动画
 工单是解释控制流程的确定性演示场景，不是某一条原始实验轨迹。自动生成 GIF 的命令
 见 [`demo/`](demo/)。
+
+## TeamBench 公开任务迁移结果
+
+`public_bench/` 子项目在 TeamBench 公开测试列表中当前可评测的 89 个任务上，对比固定
+组织与执行期选择控制器。该结果与下方 MultiTown 合成任务结果严格分开，不合并分数。
+
+| 指标 | A4-TB 固定 Planner–Executor–Verifier | A8-TB 选择性控制器 |
+| --- | ---: | ---: |
+| 完全通过 | 14 / 89 | 11 / 89 |
+| 平均部分分 | 0.63375 | 0.58251 |
+| 平均 Token/任务 | 108,381 | 68,218 |
+| 中位延迟/任务 | 72.20 秒 | 58.15 秒 |
+| p95 延迟/任务 | 134.98 秒 | 165.11 秒 |
+| 监控能耗 | 101.04 Wh | 86.41 Wh |
+
+A8-TB 将平均 Token 减少 **37.06%**、监控能耗减少 **14.48%**，但 A8−A4
+配对部分分差为 **−0.05124**，95% 配对 Bootstrap CI 为
+**[−0.08951, −0.01678]**。成本门通过、质量非劣门失败，因此不能将当前 A8-TB
+宣传为 A4-TB 的替代方案。详见[正式记录](public_bench/records/TEAMBENCH_TEST_V1.2.md)。
 
 ## 代表性 Benchmark 结果
 
@@ -133,7 +157,9 @@ pytest -q \
 
 - `multitown/`：运行时实现；
 - `schemas/`：公开的机器可读协议；
-- `tests/`：经过筛选的运行时测试。
+- `tests/`：经过筛选的运行时测试；
+- `public_bench/`：仅在本分支提供的 TeamBench 适配器、冻结任务 ID、紧凑配对结果、
+  沙箱定义和测试。
 
 明确排除：
 
