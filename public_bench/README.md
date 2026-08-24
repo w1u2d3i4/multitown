@@ -59,6 +59,11 @@ may request one repair:
   with a deterministic public runtime validator, and activate the strong
   Planner or Verifier only when that evidence says more work is needed. A failed
   review can roll back to the best valid candidate.
+- **MT-Sequential-v1 — current benchmark candidate:** retain the complete
+  PlanExecute prefix, then conditionally review and remediate only when
+  observable runtime evidence indicates that execution is stuck. It emits a
+  state/action/budget trace and preserves a byte-for-byte PlanExecute fallback.
+  This hand-written controller is not Agentic RL.
 
 No system can inspect hidden grader outcomes when making a decision. The
 Solo-TB protocol is frozen separately in
@@ -105,7 +110,10 @@ it actually changed organization were -0.13333 worse, lost one pass and used
 63.30% more tokens.  The apparent aggregate gain came from local-backend
 variation on 86 unchanged controls.  The
 [`seed-1 selector record`](records/TEAMBENCH_SELECTOR_SEED1.md) therefore marks
-it as a negative result and motivates runtime sequential control.
+it as a negative result and motivates runtime sequential control. The frozen
+next experiment is defined in the
+[`MT-Sequential-v1 protocol`](docs/TEAMBENCH_SEQUENTIAL_V1_PROTOCOL.md); no
+winning result is claimed before its development and fresh-seed gates finish.
 
 ## Historical v1.2 A4/A8 result
 
@@ -204,6 +212,12 @@ general-mas-run-teambench --method A4 --split dev \
 general-mas-run-teambench --method A8 --split dev \
   --project-root "$PWD" --controller-config configs/a8-teambench-v1.json \
   --temperature 0 --output-dir artifacts/teambench-dev-a8
+
+general-mas-run-teambench --method MTSequential --split dev \
+  --project-root "$PWD" \
+  --controller-config configs/mt-sequential-teambench-v1.json \
+  --sampling-seed 20260824 --temperature 0 \
+  --output-dir artifacts/teambench-dev-mt-sequential-v1
 
 general-mas-report --a4-dir artifacts/teambench-dev-a4 \
   --a8-dir artifacts/teambench-dev-a8 --expected-task-count 30 \

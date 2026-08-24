@@ -6,10 +6,11 @@ from general_mas_bench.teambench_runner import (
     DEFAULT_CONTROLLER,
     _allow_initial_early_stop,
     _attestation,
+    _controller_attestation,
     _phase_config,
     _runtime_validator,
     _select_failed_review_candidate,
-    _controller_attestation,
+    _sequential_decision,
 )
 
 
@@ -43,6 +44,74 @@ def test_runtime_validator_uses_observable_execution_signals(tmp_path: Path) -> 
     assert value["successful_commands"] == 1
     assert value["hard_fail"] is False
     assert "passed" not in value
+
+
+def test_runtime_validator_records_repeat_timeout_and_turn_budget(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / "code.py").write_text("before\n")
+    from general_mas_bench.teambench_stage import tree_sha256
+
+    initial = tree_sha256(tmp_path)
+    (tmp_path / "code.py").write_text("after\n")
+    turns = [
+        AgentTurn(
+            turn=index,
+            role="executor",
+            tool_calls=[{"name": "run", "args": {"cmd": "npm install"}}],
+            tool_results=[{
+                "stdout": "",
+                "stderr": "command timed out after 120s",
+                "exit_code": 124,
+            }],
+        )
+        for index in range(2)
+    ]
+
+    value = _runtime_validator(
+        turns=turns,
+        initial_hash=initial,
+        workspace=tmp_path,
+        category="Other",
+        difficulty="medium",
+        controller=DEFAULT_CONTROLLER,
+        max_turns=2,
+    )
+
+    assert value["timed_out_commands"] == 2
+    assert value["repeated_commands"] == 1
+    assert value["max_command_repetitions"] == 2
+    assert value["turn_budget_exhausted"] is True
+
+
+def test_sequential_decision_reviews_runtime_risk_with_budget() -> None:
+    validator = {
+        "workspace_changed": True,
+        "reliability_score": 0.8,
+        "hard_fail": False,
+        "successful_commands": 2,
+        "failed_commands": 1,
+        "timed_out_commands": 0,
+        "repeated_commands": 0,
+        "turns_used": 5,
+        "turn_budget_exhausted": False,
+    }
+
+    review = _sequential_decision(
+        validator,
+        consumed_tokens=40_000,
+        controller=DEFAULT_CONTROLLER,
+    )
+    stopped = _sequential_decision(
+        validator,
+        consumed_tokens=120_000,
+        controller=DEFAULT_CONTROLLER,
+    )
+
+    assert review["action"] == "review"
+    assert review["triggers"] == ["failed_commands"]
+    assert stopped["action"] == "stop"
+    assert stopped["reason"] == "token_budget_exhausted"
 
 
 def test_high_risk_task_cannot_take_initial_early_stop() -> None:

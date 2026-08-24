@@ -1,0 +1,39 @@
+{
+  "schema_version": "multitown-sequential-controller-v1",
+  "selection_source": "TeamBench 30-task development split and runtime-state diagnostics only",
+  "policy_kind": "frozen deterministic sequential controller; not Agentic RL",
+  "sequential_action_space": [
+    "stop",
+    "delegate",
+    "escalate",
+    "review",
+    "human/abstain"
+  ],
+  "sequential_review_failed_commands": 1,
+  "sequential_review_timeouts": 1,
+  "sequential_review_repeated_commands": 2,
+  "sequential_review_on_turn_exhaustion": true,
+  "sequential_max_total_tokens": 120000,
+  "sequential_verifier_turns": 8,
+  "sequential_remediation_turns": 6,
+  "early_stop_threshold": 0.75,
+  "post_plan_verifier_skip_threshold": 0.85,
+  "high_risk_categories": [
+    "Adversarial",
+    "Cross-System Integration",
+    "Distributed Systems",
+    "Data Engineering",
+    "Long-Horizon",
+    "Multi-language",
+    "Operations",
+    "Security"
+  ],
+  "high_risk_difficulties": [
+    "expert"
+  ],
+  "require_successful_command_for_early_stop": true,
+  "max_remediation_loops": 1,
+  "a4_max_remediation_loops": 1,
+  "preserve_initial_candidate": true,
+  "guided_remediation_without_reverification": true
+}

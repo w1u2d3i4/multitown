@@ -47,6 +47,16 @@ DEFAULT_CONTROLLER = {
     "a4_max_remediation_loops": 1,
     "preserve_initial_candidate": True,
     "guided_remediation_without_reverification": True,
+    "sequential_action_space": [
+        "stop", "delegate", "escalate", "review", "human/abstain",
+    ],
+    "sequential_review_failed_commands": 1,
+    "sequential_review_timeouts": 1,
+    "sequential_review_repeated_commands": 2,
+    "sequential_review_on_turn_exhaustion": True,
+    "sequential_max_total_tokens": 120_000,
+    "sequential_verifier_turns": 8,
+    "sequential_remediation_turns": 6,
 }
 
 
@@ -234,16 +244,31 @@ def _runtime_validator(
     category: str,
     difficulty: str,
     controller: dict[str, Any],
+    max_turns: int | None = None,
 ) -> dict[str, Any]:
     calls = [call for turn in turns for call in turn.tool_calls]
     results = [result for turn in turns for result in turn.tool_results]
     writes = sum(call.get("name") == "write" for call in calls)
-    commands = [
-        result for call, result in zip(calls, results)
+    command_pairs = [
+        (call, result) for call, result in zip(calls, results)
         if call.get("name") == "run"
     ]
+    commands = [result for _, result in command_pairs]
     successful_commands = sum(int(result.get("exit_code", 1)) == 0 for result in commands)
     failed_commands = sum(int(result.get("exit_code", 1)) != 0 for result in commands)
+    timed_out_commands = sum(
+        int(result.get("exit_code", 1)) == 124
+        or "timed out" in str(result.get("stderr", "")).lower()
+        for result in commands
+    )
+    command_counts: dict[str, int] = {}
+    for call, _ in command_pairs:
+        command = " ".join(str(call.get("args", {}).get("cmd", "")).split())
+        if command:
+            digest = hashlib.sha256(command.encode()).hexdigest()
+            command_counts[digest] = command_counts.get(digest, 0) + 1
+    repeated_commands = sum(max(0, count - 1) for count in command_counts.values())
+    max_command_repetitions = max(command_counts.values(), default=0)
     current_hash = tree_sha256(workspace)
     changed = current_hash != initial_hash
     score = 1.0
@@ -261,17 +286,108 @@ def _runtime_validator(
         score -= 0.10
     hard_fail = not changed or (failed_commands > 0 and successful_commands == 0)
     return {
-        "schema_version": "general-mas-runtime-validator-v1",
+        "schema_version": "general-mas-runtime-validator-v2",
         "workspace_changed": changed,
         "workspace_sha256": current_hash,
         "write_calls": writes,
         "successful_commands": successful_commands,
         "failed_commands": failed_commands,
+        "timed_out_commands": timed_out_commands,
+        "repeated_commands": repeated_commands,
+        "max_command_repetitions": max_command_repetitions,
+        "turns_used": len(turns),
+        "turn_budget": max_turns,
+        "turn_budget_exhausted": bool(
+            max_turns is not None
+            and len(turns) >= max_turns
+            and (not turns or not turns[-1].done)
+        ),
         "category": category,
         "difficulty": difficulty,
         "reliability_score": max(0.0, min(1.0, score)),
         "hard_fail": hard_fail,
     }
+
+
+def _sequential_decision(
+    validator: dict[str, Any],
+    *,
+    consumed_tokens: int,
+    controller: dict[str, Any],
+) -> dict[str, Any]:
+    """Choose a post-execution action from observable state only."""
+    token_budget = int(controller.get("sequential_max_total_tokens", 120_000))
+    action_space = list(controller.get("sequential_action_space", []))
+    required_actions = {"stop", "delegate", "escalate", "review", "human/abstain"}
+    if not required_actions.issubset(action_space):
+        raise ValueError("sequential_action_space omits a protocol action")
+
+    triggers: list[str] = []
+    if int(validator.get("failed_commands", 0)) >= int(
+        controller.get("sequential_review_failed_commands", 1)
+    ):
+        triggers.append("failed_commands")
+    if int(validator.get("timed_out_commands", 0)) >= int(
+        controller.get("sequential_review_timeouts", 1)
+    ):
+        triggers.append("command_timeout")
+    if int(validator.get("repeated_commands", 0)) >= int(
+        controller.get("sequential_review_repeated_commands", 2)
+    ):
+        triggers.append("repeated_commands")
+    if (
+        controller.get("sequential_review_on_turn_exhaustion", True)
+        and validator.get("turn_budget_exhausted", False)
+    ):
+        triggers.append("turn_budget_exhausted")
+
+    budget_exhausted = consumed_tokens >= token_budget
+    action = "review" if triggers and not budget_exhausted else "stop"
+    reason = "runtime_risk" if action == "review" else (
+        "token_budget_exhausted" if budget_exhausted else "runtime_checks_clear"
+    )
+    return {
+        "schema_version": "multitown-sequential-decision-v1",
+        "policy_source": "frozen_deterministic_runtime_controller",
+        "action_space": action_space,
+        "state": {
+            "workspace_changed": bool(validator.get("workspace_changed", False)),
+            "reliability_score": float(validator.get("reliability_score", 0.0)),
+            "hard_fail": bool(validator.get("hard_fail", False)),
+            "successful_commands": int(validator.get("successful_commands", 0)),
+            "failed_commands": int(validator.get("failed_commands", 0)),
+            "timed_out_commands": int(validator.get("timed_out_commands", 0)),
+            "repeated_commands": int(validator.get("repeated_commands", 0)),
+            "turns_used": int(validator.get("turns_used", 0)),
+            "turn_budget_exhausted": bool(
+                validator.get("turn_budget_exhausted", False)
+            ),
+            "consumed_tokens": consumed_tokens,
+            "remaining_token_budget": max(0, token_budget - consumed_tokens),
+        },
+        "action": action,
+        "reason": reason,
+        "triggers": triggers,
+    }
+
+
+def _validate_sequential_controller(controller: dict[str, Any]) -> None:
+    action_space = controller.get("sequential_action_space")
+    if not isinstance(action_space, list):
+        raise ValueError("sequential_action_space must be a list")
+    required_actions = {"stop", "delegate", "escalate", "review", "human/abstain"}
+    if not required_actions.issubset(action_space):
+        raise ValueError("sequential_action_space omits a protocol action")
+    for key in (
+        "sequential_review_failed_commands",
+        "sequential_review_timeouts",
+        "sequential_review_repeated_commands",
+        "sequential_max_total_tokens",
+        "sequential_verifier_turns",
+        "sequential_remediation_turns",
+    ):
+        if int(controller.get(key, 0)) <= 0:
+            raise ValueError(f"{key} must be a positive integer")
 
 
 def _attestation(submission: Path) -> dict[str, Any] | None:
@@ -464,6 +580,7 @@ def run_task(
 
     role_counts = {"solo": 0, "planner": 0, "executor": 0, "verifier": 0}
     validators: list[dict[str, Any]] = []
+    decision_trace: list[dict[str, Any]] = []
     route = ""
 
     if execution_method == "Solo":
@@ -478,7 +595,7 @@ def run_task(
             messages=messages, logs=logs / "solo", max_turns=20,
         )
         route = "single_strong_full_access"
-    elif execution_method == "PlanExecute":
+    elif execution_method in {"PlanExecute", "MTSequential"}:
         # TeamBench's official no-verifier ablation: a strong Planner transfers
         # the full-spec plan to a weak, brief-only Executor. There is no
         # independent review, so the controller supplies the protocol-required
@@ -502,21 +619,149 @@ def run_task(
             ),
             messages=messages, logs=logs / "execution", max_turns=12,
         )
-        validators.append(_runtime_validator(
+        execution_validator = _runtime_validator(
             turns=executor_turns,
             initial_hash=meta["initial_workspace_sha256"],
             workspace=workspace,
             category=str(row.get("category") or "Other"),
             difficulty=str(row.get("difficulty") or "unknown"),
             controller=controller,
-        ))
-        _controller_attestation(
-            submission,
-            str(row["task_id"]),
-            "fixed_plan_execute_without_independent_review",
-            source="fixed_strategy_protocol_controller",
+            max_turns=12,
         )
-        route = "fixed_plan_execute"
+        validators.append(execution_validator)
+        if execution_method == "PlanExecute":
+            _controller_attestation(
+                submission,
+                str(row["task_id"]),
+                "fixed_plan_execute_without_independent_review",
+                source="fixed_strategy_protocol_controller",
+            )
+            route = "fixed_plan_execute"
+        else:
+            candidates = run_dir / "candidates"
+            plan_execute_snapshot = candidates / "plan_execute"
+            _snapshot_workspace(workspace, plan_execute_snapshot)
+            decision = _sequential_decision(
+                execution_validator,
+                consumed_tokens=_usage(adapters)["total_tokens"],
+                controller=controller,
+            )
+            decision_trace.append({"step": 0, "phase": "post_execution", **decision})
+            if decision["action"] == "stop":
+                _controller_attestation(
+                    submission,
+                    str(row["task_id"]),
+                    f"mt_sequential_stop:{decision['reason']}",
+                    source="frozen_deterministic_runtime_controller",
+                )
+                route = f"sequential_stop:{decision['reason']}"
+            else:
+                verifier = adapter("verifier", strong)
+                role_counts["verifier"] = 1
+                (submission / "attestation.json").unlink(missing_ok=True)
+                _run_phase(
+                    role="verifier", adapter=verifier, prompt=prompts["verifier"],
+                    config=_phase_config(
+                        "verifier", task=task, workspace=workspace, reports=reports,
+                        messages=messages, submission=submission, image=image,
+                    ),
+                    messages=messages, logs=logs / "sequential_review",
+                    max_turns=int(controller.get("sequential_verifier_turns", 8)),
+                    stop_when=lambda: _attestation(submission) is not None,
+                )
+                att = _attestation(submission)
+                has_feedback = _message_exists(
+                    messages, sender="verifier", recipient="executor"
+                )
+                consumed = _usage(adapters)["total_tokens"]
+                token_budget = int(
+                    controller.get("sequential_max_total_tokens", 120_000)
+                )
+                should_remediate = bool(
+                    att
+                    and att.get("verdict") == "fail"
+                    and has_feedback
+                    and consumed < token_budget
+                )
+                followup_action = "delegate" if should_remediate else "stop"
+                followup_reason = (
+                    "verifier_feedback"
+                    if should_remediate
+                    else (
+                        "verifier_passed"
+                        if att and att.get("verdict") == "pass"
+                        else "review_failed_or_budget_exhausted"
+                    )
+                )
+                decision_trace.append({
+                    "schema_version": "multitown-sequential-decision-v1",
+                    "step": 1,
+                    "phase": "post_review",
+                    "policy_source": "frozen_deterministic_runtime_controller",
+                    "action_space": list(
+                        controller.get("sequential_action_space", [])
+                    ),
+                    "state": {
+                        "verifier_verdict": att.get("verdict") if att else "missing",
+                        "verifier_feedback": has_feedback,
+                        "consumed_tokens": consumed,
+                        "remaining_token_budget": max(0, token_budget - consumed),
+                    },
+                    "action": followup_action,
+                    "reason": followup_reason,
+                    "triggers": [followup_reason],
+                })
+                if should_remediate:
+                    role_counts["executor"] += 1
+                    before_remediation = tree_sha256(workspace)
+                    remediation_turns = _run_phase(
+                        role="executor", adapter=executor,
+                        prompt=prompts["remediation"],
+                        config=_phase_config(
+                            "executor", task=task, workspace=workspace,
+                            reports=reports, messages=messages,
+                            submission=submission, image=image,
+                        ),
+                        messages=messages, logs=logs / "sequential_remediation",
+                        max_turns=int(
+                            controller.get("sequential_remediation_turns", 6)
+                        ),
+                    )
+                    remediation_validator = _runtime_validator(
+                        turns=remediation_turns,
+                        initial_hash=before_remediation,
+                        workspace=workspace,
+                        category=str(row.get("category") or "Other"),
+                        difficulty=str(row.get("difficulty") or "unknown"),
+                        controller=controller,
+                        max_turns=int(
+                            controller.get("sequential_remediation_turns", 6)
+                        ),
+                    )
+                    validators.append(remediation_validator)
+                    if remediation_validator["workspace_changed"]:
+                        selected = "remediated"
+                    else:
+                        _restore_workspace(plan_execute_snapshot, workspace)
+                        selected = "plan_execute_rollback"
+                    _controller_attestation(
+                        submission,
+                        str(row["task_id"]),
+                        f"mt_sequential_{selected}",
+                        source="frozen_deterministic_runtime_controller",
+                    )
+                    route = f"sequential_review:{selected}"
+                elif att and att.get("verdict") == "pass":
+                    route = "sequential_review:verifier_passed"
+                else:
+                    _restore_workspace(plan_execute_snapshot, workspace)
+                    _controller_attestation(
+                        submission,
+                        str(row["task_id"]),
+                        "mt_sequential_review_failed_plan_execute_rollback",
+                        source="frozen_deterministic_runtime_controller",
+                    )
+                    route = "sequential_review:plan_execute_rollback"
     elif execution_method == "ExecuteReview":
         # TeamBench's official no-planner ablation: a weak Executor works from
         # the public brief, then an independent strong Verifier reads the full
@@ -796,6 +1041,7 @@ def run_task(
         "route": route,
         "role_activations": role_counts,
         "validators": validators,
+        "decision_trace": decision_trace,
         **usage,
         "latency_s": time.perf_counter() - started,
         "final_workspace_sha256": tree_sha256(workspace),
@@ -849,7 +1095,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--method",
-        choices=("Solo", "PlanExecute", "ExecuteReview", "A4", "A8", "MTSelector"),
+        choices=(
+            "Solo", "PlanExecute", "ExecuteReview", "A4", "A8",
+            "MTSelector", "MTSequential",
+        ),
         required=True,
     )
     parser.add_argument("--split", choices=("dev", "test"), required=True)
@@ -866,7 +1115,7 @@ def main() -> None:
     parser.add_argument("--strong-api-key", default="local")
     parser.add_argument("--strong-model", default="qwen-game")
     parser.add_argument("--weak-endpoint", default="http://127.0.0.1:8001/v1")
-    parser.add_argument("--weak-api-key", default="EMPTY")
+    parser.add_argument("--weak-api-key", default="local")
     parser.add_argument("--weak-model", default="qwen-mm-backup")
     parser.add_argument("--max-tokens", type=int, default=2048)
     parser.add_argument("--temperature", type=float, default=0.0)
@@ -891,6 +1140,8 @@ def main() -> None:
         parser.error("--policy-config is required for MTSelector")
     if args.method != "MTSelector" and policy is not None:
         parser.error("--policy-config is only valid for MTSelector")
+    if args.method == "MTSequential":
+        _validate_sequential_controller(controller)
     rows = [row for row in split["rows"] if row["split"] == args.split]
     if args.task:
         selected = set(args.task)
@@ -921,6 +1172,10 @@ def main() -> None:
         "temperature": args.temperature,
         "runner_source": _git_state(Path(__file__).resolve().parents[2]),
     }
+    canonical_controller = json.dumps(
+        controller, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+    ).encode()
+    config["controller_sha256"] = hashlib.sha256(canonical_controller).hexdigest()
     if args.sampling_seed is not None:
         if args.sampling_seed < 0:
             parser.error("--sampling-seed must be non-negative")

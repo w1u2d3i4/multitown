@@ -133,6 +133,7 @@ class RecordedAdapter(ToolCallAdapter):
         self.method = method
         self.request_log = request_log
         self.request_index = 0
+        self.sampling_seed = sampling_seed
         adapter_class = SeededOpenAIAdapter if sampling_seed is not None else OpenAIAdapter
         adapter_kwargs: dict[str, Any] = {}
         if sampling_seed is not None:
@@ -198,6 +199,14 @@ class RecordedAdapter(ToolCallAdapter):
                 "response_chars": len(response.text),
                 "error": error,
             }
+            if self.sampling_seed is not None:
+                payload["sampling_seed"] = self.sampling_seed
+                payload["request_seed"] = deterministic_request_seed(
+                    self.sampling_seed,
+                    task_id=self.task_id,
+                    role=self.role,
+                    request_index=self.request_index,
+                )
             self.request_log.parent.mkdir(parents=True, exist_ok=True)
             with self.request_log.open("a", encoding="utf-8") as handle:
                 handle.write(json.dumps(payload, ensure_ascii=False) + "\n")

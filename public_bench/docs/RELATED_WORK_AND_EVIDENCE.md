@@ -29,6 +29,22 @@ cross-paper numbers it does not treat as directly comparable.
   reports cost-performance curves under token and tool-call budgets. MultiTown
   likewise reports a Pareto view and keeps tokens, latency, energy and role
   activations visible.
+- [AgentDropout](https://arxiv.org/abs/2503.18891) learns to eliminate redundant
+  agents and communication links across rounds. It motivates conditional role
+  activation, while MultiTown uses OS-isolated roles and preserves a safe
+  PlanExecute fallback rather than adopting its communication graph directly.
+- [FlowSteer](https://arxiv.org/abs/2602.01664) treats workflow construction as
+  multi-turn interaction between a policy and an executable environment. It
+  motivates retaining state/action trajectories so the same TeamBench
+  controller interface can later support RL instead of a hand-written rule.
+- [Multi-Agent Routing as Set-Valued Prediction](https://arxiv.org/abs/2606.28925)
+  evaluates fixed-catalog routing with both accuracy and cost. Its results
+  reinforce a distinction exposed by MultiTown's seed-1 audit: pre-task routing
+  and runtime sequential control are different learning problems.
+- [MAGRPO](https://arxiv.org/abs/2508.04652) optimizes multi-turn LLM
+  collaboration with cooperative multi-agent RL. MultiTown's future RL claim
+  is narrower: it will optimize the orchestration controller over frozen role
+  models and must beat the hand-written controller in this same harness.
 
 ## What “mainstream multi-agent strategy” means here
 
