@@ -24,8 +24,13 @@ from .sandbox import (
     SafeWriteTool,
     docker_available,
 )
-from .teambench_stage import grade_in_sandbox, run_setup_in_sandbox, stage_task, tree_sha256
-
+from .strategy_selector import select_method
+from .teambench_stage import (
+    grade_in_sandbox,
+    run_setup_in_sandbox,
+    stage_task,
+    tree_sha256,
+)
 
 DEFAULT_CONTROLLER = {
     "schema_version": "general-mas-a8-controller-v2",
@@ -415,7 +420,14 @@ def run_task(
     weak: dict[str, Any],
     max_tokens: int,
     temperature: float,
+    policy: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    reported_method = method
+    execution_method = method
+    if method == "MTSelector":
+        if policy is None:
+            raise ValueError("MTSelector requires a frozen policy")
+        execution_method = select_method(policy, row)
     started = time.perf_counter()
     meta = stage_task(row, team_root, run_dir)
     run_setup_in_sandbox(row=row, team_root=team_root, run_dir=run_dir, image=image)
@@ -452,7 +464,7 @@ def run_task(
     validators: list[dict[str, Any]] = []
     route = ""
 
-    if method == "Solo":
+    if execution_method == "Solo":
         solo = adapter("solo", strong)
         role_counts["solo"] = 1
         _run_phase(
@@ -464,7 +476,7 @@ def run_task(
             messages=messages, logs=logs / "solo", max_turns=20,
         )
         route = "single_strong_full_access"
-    elif method == "PlanExecute":
+    elif execution_method == "PlanExecute":
         # TeamBench's official no-verifier ablation: a strong Planner transfers
         # the full-spec plan to a weak, brief-only Executor. There is no
         # independent review, so the controller supplies the protocol-required
@@ -495,7 +507,7 @@ def run_task(
             source="fixed_strategy_protocol_controller",
         )
         route = "fixed_plan_execute"
-    elif method == "ExecuteReview":
+    elif execution_method == "ExecuteReview":
         # TeamBench's official no-planner ablation: a weak Executor works from
         # the public brief, then an independent strong Verifier reads the full
         # specification and certifies the result. No remediation loop is added.
@@ -521,7 +533,7 @@ def run_task(
             stop_when=lambda: _attestation(submission) is not None,
         )
         route = "fixed_execute_review"
-    elif method == "A4":
+    elif execution_method == "A4":
         planner = adapter("planner", strong)
         executor = adapter("executor", weak)
         verifier = adapter("verifier", strong)
@@ -580,7 +592,7 @@ def run_task(
             route = "fixed_full_with_remediation"
         else:
             route = "fixed_full"
-    elif method == "A8":
+    elif execution_method == "A8":
         executor = adapter("executor", weak)
         role_counts["executor"] = 1
         initial_turns = _run_phase(
@@ -730,7 +742,10 @@ def run_task(
                 else:
                     route = "strong_review"
     else:
-        raise ValueError(method)
+        raise ValueError(execution_method)
+
+    if reported_method == "MTSelector":
+        route = f"mt_selector:{execution_method}:{route}"
 
     if _attestation(submission) is None:
         write_json(submission / "attestation.json", {
@@ -743,7 +758,7 @@ def run_task(
     usage = _usage(adapters)
     result = {
         "schema_version": "general-mas-teambench-result-v1",
-        "method": method,
+        "method": reported_method,
         "task_id": row["task_id"],
         "source_task": row["source_task"],
         "split": row["split"],
@@ -760,6 +775,8 @@ def run_task(
         "final_workspace_sha256": tree_sha256(workspace),
         "request_errors": 0,
     }
+    if reported_method == "MTSelector":
+        result["selected_strategy"] = execution_method
     write_json(run_dir / "result.json", result)
     return result
 
@@ -806,7 +823,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--method",
-        choices=("Solo", "PlanExecute", "ExecuteReview", "A4", "A8"),
+        choices=("Solo", "PlanExecute", "ExecuteReview", "A4", "A8", "MTSelector"),
         required=True,
     )
     parser.add_argument("--split", choices=("dev", "test"), required=True)
@@ -814,6 +831,7 @@ def main() -> None:
     parser.add_argument("--project-root", type=Path, default=Path.cwd())
     parser.add_argument("--split-file", type=Path, default=Path("benchmarks/teambench-v1/split.json"))
     parser.add_argument("--controller-config", type=Path)
+    parser.add_argument("--policy-config", type=Path)
     parser.add_argument("--task", action="append")
     parser.add_argument("--max-tasks", type=int)
     parser.add_argument("--docker-image", default="general-mas-runner:0.1")
@@ -840,6 +858,11 @@ def main() -> None:
     split_path = args.split_file if args.split_file.is_absolute() else project_root / args.split_file
     split = read_json(split_path.resolve())
     controller = read_json(args.controller_config.resolve()) if args.controller_config else DEFAULT_CONTROLLER
+    policy = read_json(args.policy_config.resolve()) if args.policy_config else None
+    if args.method == "MTSelector" and policy is None:
+        parser.error("--policy-config is required for MTSelector")
+    if args.method != "MTSelector" and policy is not None:
+        parser.error("--policy-config is only valid for MTSelector")
     rows = [row for row in split["rows"] if row["split"] == args.split]
     if args.task:
         selected = set(args.task)
@@ -865,6 +888,12 @@ def main() -> None:
         "max_tokens": args.max_tokens,
         "temperature": args.temperature,
     }
+    if policy is not None:
+        canonical_policy = json.dumps(
+            policy, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode()
+        config["policy"] = policy
+        config["policy_sha256"] = hashlib.sha256(canonical_policy).hexdigest()
     config_path = output / "config.json"
     if config_path.exists() and read_json(config_path) != config:
         raise SystemExit("existing output config differs; refuse unsafe resume")
@@ -908,6 +937,7 @@ def main() -> None:
                     weak=weak,
                     max_tokens=args.max_tokens,
                     temperature=args.temperature,
+                    policy=policy,
                 )
             except Exception as exc:
                 errors += 1

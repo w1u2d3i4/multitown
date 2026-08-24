@@ -26,6 +26,7 @@ general-mas-run-teambench = "general_mas_bench.teambench_runner:main"
 general-mas-report = "general_mas_bench.report:main"
 general-mas-baseline-report = "general_mas_bench.baseline_report:main"
 general-mas-strategy-report = "general_mas_bench.strategy_report:main"
+general-mas-train-selector = "general_mas_bench.strategy_selector:main"
 
 [build-system]
 requires = ["hatchling>=1.27"]
