@@ -15,6 +15,22 @@ cost-aware multi-agent control. Its Arena turns otherwise invisible routing,
 model calls, validation, escalation, token use, and results into a town you can
 watch and compare.
 
+## Project branches
+
+Start here on `main`. Each long-lived branch has one job, and experimental
+claims stay on the branch that owns their evidence:
+
+| Branch | Purpose | What to expect |
+| --- | --- | --- |
+| [`main`](https://github.com/w1u2d3i4/multitown/tree/main) | Stable project showcase | The current validated MultiTown result, Arena demo, public runtime and conservative headline claims. |
+| [`public-bench`](https://github.com/w1u2d3i4/multitown/tree/public-bench) | External evidence track | Tests the method on public general-purpose benchmarks against a canonical single agent and a fixed Planner–Executor–Verifier team; reports quality, tokens, latency and energy, including negative results. |
+| [`agentic-rl`](https://github.com/w1u2d3i4/multitown/tree/agentic-rl) | Learned-control research | Experiments with replacing deterministic delegation rules by trained sequential policies under quality, budget and safety constraints. It is also the control research foundation for future role-playing agents. |
+| [`agentic-rpg`](https://github.com/w1u2d3i4/multitown/tree/agentic-rpg) | Tabletop-RPG product direction | Evolves the town from an experiment viewer into a playable multi-agent role-playing prototype with characters, plots, tasks and player intervention. |
+
+The branches are not a performance ranking. `public-bench` asks whether the
+current method transfers; `agentic-rl` asks whether control can be learned;
+`agentic-rpg` explores how that control becomes gameplay.
+
 This repository is a code-only public surface with concise, audited result
 summaries. It intentionally excludes raw experiment records, generated result
 files, model checkpoints, benchmark datasets, internal process notes,

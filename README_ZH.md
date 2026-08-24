@@ -14,6 +14,21 @@ MultiTown 是一个 **AI 组织数字孪生** 与 Python 运行时。Arena 把�
 路由、模型调用、结果验证、升级处理、Token 消耗和最终结果变成一座可以观看和比较的
 小镇。
 
+## 项目分支分别做什么
+
+新读者应从 `main` 开始。每个长期分支只承担一种职责，实验结论也只留在拥有对应证据
+的分支中：
+
+| 分支 | 目的 | 可以看到什么 |
+| --- | --- | --- |
+| [`main`](https://github.com/w1u2d3i4/multitown/tree/main) | 稳定成果展示 | 当前已经验证的 MultiTown 结果、Arena 演示、公开运行时代码和保守的核心结论。 |
+| [`public-bench`](https://github.com/w1u2d3i4/multitown/tree/public-bench) | 通用公开数据证据 | 在公开通用 Benchmark 上，将当前方法与标准单 Agent、固定 Planner–Executor–Verifier 团队比较，同时报告质量、Token、延迟、能耗和负结果。 |
+| [`agentic-rl`](https://github.com/w1u2d3i4/multitown/tree/agentic-rl) | 学习型控制研究 | 尝试在质量、预算和安全约束下，用训练得到的顺序策略替代确定性委派规则；同时为未来跑团 Agent 的动态控制打基础。 |
+| [`agentic-rpg`](https://github.com/w1u2d3i4/multitown/tree/agentic-rpg) | 跑团产品方向 | 将“可观看的 Agent 小镇”继续发展为可玩的多智能体跑团雏形，逐步加入角色、剧情、任务和玩家干预。 |
+
+这些分支不是性能排名：`public-bench` 回答当前方法能否迁移，`agentic-rl` 回答控制策略
+能否学习，`agentic-rpg` 则探索这种控制如何变成实际玩法。
+
 本仓库是仅包含代码和简明审计结果摘要的公开版本，刻意排除了原始实验记录、生成的
 结果文件、模型 Checkpoint、Benchmark 数据集、内部过程文档、中断运行以及私有开发
 Git 历史。
