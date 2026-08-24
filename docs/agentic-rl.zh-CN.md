@@ -71,6 +71,10 @@ A9 offline controller 的终止奖励可以概括为：
 下一项冻结协议是 [A26 风险校准策略改进](A26_SAFE_POLICY_IMPROVEMENT_ZH.md)。
 它先建立更安全的学习式路由基线，明确不冒充完整 Agentic RL。
 
+A26 随后未通过 OOD 门禁。冻结的后继方案是
+[A28 一致性门控的专家优先路由](A28_CONSERVATIVE_ROUTER_ZH.md)，它修复不安全的分歧路径，
+并使用新的独立 confirmation bank。
+
 ## 查看公开命令
 
 ```bash
@@ -85,6 +89,7 @@ multitown-a9-review-shield --help
 multitown-a22-adaptive --help
 multitown-a22-report --help
 multitown-a26-safe-router --help
+multitown-a28-conservative-router --help
 ```
 
 仓库有意排除了原始实验记录、私有 episode bank、Checkpoint 和模型输出。因此这些命令

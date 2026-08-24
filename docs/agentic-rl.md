@@ -79,6 +79,10 @@ The next frozen protocol is [A26 risk-calibrated policy improvement](A26_SAFE_PO
 It first establishes a safer learned routing baseline; it is explicitly not
 called full Agentic RL.
 
+A26 subsequently failed its OOD gates. The frozen successor is
+[A28 agreement-gated specialist-first routing](A28_CONSERVATIVE_ROUTER.md),
+which changes the unsafe disagreement path and uses a new confirmation bank.
+
 ## Explore the public entry points
 
 ```bash
@@ -93,6 +97,7 @@ multitown-a9-review-shield --help
 multitown-a22-adaptive --help
 multitown-a22-report --help
 multitown-a26-safe-router --help
+multitown-a28-conservative-router --help
 ```
 
 The repository intentionally excludes raw experiment records, private episode
