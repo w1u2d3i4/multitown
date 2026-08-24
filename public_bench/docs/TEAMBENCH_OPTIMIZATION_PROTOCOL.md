@@ -32,10 +32,12 @@ that matrix alone.
 2. **Public discovery set:** the existing 89 evaluable TeamBench-90 tasks at
    seed 0. It may be used for transparent post-hoc evaluation and failure
    analysis, but not for tuning followed by a held-out claim.
-3. **Confirmation set:** a new generated seed frozen before candidate outcomes
-   are opened. At minimum, compare the frozen candidate with `Solo-TB` and
+3. **Confirmation set:** public generator seed **1**, frozen here before any
+   candidate seed-1 outcome is opened, on the same 89 evaluable TeamBench-90
+   task IDs. At minimum, compare the frozen candidate with `Solo-TB` and
    `PlanExecute-TB`, the two current Pareto-front methods. A five-condition
-   confirmation remains preferable when compute permits.
+   confirmation remains preferable when compute permits. Seed 1 is not an
+   official hidden-track result.
 4. **Official hidden track:** if submitted later, TeamBench's rotating hidden
    seeds are the strongest independent confirmation. Hidden results must never
    be inferred from public-seed results.
