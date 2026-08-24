@@ -9,6 +9,7 @@ from general_mas_bench.teambench_runner import (
     _phase_config,
     _runtime_validator,
     _select_failed_review_candidate,
+    _controller_attestation,
 )
 
 
@@ -144,3 +145,18 @@ def test_solo_has_full_read_access_but_cannot_write_task_spec(tmp_path: Path) ->
     assert write_tool.execute(path="/workspace/code.py", content="after").exit_code == 0
     assert write_tool.execute(path="/task/spec.md", content="tampered").exit_code == 1
     assert (task / "spec.md").read_text() == "full requirements"
+
+
+def test_fixed_strategy_controller_attestation_is_explicit(tmp_path: Path) -> None:
+    _controller_attestation(
+        tmp_path,
+        "task-1",
+        "fixed_plan_execute_without_independent_review",
+        source="fixed_strategy_protocol_controller",
+    )
+
+    value = _attestation(tmp_path)
+    assert value is not None
+    assert value["verdict"] == "pass"
+    assert value["source"] == "fixed_strategy_protocol_controller"
+    assert value["reason"] == "fixed_plan_execute_without_independent_review"

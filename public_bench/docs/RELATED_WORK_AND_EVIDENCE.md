@@ -30,6 +30,27 @@ cross-paper numbers it does not treat as directly comparable.
   likewise reports a Pareto view and keeps tokens, latency, energy and role
   activations visible.
 
+## What “mainstream multi-agent strategy” means here
+
+The literature contains several recurring organization patterns. A framework
+name is not itself a controlled baseline: AutoGen and CAMEL, for example, can
+express many different conversations. MultiTown therefore compares concrete
+organizations, and cites frameworks only to explain the family they belong to.
+
+| Strategy family | Representative work | Mechanism | Same-harness representative in this branch |
+| --- | --- | --- | --- |
+| Independent ensemble / vote | Multi-agent debate and the independent architecture in *Scaling Agent Systems* | Several agents propose independently, then vote, judge or debate | Context only. Parallel answer aggregation does not preserve TeamBench's single shared workspace and disjoint OS privileges. |
+| Central manager / worker | Centralized architecture in *Scaling Agent Systems*; flexible conversations in [AutoGen](https://arxiv.org/abs/2308.08155) | A coordinator decomposes work and assigns execution | **PlanExecute-TB** isolates the value of planning and handoff. |
+| Sequential role pipeline / SOP | [MetaGPT](https://arxiv.org/abs/2308.00352) and [ChatDev](https://arxiv.org/abs/2307.07924) | Specialized roles pass artifacts through a fixed workflow | **FixedTeam-TB** is the full Planner -> Executor -> Verifier pipeline; **PlanExecute-TB** and **ExecuteReview-TB** are its role ablations. |
+| Peer conversation / role play | [CAMEL](https://arxiv.org/abs/2303.17760) and AutoGen | Agents converse under assigned roles, sometimes without a central controller | Context only. The current benchmark intentionally tests auditable privilege separation rather than free-form shared-history chat. |
+| Dynamic selection / pruning | DyLAN and AgentPrune | Select useful agents or prune communication according to the task | **MultiTown-TB** is the direct local dynamic-activation method. It is analogous at the organization level, but is not a reproduction of either algorithm. |
+
+This boundary prevents a misleading claim such as “MultiTown beats MetaGPT”
+when MetaGPT has not been run under the same model, task and access contract.
+The direct claim is narrower and testable: MultiTown-TB is compared with Solo,
+planning-only, review-only and fixed-full organizations in one TeamBench
+harness.
+
 ## MultiTown comparison matrix
 
 All local headline comparisons use the same 89 evaluable TeamBench test tasks,
@@ -39,8 +60,10 @@ output cap.
 | System | Why it is included | Information and organization |
 | --- | --- | --- |
 | Solo-TB | Canonical mainstream single-agent anchor | One strong agent sees the full specification, edits and tests the workspace, and certifies its result. |
-| A4-TB | Mainstream fixed multi-agent anchor | A strong Planner, weak Executor and independent strong Verifier are always activated. |
-| A8-TB | MultiTown method | A weak Executor starts; public runtime evidence selectively activates a strong Planner and/or Verifier and can roll back a failed review. |
+| PlanExecute-TB | Mainstream manager/worker and no-review anchor | A strong Planner transfers a full-spec plan to a weak, brief-only Executor; no Verifier is called. |
+| ExecuteReview-TB | Mainstream execution/review and no-planning anchor | A weak Executor works from the brief, then an independent strong Verifier checks the result; no repair loop is added. |
+| FixedTeam-TB (`A4`) | Mainstream fixed role pipeline | A strong Planner, weak Executor and independent strong Verifier are always activated, with at most one remediation/reverification loop. |
+| MultiTown-TB (`A8`) | Proposed dynamic organization | A weak Executor starts; public runtime evidence selectively activates a strong Planner and/or Verifier and can roll back a failed review. |
 
 Solo-TB and the role-separated methods answer different operational questions.
 Solo-TB measures what one capable agent can achieve when it can see, edit and
@@ -48,6 +71,11 @@ self-certify. A4-TB/A8-TB additionally enforce separation of duties: no role can
 hold all three privileges. The relevant A8-TB claim is therefore conditional:
 resource efficiency relative to an always-on team under the same governance
 boundary, plus an explicit quality comparison to the unrestricted Solo anchor.
+
+The two new fixed baselines mirror TeamBench's official `team_no_verify` and
+`team_no_plan` conditions rather than being tuned after viewing A8 outcomes.
+Their protocol and the five-method matrix were frozen before formal invocation
+in [`TEAMBENCH_STRATEGY_MATRIX_PROTOCOL.md`](TEAMBENCH_STRATEGY_MATRIX_PROTOCOL.md).
 
 Required outputs are pass rate, deterministic partial score, paired bootstrap
 intervals, exact McNemar tests, tokens, latency, monitored energy, route mix,

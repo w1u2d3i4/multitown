@@ -13,8 +13,9 @@ both a standard single agent and an always-on multi-agent team when tools,
 tasks and accounting are held fixed.
 
 The multi-agent motivation here is **separation of duties**, not “more agents
-must be smarter.” In A4-TB and A8-TB, no one role can simultaneously read the
-full specification, modify the workspace and certify the result. Solo-TB is the
+must be smarter.” In all four role-separated strategies, no one role can
+simultaneously read the full specification, modify the workspace and certify
+the result. Solo-TB is the
 full-access quality anchor but does not provide that governance boundary. The
 method question is therefore whether MultiTown can preserve role isolation
 while avoiding the cost of activating every specialist on every task.
@@ -27,7 +28,7 @@ while avoiding the cost of activating every specialist on every task.
 - Secondary data lock: MultiAgentBench/MARBLE, five domains and 500 released
   configurations. No MARBLE headline result is claimed here.
 
-The comparison methodology follows the patterns used by TeamBench and related
+The five-method comparison follows the patterns used by TeamBench and related
 agent-scaling work: include a strong single-agent anchor, hold task/tool access
 and execution accounting fixed, report paired task-level statistics, and show
 the quality/resource Pareto trade-off instead of only the best accuracy cell.
@@ -46,9 +47,15 @@ may request one repair:
 
 - **Solo-TB — canonical single-agent anchor:** one strong model sees the full
   specification, edits and tests the workspace, and certifies its own result.
-- **A4-TB — fixed full team:** always call a strong Planner, a weak Executor and
-  an independent strong Verifier, with a frozen one-loop remediation budget.
-- **A8-TB — selective team:** start with the weak Executor, check the candidate
+- **PlanExecute-TB — plan then act:** call a strong Planner and a weak Executor,
+  but no independent Verifier. This mirrors TeamBench's no-verifier ablation.
+- **ExecuteReview-TB — act then review:** call a weak Executor and an independent
+  strong Verifier, but no Planner or repair loop. This mirrors TeamBench's
+  no-planner ablation.
+- **FixedTeam-TB (`A4`) — fixed full team:** always call a strong Planner, a
+  weak Executor and an independent strong Verifier, with a frozen one-loop
+  remediation budget.
+- **MultiTown-TB (`A8`) — selective team:** start with the weak Executor, check the candidate
   with a deterministic public runtime validator, and activate the strong
   Planner or Verifier only when that evidence says more work is needed. A failed
   review can roll back to the best valid candidate.
@@ -56,6 +63,14 @@ may request one repair:
 No system can inspect hidden grader outcomes when making a decision. The
 Solo-TB protocol is frozen separately in
 [`docs/TEAMBENCH_SOLO_BASELINE_PROTOCOL.md`](docs/TEAMBENCH_SOLO_BASELINE_PROTOCOL.md).
+The full five-method contract is frozen in
+[`docs/TEAMBENCH_STRATEGY_MATRIX_PROTOCOL.md`](docs/TEAMBENCH_STRATEGY_MATRIX_PROTOCOL.md).
+
+These local strategies cover the parts of mainstream manager/worker,
+executor/reviewer, SOP pipeline and dynamic-selection designs that can be
+compared fairly under TeamBench role isolation. Debate, independent voting and
+free-form peer-chat systems are documented as related families, not falsely
+reported as reproduced experiments.
 
 ## Frozen formal result
 
@@ -131,6 +146,14 @@ general-mas-run-teambench --method Solo --split dev \
   --project-root "$PWD" --temperature 0 \
   --output-dir artifacts/teambench-dev-solo
 
+general-mas-run-teambench --method PlanExecute --split dev \
+  --project-root "$PWD" --temperature 0 \
+  --output-dir artifacts/teambench-dev-plan-execute
+
+general-mas-run-teambench --method ExecuteReview --split dev \
+  --project-root "$PWD" --temperature 0 \
+  --output-dir artifacts/teambench-dev-execute-review
+
 general-mas-run-teambench --method A4 --split dev \
   --project-root "$PWD" --controller-config configs/a4-teambench-v1.json \
   --temperature 0 --output-dir artifacts/teambench-dev-a4
@@ -149,6 +172,15 @@ general-mas-baseline-report \
   --a8-dir artifacts/teambench-dev-a8 \
   --expected-task-count 30 \
   --output-dir artifacts/teambench-dev-baseline-report
+
+general-mas-strategy-report \
+  --solo-dir artifacts/teambench-dev-solo \
+  --plan-execute-dir artifacts/teambench-dev-plan-execute \
+  --execute-review-dir artifacts/teambench-dev-execute-review \
+  --a4-dir artifacts/teambench-dev-a4 \
+  --a8-dir artifacts/teambench-dev-a8 \
+  --expected-task-count 30 \
+  --output-dir artifacts/teambench-dev-strategy-report
 ```
 
 Use `--strong-endpoint`, `--strong-model`, `--weak-endpoint` and `--weak-model`

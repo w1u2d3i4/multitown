@@ -14,12 +14,13 @@ new product story or tune the synthetic town benchmark. It asks whether the
 current organization-control idea survives contact with public, general-purpose
 tasks.
 
-The evidence matrix compares three systems under one task list, sandbox and
-measurement contract: TeamBench's canonical single strong agent (Solo-TB), a
-fixed Planner–Executor–Verifier team (A4-TB), and MultiTown's weak-first
-selective organization (A8-TB). Claims are separated into task quality, tokens,
-latency, energy and role activation; a cost advantage is never presented as
-universal method superiority.
+The evidence matrix compares five systems under one task list, sandbox and
+measurement contract: TeamBench's canonical strong single agent (Solo-TB),
+planning-without-review (PlanExecute-TB), execution-with-independent-review
+(ExecuteReview-TB), a fixed Planner–Executor–Verifier pipeline (FixedTeam-TB),
+and MultiTown's weak-first selective organization (MultiTown-TB). Claims are
+separated into task quality, tokens, latency, energy and role activation; a
+cost advantage is never presented as universal method superiority.
 
 The underlying multi-agent value proposition is separation of duties: unlike
 Solo-TB, no role-separated organization lets one agent read the full

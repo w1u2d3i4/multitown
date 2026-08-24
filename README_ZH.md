@@ -12,10 +12,11 @@
 `public-bench` 是 MultiTown 的外部证据分支。它不增加新的产品故事，也不继续调整小镇
 合成 Benchmark，而是回答：当前组织控制方法放到公开、通用任务上后是否仍然成立。
 
-证据矩阵在同一任务列表、沙箱和测量协议下比较三种系统：TeamBench 标准的单强 Agent
-（Solo-TB）、固定 Planner–Executor–Verifier 团队（A4-TB），以及 MultiTown 的弱模型
-优先选择性组织（A8-TB）。结论会分别报告任务质量、Token、延迟、能耗和角色启用次数；
-成本优势不会被包装成方法全面领先。
+证据矩阵在同一任务列表、沙箱和测量协议下比较五种系统：TeamBench 标准的单强 Agent
+（Solo-TB）、只规划后执行（PlanExecute-TB）、先执行再独立复核（ExecuteReview-TB）、
+固定 Planner–Executor–Verifier 流水线（FixedTeam-TB），以及 MultiTown 的弱模型优先
+选择性组织（MultiTown-TB）。结论会分别报告任务质量、Token、延迟、能耗和角色启用
+次数；成本优势不会被包装成方法全面领先。
 
 这里的多智能体价值主张是职责分离：与 Solo-TB 不同，角色隔离组织不会让同一个 Agent
 同时读取完整要求、修改工作区并自我验收。A8-TB 要检验的是，能否保留这条治理边界，

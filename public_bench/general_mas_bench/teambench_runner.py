@@ -299,12 +299,18 @@ def _allow_initial_early_stop(
     )
 
 
-def _controller_attestation(submission: Path, task_id: str, reason: str) -> None:
+def _controller_attestation(
+    submission: Path,
+    task_id: str,
+    reason: str,
+    *,
+    source: str = "deterministic_a8_runtime_validator",
+) -> None:
     write_json(submission / "attestation.json", {
         "task_id": task_id,
         "verdict": "pass",
         "checklist": [],
-        "source": "deterministic_a8_runtime_validator",
+        "source": source,
         "reason": reason,
     })
 
@@ -458,6 +464,63 @@ def run_task(
             messages=messages, logs=logs / "solo", max_turns=20,
         )
         route = "single_strong_full_access"
+    elif method == "PlanExecute":
+        # TeamBench's official no-verifier ablation: a strong Planner transfers
+        # the full-spec plan to a weak, brief-only Executor. There is no
+        # independent review, so the controller supplies the protocol-required
+        # attestation after execution without consulting the hidden grader.
+        planner = adapter("planner", strong)
+        executor = adapter("executor", weak)
+        role_counts.update(planner=1, executor=1)
+        _run_phase(
+            role="planner", adapter=planner, prompt=prompts["planner"],
+            config=_phase_config(
+                "planner", task=task, workspace=workspace, reports=reports,
+                messages=messages, submission=submission, image=image,
+            ),
+            messages=messages, logs=logs / "planning", max_turns=6,
+        )
+        _run_phase(
+            role="executor", adapter=executor, prompt=prompts["executor"],
+            config=_phase_config(
+                "executor", task=task, workspace=workspace, reports=reports,
+                messages=messages, submission=submission, image=image,
+            ),
+            messages=messages, logs=logs / "execution", max_turns=12,
+        )
+        _controller_attestation(
+            submission,
+            str(row["task_id"]),
+            "fixed_plan_execute_without_independent_review",
+            source="fixed_strategy_protocol_controller",
+        )
+        route = "fixed_plan_execute"
+    elif method == "ExecuteReview":
+        # TeamBench's official no-planner ablation: a weak Executor works from
+        # the public brief, then an independent strong Verifier reads the full
+        # specification and certifies the result. No remediation loop is added.
+        executor = adapter("executor", weak)
+        verifier = adapter("verifier", strong)
+        role_counts.update(executor=1, verifier=1)
+        _run_phase(
+            role="executor", adapter=executor, prompt=prompts["initial_executor"],
+            config=_phase_config(
+                "executor", task=task, workspace=workspace, reports=reports,
+                messages=messages, submission=submission, image=image,
+            ),
+            messages=messages, logs=logs / "execution", max_turns=12,
+        )
+        (submission / "attestation.json").unlink(missing_ok=True)
+        _run_phase(
+            role="verifier", adapter=verifier, prompt=prompts["verifier"],
+            config=_phase_config(
+                "verifier", task=task, workspace=workspace, reports=reports,
+                messages=messages, submission=submission, image=image,
+            ),
+            messages=messages, logs=logs / "review", max_turns=8,
+            stop_when=lambda: _attestation(submission) is not None,
+        )
+        route = "fixed_execute_review"
     elif method == "A4":
         planner = adapter("planner", strong)
         executor = adapter("executor", weak)
@@ -741,7 +804,11 @@ def _archive_failed_attempt(task_run: Path, failed_root: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--method", choices=("Solo", "A4", "A8"), required=True)
+    parser.add_argument(
+        "--method",
+        choices=("Solo", "PlanExecute", "ExecuteReview", "A4", "A8"),
+        required=True,
+    )
     parser.add_argument("--split", choices=("dev", "test"), required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--project-root", type=Path, default=Path.cwd())
