@@ -834,6 +834,7 @@ def main() -> None:
     parser.add_argument("--policy-config", type=Path)
     parser.add_argument("--task", action="append")
     parser.add_argument("--max-tasks", type=int)
+    parser.add_argument("--seed-override", type=int)
     parser.add_argument("--docker-image", default="general-mas-runner:0.1")
     parser.add_argument("--strong-endpoint", default="http://127.0.0.1:8000/v1")
     parser.add_argument("--strong-api-key", default="local")
@@ -869,6 +870,10 @@ def main() -> None:
         rows = [row for row in rows if row["task_id"] in selected]
     if args.max_tasks is not None:
         rows = rows[: args.max_tasks]
+    if args.seed_override is not None:
+        if args.seed_override < 0:
+            parser.error("--seed-override must be non-negative")
+        rows = [{**row, "seed": args.seed_override} for row in rows]
     if not rows:
         raise SystemExit("no tasks selected")
 
@@ -888,6 +893,12 @@ def main() -> None:
         "max_tokens": args.max_tokens,
         "temperature": args.temperature,
     }
+    if args.seed_override is not None:
+        canonical_instances = json.dumps(
+            rows, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode()
+        config["seed_override"] = args.seed_override
+        config["task_instances_sha256"] = hashlib.sha256(canonical_instances).hexdigest()
     if policy is not None:
         canonical_policy = json.dumps(
             policy, sort_keys=True, separators=(",", ":"), ensure_ascii=False
