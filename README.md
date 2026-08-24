@@ -84,7 +84,7 @@ frozen results. The animated work order is a deterministic explanatory scenario,
 not a raw experimental episode. See [`demo/`](demo/) for the automatic GIF
 generation command.
 
-## Public TeamBench transfer result
+## Public TeamBench transfer result (historical v1.2)
 
 The `public_bench/` subproject evaluates the same fixed and selective
 organization ideas on 89 currently evaluable tasks from TeamBench's public test
@@ -114,6 +114,11 @@ non-inferiority gate failed, so A8-TB is not presented as a replacement for
 A4-TB. In plain language: the selective team saved compute, but lost too much
 task quality to qualify as an acceptable replacement under the frozen rule.
 See the [formal record](public_bench/records/TEAMBENCH_TEST_V1.2.md).
+
+A later sandbox audit found that timed-out Docker commands could remain alive
+after the client returned. The v1.2 task scores remain historical evidence, but
+its latency/energy are not combined with new methods. The repaired five-way
+rerun is frozen in the [v2 protocol](public_bench/docs/TEAMBENCH_STRATEGY_MATRIX_V2_PROTOCOL.md).
 
 ## Selected benchmark results
 

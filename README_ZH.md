@@ -72,7 +72,7 @@ python3 -m http.server 8000 --directory demo
 工单是解释控制流程的确定性演示场景，不是某一条原始实验轨迹。自动生成 GIF 的命令
 见 [`demo/`](demo/)。
 
-## TeamBench 公开任务迁移结果
+## TeamBench 公开任务迁移结果（历史 v1.2）
 
 `public_bench/` 子项目在 TeamBench 公开测试列表中当前可评测的 89 个任务上，对比固定
 组织与执行期选择控制器。该结果与下方 MultiTown 合成任务结果严格分开，不合并分数。
@@ -97,6 +97,10 @@ A8-TB 将平均 Token 减少 **37.06%**、监控能耗减少 **14.48%**，但 A8
 **[−0.08951, −0.01678]**。成本门通过、质量非劣门失败，因此不能将当前 A8-TB
 宣传为 A4-TB 的替代方案。通俗来说：选择性团队节省了算力，但损失的任务质量超过
 冻结规则允许的范围。详见[正式记录](public_bench/records/TEAMBENCH_TEST_V1.2.md)。
+
+后续沙箱审计发现，Docker 命令超时后其容器可能继续运行。因此 v1.2 的确定性任务分数
+仍作为历史证据保留，但延迟/能耗不会与修复后的新方法混合比较。五种方法将从第一个
+任务开始全部重跑，口径见 [v2 协议](public_bench/docs/TEAMBENCH_STRATEGY_MATRIX_V2_PROTOCOL.md)。
 
 ## 代表性 Benchmark 结果
 

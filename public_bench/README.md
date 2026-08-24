@@ -65,6 +65,9 @@ Solo-TB protocol is frozen separately in
 [`docs/TEAMBENCH_SOLO_BASELINE_PROTOCOL.md`](docs/TEAMBENCH_SOLO_BASELINE_PROTOCOL.md).
 The full five-method contract is frozen in
 [`docs/TEAMBENCH_STRATEGY_MATRIX_PROTOCOL.md`](docs/TEAMBENCH_STRATEGY_MATRIX_PROTOCOL.md).
+An infrastructure audit found that timed-out Docker commands could outlive the
+client process, so the clean five-way rerun is governed by the superseding
+[`v2 protocol`](docs/TEAMBENCH_STRATEGY_MATRIX_V2_PROTOCOL.md).
 
 These local strategies cover the parts of mainstream manager/worker,
 executor/reviewer, SOP pipeline and dynamic-selection designs that can be
@@ -72,7 +75,7 @@ compared fairly under TeamBench role isolation. Debate, independent voting and
 free-form peer-chat systems are documented as related families, not falsely
 reported as reproduced experiments.
 
-## Frozen formal result
+## Historical v1.2 A4/A8 result
 
 | Metric | A4-TB — fixed full team | A8-TB — selective team |
 | --- | ---: | ---: |
@@ -92,6 +95,11 @@ CI **[−0.08951, −0.01678]**. It was better on 12 tasks, tied on 57 and worse
 This is a mixed/negative transfer result. It does not support replacing A4-TB
 with the current A8-TB controller. The complete interpretation is in
 [`records/TEAMBENCH_TEST_V1.2.md`](records/TEAMBENCH_TEST_V1.2.md).
+
+These deterministic task scores remain an auditable historical record. Because
+the later sandbox audit found that a timed-out command could leave a container
+running, v1.2 latency and energy are not mixed with post-fix methods in a new
+five-way claim. All five methods are rerun from task 1 for that comparison.
 
 ## What is published
 

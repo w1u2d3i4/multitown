@@ -35,10 +35,15 @@ def test_docker_command_timeout_normalizes_bytes(
     workspace = tmp_path / "work"
     workspace.mkdir()
 
-    def fake_run(*_args, **_kwargs):
-        raise subprocess.TimeoutExpired(
-            cmd=["docker"], timeout=7, output=b"partial output", stderr=b"partial error"
-        )
+    calls = []
+
+    def fake_run(args, **_kwargs):
+        calls.append(args)
+        if args[:2] == ["docker", "run"]:
+            raise subprocess.TimeoutExpired(
+                cmd=["docker"], timeout=7, output=b"partial output", stderr=b"partial error"
+            )
+        return subprocess.CompletedProcess(args, 0, "", "")
 
     monkeypatch.setattr("general_mas_bench.sandbox.subprocess.run", fake_run)
     result = DockerCommandTool(workspace, "test-image", timeout_s=7).execute(cmd="sleep 8")
@@ -46,3 +51,5 @@ def test_docker_command_timeout_normalizes_bytes(
     assert result.exit_code == 124
     assert result.stdout == "partial output"
     assert result.stderr == "partial error\ncommand timed out after 7s"
+    name = calls[0][calls[0].index("--name") + 1]
+    assert calls[1] == ["docker", "rm", "-f", name]

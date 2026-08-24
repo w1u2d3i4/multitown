@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -16,6 +17,21 @@ def _subprocess_text(value: str | bytes | None) -> str:
     if isinstance(value, bytes):
         return value.decode("utf-8", errors="replace")
     return value
+
+
+def _force_remove_container(name: str) -> None:
+    try:
+        subprocess.run(
+            ["docker", "rm", "-f", name],
+            text=True,
+            capture_output=True,
+            timeout=15,
+            check=False,
+        )
+    except Exception:
+        # Cleanup must never replace the actual tool result. A surviving
+        # container is still externally visible to the run-level audit.
+        pass
 
 
 def _safe_resolve(path: str, roots: dict[str, Path], base: Path) -> Path:
@@ -116,8 +132,10 @@ class DockerCommandTool(Tool):
     def execute(self, cmd: str = "", **_: object) -> ToolResult:
         if not cmd:
             return ToolResult(stderr="cmd is required", exit_code=1)
+        container_name = f"general-mas-{os.getpid()}-{uuid.uuid4().hex[:12]}"
         args = [
-            "docker", "run", "--rm", "--network", "none", "--read-only",
+            "docker", "run", "--rm", "--name", container_name,
+            "--network", "none", "--read-only",
             "--pids-limit", "256", "--memory", "6g", "--cpus", "12",
             "--cap-drop", "ALL", "--security-opt", "no-new-privileges",
             "--tmpfs", "/tmp:rw,nosuid,size=1g",
@@ -150,6 +168,11 @@ class DockerCommandTool(Tool):
             )
         except Exception as exc:
             return ToolResult(stderr=f"{type(exc).__name__}: {exc}", exit_code=1)
+        finally:
+            # Killing a timed-out `docker run` client does not stop its
+            # container. Always issue an idempotent, name-scoped cleanup so a
+            # model command cannot leak CPU/RAM or contaminate later trials.
+            _force_remove_container(container_name)
 
 
 def docker_available() -> tuple[bool, str]:
