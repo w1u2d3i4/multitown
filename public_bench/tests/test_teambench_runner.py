@@ -115,3 +115,32 @@ def test_selective_planner_relative_reads_use_workspace(tmp_path: Path) -> None:
     result = config.tools[0].execute(path="DECISIONS.md")
     assert result.exit_code == 0
     assert result.stdout == "right"
+
+
+def test_solo_has_full_read_access_but_cannot_write_task_spec(tmp_path: Path) -> None:
+    task = tmp_path / "task"
+    workspace = tmp_path / "workspace"
+    reports = tmp_path / "reports"
+    messages = tmp_path / "messages"
+    submission = tmp_path / "submission"
+    for path in (task, workspace, reports, messages, submission):
+        path.mkdir()
+    (task / "spec.md").write_text("full requirements")
+    (workspace / "code.py").write_text("before")
+
+    config = _phase_config(
+        "solo",
+        task=task,
+        workspace=workspace,
+        reports=reports,
+        messages=messages,
+        submission=submission,
+        image="unused",
+    )
+
+    read_tool = next(tool for tool in config.tools if tool.name == "read")
+    write_tool = next(tool for tool in config.tools if tool.name == "write")
+    assert read_tool.execute(path="/task/spec.md").stdout == "full requirements"
+    assert write_tool.execute(path="/workspace/code.py", content="after").exit_code == 0
+    assert write_tool.execute(path="/task/spec.md", content="tampered").exit_code == 1
+    assert (task / "spec.md").read_text() == "full requirements"

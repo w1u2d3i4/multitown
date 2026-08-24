@@ -7,6 +7,20 @@
 > [TeamBench public-data track](public_bench/) and its compact formal record.
 > The stable Arena remains on [`main`](https://github.com/w1u2d3i4/multitown/tree/main).
 
+## Purpose of this branch
+
+`public-bench` is MultiTown's external evidence track. It does not introduce a
+new product story or tune the synthetic town benchmark. It asks whether the
+current organization-control idea survives contact with public, general-purpose
+tasks.
+
+The evidence matrix compares three systems under one task list, sandbox and
+measurement contract: TeamBench's canonical single strong agent (Solo-TB), a
+fixed Planner–Executor–Verifier team (A4-TB), and MultiTown's weak-first
+selective organization (A8-TB). Claims are separated into task quality, tokens,
+latency, energy and role activation; a cost advantage is never presented as
+universal method superiority.
+
 <p align="center">
   <img src="demo/assets/multitown-arena.gif" alt="MultiTown Arena: fixed and adaptive AI organizations solve the same task" width="960" />
 </p>

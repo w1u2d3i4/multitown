@@ -24,6 +24,7 @@ general-mas-freeze = "general_mas_bench.freeze:main"
 general-mas-audit = "general_mas_bench.upstream_audit:main"
 general-mas-run-teambench = "general_mas_bench.teambench_runner:main"
 general-mas-report = "general_mas_bench.report:main"
+general-mas-baseline-report = "general_mas_bench.baseline_report:main"
 
 [build-system]
 requires = ["hatchling>=1.27"]

@@ -7,6 +7,11 @@ organizations on public, general-purpose tasks. It is intentionally isolated
 from MultiTown's synthetic town benchmark: task sets, metrics and claims are
 never merged across the two tracks.
 
+This is an **evidence branch**, not a leaderboard shortcut. Its core question is
+whether selective multi-agent control occupies a better measured trade-off than
+both a standard single agent and an always-on multi-agent team when tools,
+tasks and accounting are held fixed.
+
 ## Current scope
 
 - Primary benchmark: [TeamBench](https://github.com/ybkim95/TeamBench), using
@@ -14,6 +19,12 @@ never merged across the two tracks.
   TeamBench-90 test list.
 - Secondary data lock: MultiAgentBench/MARBLE, five domains and 500 released
   configurations. No MARBLE headline result is claimed here.
+
+The comparison methodology follows the patterns used by TeamBench and related
+agent-scaling work: include a strong single-agent anchor, hold task/tool access
+and execution accounting fixed, report paired task-level statistics, and show
+the quality/resource Pareto trade-off instead of only the best accuracy cell.
+See [`docs/RELATED_WORK_AND_EVIDENCE.md`](docs/RELATED_WORK_AND_EVIDENCE.md).
 
 ## What the names mean
 
@@ -26,6 +37,8 @@ In that role contract, the **Planner** writes a task plan, the **Executor** edit
 code and runs tools, and the **Verifier** independently checks the result and
 may request one repair:
 
+- **Solo-TB — canonical single-agent anchor:** one strong model sees the full
+  specification, edits and tests the workspace, and certifies its own result.
 - **A4-TB — fixed full team:** always call a strong Planner, a weak Executor and
   an independent strong Verifier, with a frozen one-loop remediation budget.
 - **A8-TB — selective team:** start with the weak Executor, check the candidate
@@ -33,7 +46,9 @@ may request one repair:
   Planner or Verifier only when that evidence says more work is needed. A failed
   review can roll back to the best valid candidate.
 
-Neither controller can inspect hidden grader outcomes when making a decision.
+No system can inspect hidden grader outcomes when making a decision. The
+Solo-TB protocol is frozen separately in
+[`docs/TEAMBENCH_SOLO_BASELINE_PROTOCOL.md`](docs/TEAMBENCH_SOLO_BASELINE_PROTOCOL.md).
 
 ## Frozen formal result
 

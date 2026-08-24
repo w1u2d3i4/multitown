@@ -56,7 +56,51 @@ def _phase_config(
     image: str,
     planner_reads_workspace: bool = False,
 ) -> RoleConfig:
-    if role == "planner":
+    if role == "solo":
+        command_mounts = {
+            "/workspace": (workspace, False),
+            "/shared/workspace": (workspace, False),
+            "/reports": (reports, False),
+            "/shared/reports": (reports, False),
+            "/task": (task, True),
+            "/submission": (submission, False),
+            "/shared/submission": (submission, False),
+        }
+        tools = [
+            DockerCommandTool(workspace, image, read_only=False, mounts=command_mounts),
+            SafeReadTool(
+                {
+                    "/task": task,
+                    "/workspace": workspace,
+                    "/shared/workspace": workspace,
+                    "/reports": reports,
+                    "/shared/reports": reports,
+                    "/submission": submission,
+                    "/shared/submission": submission,
+                },
+                workspace,
+            ),
+            SafeWriteTool(
+                {
+                    "/workspace": workspace,
+                    "/shared/workspace": workspace,
+                    "/reports": reports,
+                    "/shared/reports": reports,
+                    "/submission": submission,
+                    "/shared/submission": submission,
+                },
+                workspace,
+            ),
+        ]
+        system = (
+            "You are a single full-access software agent. Read the complete task "
+            "specification, inspect and modify the workspace, run relevant local tests, "
+            "and certify your own result. The task grader is hidden and unavailable. "
+            "Use /workspace or /shared/workspace in shell commands. Only after completing "
+            "and checking the task, write /submission/attestation.json with task_id, "
+            "verdict and checklist, then output DONE."
+        )
+    elif role == "planner":
         roots = {"/task": task}
         tools = [SafeMessageTool(messages, "planner")]
         if planner_reads_workspace:
@@ -319,6 +363,14 @@ def _prompts(task_id: str, spec: str, brief: str) -> dict[str, str]:
             "Inspect the workspace, implement the best complete "
             "solution you can from the brief, run useful local checks, then output TASK_COMPLETE."
         ),
+        "solo": (
+            f"Task: {task_id}\n\nFULL SPECIFICATION:\n{spec}\n\nPUBLIC BRIEF:\n{brief}\n\n"
+            "You have full specification and workspace access. Inspect the existing files, "
+            "implement every requirement, and run useful local checks. Do not inspect or "
+            "guess the hidden grader. When the work is complete, write "
+            "/submission/attestation.json as valid JSON with task_id, verdict and checklist, "
+            "then output DONE."
+        ),
         "remediation": (
             f"Task: {task_id}\n\nPUBLIC BRIEF:\n{brief}\n\n"
             "New specialist feedback is available in team messages. Use /workspace or "
@@ -390,11 +442,23 @@ def run_task(
         adapters.append(value)
         return value
 
-    role_counts = {"planner": 0, "executor": 0, "verifier": 0}
+    role_counts = {"solo": 0, "planner": 0, "executor": 0, "verifier": 0}
     validators: list[dict[str, Any]] = []
     route = ""
 
-    if method == "A4":
+    if method == "Solo":
+        solo = adapter("solo", strong)
+        role_counts["solo"] = 1
+        _run_phase(
+            role="solo", adapter=solo, prompt=prompts["solo"],
+            config=_phase_config(
+                "solo", task=task, workspace=workspace, reports=reports,
+                messages=messages, submission=submission, image=image,
+            ),
+            messages=messages, logs=logs / "solo", max_turns=20,
+        )
+        route = "single_strong_full_access"
+    elif method == "A4":
         planner = adapter("planner", strong)
         executor = adapter("executor", weak)
         verifier = adapter("verifier", strong)
@@ -677,7 +741,7 @@ def _archive_failed_attempt(task_run: Path, failed_root: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--method", choices=("A4", "A8"), required=True)
+    parser.add_argument("--method", choices=("Solo", "A4", "A8"), required=True)
     parser.add_argument("--split", choices=("dev", "test"), required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--project-root", type=Path, default=Path.cwd())

@@ -7,6 +7,16 @@
 > [TeamBench 公开数据评测](public_bench/)及紧凑正式记录。稳定 Arena 仍位于
 > [`main`](https://github.com/w1u2d3i4/multitown/tree/main) 分支。
 
+## 本分支的目的
+
+`public-bench` 是 MultiTown 的外部证据分支。它不增加新的产品故事，也不继续调整小镇
+合成 Benchmark，而是回答：当前组织控制方法放到公开、通用任务上后是否仍然成立。
+
+证据矩阵在同一任务列表、沙箱和测量协议下比较三种系统：TeamBench 标准的单强 Agent
+（Solo-TB）、固定 Planner–Executor–Verifier 团队（A4-TB），以及 MultiTown 的弱模型
+优先选择性组织（A8-TB）。结论会分别报告任务质量、Token、延迟、能耗和角色启用次数；
+成本优势不会被包装成方法全面领先。
+
 <p align="center">
   <img src="demo/assets/multitown-arena.gif" alt="MultiTown Arena：固定组织与动态组织处理同一个任务" width="960" />
 </p>
