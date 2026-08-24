@@ -15,6 +15,20 @@ cost-aware multi-agent control. Its Arena turns otherwise invisible routing,
 model calls, validation, escalation, token use, and results into a town you can
 watch and compare.
 
+## Why Multi-Agent?
+
+MultiTown does not assume that adding agents automatically improves accuracy.
+It treats a multi-agent system as an **organization and governance problem**:
+different roles can receive different information and permissions, while a
+controller decides when extra planning, execution or review is worth its cost.
+
+A single full-access agent is simple but can read requirements, change the work
+and certify itself. An always-on team separates those duties but pays the full
+coordination cost on every task. MultiTown studies the middle ground: start with
+the least expensive valid organization, validate observable work, and activate
+specialists only when needed. The `public-bench` branch tests this proposition
+against both single-agent and fixed-team anchors on public tasks.
+
 ## Project branches
 
 Start here on `main`. Each long-lived branch has one job, and experimental
