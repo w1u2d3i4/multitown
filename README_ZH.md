@@ -2,6 +2,11 @@
 
 [English](README.md) | [简体中文](README_ZH.md)
 
+> [!IMPORTANT]
+> 当前是探索性的 **`agentic-rpg` 分支**。稳定且有实验依据的项目成果位于
+> [`main`](https://github.com/w1u2d3i4/multitown/tree/main)；学习型控制实验隔离在
+> [`agentic-rl`](https://github.com/w1u2d3i4/multitown/tree/agentic-rl)。
+
 <p align="center">
   <img src="demo/assets/multitown-arena.gif" alt="MultiTown Arena：A4 与 A8 两种 AI 组织处理同一个任务" width="960" />
 </p>
@@ -13,6 +18,16 @@
 MultiTown 是一个 **AI 组织数字孪生** 与 Python 运行时。Arena 把原本不可见的任务
 路由、模型调用、结果验证、升级处理、Token 消耗和最终结果变成一座可以观看和比较的
 小镇。
+
+## 为什么要有这个分支
+
+本分支探索把 MultiTown 做成一个**多智能体跑团雏形**。当前小镇已经能呈现角色、组织、
+工单、验证和升级流程；产品方向是在此基础上加入持续角色状态、剧情与任务状态、玩家
+选择、后果以及面向游戏的交互界面。
+
+它与 `agentic-rl` 的预期连接点是动态角色协作：Agent 可以临时组队、委派行动、请求
+复核、消耗有限模型或行动预算，并把高影响选择交还玩家。这是后续路线，不代表本分支
+现在已经拥有完整可玩的跑团，或已经证明 RL 策略优于确定性控制器。
 
 本仓库是仅包含代码和简明审计结果摘要的公开版本，刻意排除了原始实验记录、生成的
 结果文件、模型 Checkpoint、Benchmark 数据集、内部过程文档、中断运行以及私有开发

@@ -2,6 +2,13 @@
 
 [English](README.md) | [简体中文](README_ZH.md)
 
+> [!IMPORTANT]
+> You are viewing the exploratory **`agentic-rpg` branch**. The stable,
+> evidence-backed project is on
+> [`main`](https://github.com/w1u2d3i4/multitown/tree/main); learned controller
+> experiments are isolated on
+> [`agentic-rl`](https://github.com/w1u2d3i4/multitown/tree/agentic-rl).
+
 <p align="center">
   <img src="demo/assets/multitown-arena.gif" alt="MultiTown Arena: A4 and A8 AI organizations solve the same task" width="960" />
 </p>
@@ -14,6 +21,19 @@ MultiTown is an **AI organization digital twin** and Python runtime for studying
 cost-aware multi-agent control. Its Arena turns otherwise invisible routing,
 model calls, validation, escalation, token use, and results into a town you can
 watch and compare.
+
+## Why this branch exists
+
+This branch explores MultiTown as a **multi-agent tabletop-RPG prototype**.
+The current town already exposes characters, organizations, work orders,
+validation and escalation. The product direction is to add persistent roles,
+plot and quest state, player choices, consequences and a game-facing interface.
+
+The intended bridge from `agentic-rl` is adaptive character coordination:
+agents may form a party, delegate actions, request review, spend limited model
+or action budgets, and hand consequential choices to the player. That is a
+roadmap, not a claim that a complete playable RPG or a superior RL policy
+already exists on this branch.
 
 This repository is a code-only public surface with concise, audited result
 summaries. It intentionally excludes raw experiment records, generated result
