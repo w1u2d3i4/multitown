@@ -21,6 +21,12 @@ selective organization (A8-TB). Claims are separated into task quality, tokens,
 latency, energy and role activation; a cost advantage is never presented as
 universal method superiority.
 
+The underlying multi-agent value proposition is separation of duties: unlike
+Solo-TB, no role-separated organization lets one agent read the full
+specification, modify the workspace and certify its own result. A8-TB tests
+whether that governance boundary can be retained without paying for every role
+on every task.
+
 <p align="center">
   <img src="demo/assets/multitown-arena.gif" alt="MultiTown Arena: fixed and adaptive AI organizations solve the same task" width="960" />
 </p>

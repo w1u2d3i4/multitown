@@ -42,6 +42,13 @@ output cap.
 | A4-TB | Mainstream fixed multi-agent anchor | A strong Planner, weak Executor and independent strong Verifier are always activated. |
 | A8-TB | MultiTown method | A weak Executor starts; public runtime evidence selectively activates a strong Planner and/or Verifier and can roll back a failed review. |
 
+Solo-TB and the role-separated methods answer different operational questions.
+Solo-TB measures what one capable agent can achieve when it can see, edit and
+self-certify. A4-TB/A8-TB additionally enforce separation of duties: no role can
+hold all three privileges. The relevant A8-TB claim is therefore conditional:
+resource efficiency relative to an always-on team under the same governance
+boundary, plus an explicit quality comparison to the unrestricted Solo anchor.
+
 Required outputs are pass rate, deterministic partial score, paired bootstrap
 intervals, exact McNemar tests, tokens, latency, monitored energy, route mix,
 role activations and invocation failures. Solo-TB was protocol-frozen on

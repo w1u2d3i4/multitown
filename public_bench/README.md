@@ -12,6 +12,13 @@ whether selective multi-agent control occupies a better measured trade-off than
 both a standard single agent and an always-on multi-agent team when tools,
 tasks and accounting are held fixed.
 
+The multi-agent motivation here is **separation of duties**, not “more agents
+must be smarter.” In A4-TB and A8-TB, no one role can simultaneously read the
+full specification, modify the workspace and certify the result. Solo-TB is the
+full-access quality anchor but does not provide that governance boundary. The
+method question is therefore whether MultiTown can preserve role isolation
+while avoiding the cost of activating every specialist on every task.
+
 ## Current scope
 
 - Primary benchmark: [TeamBench](https://github.com/ybkim95/TeamBench), using
@@ -120,6 +127,10 @@ never vendored into this repository.
 Start OpenAI-compatible strong and weak model endpoints, then run:
 
 ```bash
+general-mas-run-teambench --method Solo --split dev \
+  --project-root "$PWD" --temperature 0 \
+  --output-dir artifacts/teambench-dev-solo
+
 general-mas-run-teambench --method A4 --split dev \
   --project-root "$PWD" --controller-config configs/a4-teambench-v1.json \
   --temperature 0 --output-dir artifacts/teambench-dev-a4
@@ -131,6 +142,13 @@ general-mas-run-teambench --method A8 --split dev \
 general-mas-report --a4-dir artifacts/teambench-dev-a4 \
   --a8-dir artifacts/teambench-dev-a8 --expected-task-count 30 \
   --output-dir artifacts/teambench-dev-report
+
+general-mas-baseline-report \
+  --solo-dir artifacts/teambench-dev-solo \
+  --a4-dir artifacts/teambench-dev-a4 \
+  --a8-dir artifacts/teambench-dev-a8 \
+  --expected-task-count 30 \
+  --output-dir artifacts/teambench-dev-baseline-report
 ```
 
 Use `--strong-endpoint`, `--strong-model`, `--weak-endpoint` and `--weak-model`
