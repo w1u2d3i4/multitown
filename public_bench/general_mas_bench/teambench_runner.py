@@ -905,6 +905,7 @@ def main() -> None:
         ).encode()
         config["policy"] = policy
         config["policy_sha256"] = hashlib.sha256(canonical_policy).hexdigest()
+        config["runner_source"] = _git_state(Path(__file__).resolve().parents[2])
     config_path = output / "config.json"
     if config_path.exists() and read_json(config_path) != config:
         raise SystemExit("existing output config differs; refuse unsafe resume")
