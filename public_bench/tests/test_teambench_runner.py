@@ -6,11 +6,15 @@ from general_mas_bench.teambench_runner import (
     DEFAULT_CONTROLLER,
     _allow_initial_early_stop,
     _attestation,
+    _command_failure_evidence,
     _controller_attestation,
+    _logged_command_signals,
     _phase_config,
+    _replan_decision,
     _runtime_validator,
     _select_failed_review_candidate,
     _sequential_decision,
+    _should_interrupt_for_replan,
 )
 
 
@@ -81,6 +85,7 @@ def test_runtime_validator_records_repeat_timeout_and_turn_budget(
     assert value["timed_out_commands"] == 2
     assert value["repeated_commands"] == 1
     assert value["max_command_repetitions"] == 2
+    assert value["max_failed_command_repetitions"] == 2
     assert value["turn_budget_exhausted"] is True
 
 
@@ -112,6 +117,113 @@ def test_sequential_decision_reviews_runtime_risk_with_budget() -> None:
     assert review["triggers"] == ["failed_commands"]
     assert stopped["action"] == "stop"
     assert stopped["reason"] == "token_budget_exhausted"
+
+
+def test_replan_decision_ignores_ordinary_failed_test_after_success() -> None:
+    validator = {
+        "workspace_changed": True,
+        "successful_commands": 2,
+        "failed_commands": 1,
+        "timed_out_commands": 0,
+        "max_failed_command_repetitions": 1,
+        "turns_used": 12,
+    }
+
+    decision = _replan_decision(
+        validator,
+        plan_delivered=True,
+        plan_retry_used=False,
+        consumed_tokens=40_000,
+        controller=DEFAULT_CONTROLLER,
+    )
+
+    assert decision["action"] == "stop"
+    assert decision["triggers"] == []
+
+
+def test_replan_decision_escalates_hard_runtime_failure_with_budget() -> None:
+    validator = {
+        "workspace_changed": True,
+        "successful_commands": 0,
+        "failed_commands": 2,
+        "timed_out_commands": 1,
+        "max_failed_command_repetitions": 2,
+        "turns_used": 3,
+    }
+
+    decision = _replan_decision(
+        validator,
+        plan_delivered=True,
+        plan_retry_used=False,
+        consumed_tokens=40_000,
+        controller=DEFAULT_CONTROLLER,
+    )
+
+    assert decision["action"] == "escalate"
+    assert decision["triggers"] == [
+        "command_timeout",
+        "repeated_command",
+        "all_commands_failed",
+    ]
+
+
+def test_logged_command_signals_drive_live_replan_interrupt(tmp_path: Path) -> None:
+    log_dir = tmp_path / "executor"
+    log_dir.mkdir()
+    for index in range(2):
+        (log_dir / f"turn_{index:03d}.json").write_text(
+            '{"tool_calls":[{"name":"run","args":{"cmd":"npm install"}}],'
+            '"tool_results":[{"stdout":"","stderr":"","exit_code":1}]}'
+        )
+
+    signals = _logged_command_signals(log_dir)
+
+    assert signals["failed_commands"] == 2
+    assert signals["max_command_repetitions"] == 2
+    assert signals["max_failed_command_repetitions"] == 2
+    assert _should_interrupt_for_replan(log_dir, DEFAULT_CONTROLLER)
+
+
+def test_successful_validation_rerun_does_not_interrupt_replan(tmp_path: Path) -> None:
+    log_dir = tmp_path / "executor"
+    log_dir.mkdir()
+    for index in range(2):
+        (log_dir / f"turn_{index:03d}.json").write_text(
+            '{"tool_calls":[{"name":"run","args":{"cmd":"pytest -q"}}],'
+            '"tool_results":[{"stdout":"ok","stderr":"","exit_code":0}]}'
+        )
+
+    signals = _logged_command_signals(log_dir)
+
+    assert signals["max_command_repetitions"] == 2
+    assert signals["max_failed_command_repetitions"] == 0
+    assert not _should_interrupt_for_replan(log_dir, DEFAULT_CONTROLLER)
+
+
+def test_replan_failure_evidence_is_bounded_and_ignores_success() -> None:
+    turns = [
+        AgentTurn(
+            turn=0,
+            role="executor",
+            tool_calls=[
+                {"name": "run", "args": {"cmd": "pytest -q"}},
+                {"name": "run", "args": {"cmd": "python -m compileall ."}},
+            ],
+            tool_results=[
+                {"stdout": "failed", "stderr": "AssertionError", "exit_code": 1},
+                {"stdout": "ok", "stderr": "", "exit_code": 0},
+            ],
+        )
+    ]
+
+    evidence = _command_failure_evidence(turns)
+
+    assert evidence == [{
+        "command": "pytest -q",
+        "exit_code": 1,
+        "stdout_tail": "failed",
+        "stderr_tail": "AssertionError",
+    }]
 
 
 def test_high_risk_task_cannot_take_initial_early_stop() -> None:

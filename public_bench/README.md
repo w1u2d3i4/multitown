@@ -59,11 +59,20 @@ may request one repair:
   with a deterministic public runtime validator, and activate the strong
   Planner or Verifier only when that evidence says more work is needed. A failed
   review can roll back to the best valid candidate.
-- **MT-Sequential-v1 — current benchmark candidate:** retain the complete
+- **MT-Sequential-v1 — retired sequential-review candidate:** retain the complete
   PlanExecute prefix, then conditionally review and remediate only when
   observable runtime evidence indicates that execution is stuck. It emits a
   state/action/budget trace and preserves a byte-for-byte PlanExecute fallback.
-  This hand-written controller is not Agentic RL.
+  Seed-2 rejected it because review was broad and rarely changed the result.
+- **MT-Replan-v2 — current unscored candidate:** retain the PlanExecute roles,
+  interrupt only on high-precision runtime failures, ask the strong Planner to
+  inspect the workspace read-only and issue one recovery plan, then delegate a
+  bounded repair to the weak Executor. It has no Verifier and no result claim
+  yet.
+
+Both sequential controllers are hand-written and are not Agentic RL. The v2
+state/action contract is designed so that a later learned policy can be trained
+and compared in exactly the same TeamBench harness.
 
 No system can inspect hidden grader outcomes when making a decision. The
 Solo-TB protocol is frozen separately in
@@ -134,6 +143,12 @@ only one of 80 reviews changes a final workspace, and that task gains no score.
 The protocol-required same-seed Solo rank anchor is still pending, so no
 benchmark-best claim is made. See the
 [`seed-2 paired record`](records/TEAMBENCH_SEQUENTIAL_SEED2.md).
+
+The next candidate is frozen in the
+[`MT-Replan-v2 protocol`](docs/TEAMBENCH_REPLAN_V2_PROTOCOL.md). It turns the v1
+failure into two testable changes: intervene before repeated failed or timed-out
+commands, and replace broad post-hoc verification with a short
+execution-feedback/replanning loop. No v2 benchmark result is claimed yet.
 
 ## Historical v1.2 A4/A8 result
 
@@ -238,6 +253,12 @@ general-mas-run-teambench --method MTSequential --split dev \
   --controller-config configs/mt-sequential-teambench-v1.json \
   --sampling-seed 20260824 --temperature 0 \
   --output-dir artifacts/teambench-dev-mt-sequential-v1
+
+general-mas-run-teambench --method MTReplan --split dev \
+  --project-root "$PWD" \
+  --controller-config configs/mt-replan-teambench-v2.json \
+  --sampling-seed 20260824 --temperature 0 \
+  --output-dir artifacts/teambench-dev-mt-replan-v2
 
 general-mas-report --a4-dir artifacts/teambench-dev-a4 \
   --a8-dir artifacts/teambench-dev-a8 --expected-task-count 30 \

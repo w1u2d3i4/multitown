@@ -57,6 +57,16 @@ DEFAULT_CONTROLLER = {
     "sequential_max_total_tokens": 120_000,
     "sequential_verifier_turns": 8,
     "sequential_remediation_turns": 6,
+    "replan_action_space": [
+        "stop", "delegate", "escalate", "review", "human/abstain",
+    ],
+    "replan_command_timeout_s": 30,
+    "replan_interrupt_timeouts": 1,
+    "replan_interrupt_failed_command_repetitions": 2,
+    "replan_failed_without_success": 2,
+    "replan_max_total_tokens": 90_000,
+    "replan_planner_turns": 3,
+    "replan_executor_turns": 6,
 }
 
 
@@ -70,6 +80,7 @@ def _phase_config(
     submission: Path,
     image: str,
     planner_reads_workspace: bool = False,
+    command_timeout_s: int = 120,
 ) -> RoleConfig:
     if role == "solo":
         command_mounts = {
@@ -82,7 +93,13 @@ def _phase_config(
             "/shared/submission": (submission, False),
         }
         tools = [
-            DockerCommandTool(workspace, image, read_only=False, mounts=command_mounts),
+            DockerCommandTool(
+                workspace,
+                image,
+                read_only=False,
+                timeout_s=command_timeout_s,
+                mounts=command_mounts,
+            ),
             SafeReadTool(
                 {
                     "/task": task,
@@ -135,7 +152,13 @@ def _phase_config(
             "/shared/reports": (reports, False),
         }
         tools = [
-            DockerCommandTool(workspace, image, read_only=False, mounts=command_mounts),
+            DockerCommandTool(
+                workspace,
+                image,
+                read_only=False,
+                timeout_s=command_timeout_s,
+                mounts=command_mounts,
+            ),
             SafeReadTool(
                 {"/workspace": workspace, "/shared/workspace": workspace,
                  "/reports": reports, "/shared/reports": reports}, workspace,
@@ -164,7 +187,13 @@ def _phase_config(
             "/shared/submission": (submission, False),
         }
         tools = [
-            DockerCommandTool(workspace, image, read_only=True, mounts=command_mounts),
+            DockerCommandTool(
+                workspace,
+                image,
+                read_only=True,
+                timeout_s=command_timeout_s,
+                mounts=command_mounts,
+            ),
             SafeReadTool(
                 {
                     "/task": task,
@@ -236,6 +265,98 @@ def _message_exists(messages: Path, *, sender: str, recipient: str) -> bool:
     return False
 
 
+def _message_count(messages: Path, *, sender: str, recipient: str) -> int:
+    path = messages / "dialogue.jsonl"
+    if not path.is_file():
+        return 0
+    count = 0
+    with path.open("r", encoding="utf-8") as handle:
+        for line in handle:
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if row.get("role") == sender and row.get("to") in {recipient, "all"}:
+                count += 1
+    return count
+
+
+def _logged_command_signals(log_dir: Path) -> dict[str, int]:
+    """Read completed agent turns so a controller can interrupt before the next LLM call."""
+    successful = 0
+    failed = 0
+    timed_out = 0
+    command_counts: dict[str, int] = {}
+    failed_command_counts: dict[str, int] = {}
+    turns = 0
+    for path in sorted(log_dir.glob("turn_*.json")):
+        try:
+            turn = read_json(path)
+        except (OSError, json.JSONDecodeError):
+            continue
+        turns += 1
+        calls = list(turn.get("tool_calls") or [])
+        results = list(turn.get("tool_results") or [])
+        for call, result in zip(calls, results):
+            if call.get("name") != "run":
+                continue
+            exit_code = int(result.get("exit_code", 1))
+            successful += int(exit_code == 0)
+            failed += int(exit_code != 0)
+            timed_out += int(
+                exit_code == 124
+                or "timed out" in str(result.get("stderr", "")).lower()
+            )
+            command = " ".join(str(call.get("args", {}).get("cmd", "")).split())
+            if command:
+                digest = hashlib.sha256(command.encode()).hexdigest()
+                command_counts[digest] = command_counts.get(digest, 0) + 1
+                if exit_code != 0:
+                    failed_command_counts[digest] = (
+                        failed_command_counts.get(digest, 0) + 1
+                    )
+    return {
+        "turns": turns,
+        "successful_commands": successful,
+        "failed_commands": failed,
+        "timed_out_commands": timed_out,
+        "max_command_repetitions": max(command_counts.values(), default=0),
+        "max_failed_command_repetitions": max(
+            failed_command_counts.values(), default=0
+        ),
+    }
+
+
+def _should_interrupt_for_replan(log_dir: Path, controller: dict[str, Any]) -> bool:
+    signals = _logged_command_signals(log_dir)
+    return (
+        signals["timed_out_commands"]
+        >= int(controller.get("replan_interrupt_timeouts", 1))
+        or signals["max_failed_command_repetitions"]
+        >= int(controller.get("replan_interrupt_failed_command_repetitions", 2))
+    )
+
+
+def _command_failure_evidence(
+    turns: list[AgentTurn], *, limit: int = 3
+) -> list[dict[str, Any]]:
+    """Return a bounded, observable failure summary for the recovery Planner."""
+    evidence: list[dict[str, Any]] = []
+    for turn in turns:
+        for call, result in zip(turn.tool_calls, turn.tool_results):
+            if call.get("name") != "run" or int(result.get("exit_code", 1)) == 0:
+                continue
+            evidence.append({
+                "command": " ".join(
+                    str(call.get("args", {}).get("cmd", "")).split()
+                )[:512],
+                "exit_code": int(result.get("exit_code", 1)),
+                "stdout_tail": str(result.get("stdout", ""))[-1000:],
+                "stderr_tail": str(result.get("stderr", ""))[-1000:],
+            })
+    return evidence[-limit:]
+
+
 def _runtime_validator(
     *,
     turns: list[AgentTurn],
@@ -262,13 +383,22 @@ def _runtime_validator(
         for result in commands
     )
     command_counts: dict[str, int] = {}
+    failed_command_counts: dict[str, int] = {}
     for call, _ in command_pairs:
         command = " ".join(str(call.get("args", {}).get("cmd", "")).split())
         if command:
             digest = hashlib.sha256(command.encode()).hexdigest()
             command_counts[digest] = command_counts.get(digest, 0) + 1
+    for call, result in command_pairs:
+        if int(result.get("exit_code", 1)) == 0:
+            continue
+        command = " ".join(str(call.get("args", {}).get("cmd", "")).split())
+        if command:
+            digest = hashlib.sha256(command.encode()).hexdigest()
+            failed_command_counts[digest] = failed_command_counts.get(digest, 0) + 1
     repeated_commands = sum(max(0, count - 1) for count in command_counts.values())
     max_command_repetitions = max(command_counts.values(), default=0)
+    max_failed_command_repetitions = max(failed_command_counts.values(), default=0)
     current_hash = tree_sha256(workspace)
     changed = current_hash != initial_hash
     score = 1.0
@@ -295,6 +425,7 @@ def _runtime_validator(
         "timed_out_commands": timed_out_commands,
         "repeated_commands": repeated_commands,
         "max_command_repetitions": max_command_repetitions,
+        "max_failed_command_repetitions": max_failed_command_repetitions,
         "turns_used": len(turns),
         "turn_budget": max_turns,
         "turn_budget_exhausted": bool(
@@ -385,6 +516,92 @@ def _validate_sequential_controller(controller: dict[str, Any]) -> None:
         "sequential_max_total_tokens",
         "sequential_verifier_turns",
         "sequential_remediation_turns",
+    ):
+        if int(controller.get(key, 0)) <= 0:
+            raise ValueError(f"{key} must be a positive integer")
+
+
+def _replan_decision(
+    validator: dict[str, Any],
+    *,
+    plan_delivered: bool,
+    plan_retry_used: bool = False,
+    consumed_tokens: int,
+    controller: dict[str, Any],
+) -> dict[str, Any]:
+    """Escalate only on high-precision execution failures; never inspect grader output."""
+    action_space = list(controller.get("replan_action_space", []))
+    required_actions = {"stop", "delegate", "escalate", "review", "human/abstain"}
+    if not required_actions.issubset(action_space):
+        raise ValueError("replan_action_space omits a protocol action")
+
+    triggers: list[str] = []
+    if not plan_delivered:
+        triggers.append("plan_missing")
+    if int(validator.get("timed_out_commands", 0)) >= int(
+        controller.get("replan_interrupt_timeouts", 1)
+    ):
+        triggers.append("command_timeout")
+    if int(validator.get("max_failed_command_repetitions", 0)) >= int(
+        controller.get("replan_interrupt_failed_command_repetitions", 2)
+    ):
+        triggers.append("repeated_command")
+    if not bool(validator.get("workspace_changed", False)):
+        triggers.append("workspace_unchanged")
+    if (
+        int(validator.get("successful_commands", 0)) == 0
+        and int(validator.get("failed_commands", 0))
+        >= int(controller.get("replan_failed_without_success", 2))
+    ):
+        triggers.append("all_commands_failed")
+
+    token_budget = int(controller.get("replan_max_total_tokens", 90_000))
+    budget_exhausted = consumed_tokens >= token_budget
+    action = "escalate" if triggers and not budget_exhausted else "stop"
+    reason = (
+        "runtime_failure"
+        if action == "escalate"
+        else ("token_budget_exhausted" if budget_exhausted else "runtime_checks_clear")
+    )
+    return {
+        "schema_version": "multitown-replan-decision-v1",
+        "policy_source": "frozen_deterministic_replan_controller",
+        "action_space": action_space,
+        "state": {
+            "plan_delivered": plan_delivered,
+            "plan_retry_used": plan_retry_used,
+            "workspace_changed": bool(validator.get("workspace_changed", False)),
+            "successful_commands": int(validator.get("successful_commands", 0)),
+            "failed_commands": int(validator.get("failed_commands", 0)),
+            "timed_out_commands": int(validator.get("timed_out_commands", 0)),
+            "max_failed_command_repetitions": int(
+                validator.get("max_failed_command_repetitions", 0)
+            ),
+            "turns_used": int(validator.get("turns_used", 0)),
+            "consumed_tokens": consumed_tokens,
+            "remaining_token_budget": max(0, token_budget - consumed_tokens),
+        },
+        "action": action,
+        "reason": reason,
+        "triggers": triggers,
+    }
+
+
+def _validate_replan_controller(controller: dict[str, Any]) -> None:
+    action_space = controller.get("replan_action_space")
+    if not isinstance(action_space, list):
+        raise ValueError("replan_action_space must be a list")
+    required_actions = {"stop", "delegate", "escalate", "review", "human/abstain"}
+    if not required_actions.issubset(action_space):
+        raise ValueError("replan_action_space omits a protocol action")
+    for key in (
+        "replan_command_timeout_s",
+        "replan_interrupt_timeouts",
+        "replan_interrupt_failed_command_repetitions",
+        "replan_failed_without_success",
+        "replan_max_total_tokens",
+        "replan_planner_turns",
+        "replan_executor_turns",
     ):
         if int(controller.get(key, 0)) <= 0:
             raise ValueError(f"{key} must be a positive integer")
@@ -504,6 +721,28 @@ def _prompts(task_id: str, spec: str, brief: str) -> dict[str, str]:
             "/shared/workspace in shell commands. Make only the required "
             "targeted fixes, rerun relevant checks, then output TASK_COMPLETE."
         ),
+        "planner_retry": (
+            f"Task: {task_id}\n\nFULL SPECIFICATION:\n{spec}\n\n"
+            "Your previous attempt did not deliver a plan. Do not inspect unavailable paths. "
+            "Make send_message(to='executor', content=...) your first and mandatory action. "
+            "Send a concise recovery-ready plan with exact requirements and checks, then "
+            "output DONE."
+        ),
+        "replan": (
+            f"Task: {task_id}\n\nFULL SPECIFICATION:\n{spec}\n\n"
+            "The first Executor attempt hit a controller-observed runtime failure. You now "
+            "have read-only workspace access. Inspect only what is necessary, infer the "
+            "failure from the current files and command evidence in the prompt, and make "
+            "send_message(to='executor', content=...) your first mandatory action. Send one "
+            "short, concrete recovery plan; do not implement or certify the task."
+        ),
+        "recovery": (
+            f"Task: {task_id}\n\nPUBLIC BRIEF:\n{brief}\n\n"
+            "A strong Planner has inspected the failed attempt and sent a recovery plan. "
+            "Read the newest Planner message, make only targeted changes in /workspace, "
+            "avoid repeating failed commands, run one focused local check, and output "
+            "TASK_COMPLETE."
+        ),
         "verifier": (
             f"Task: {task_id}\n\nFULL SPECIFICATION:\n{spec}\n\n"
             "Independently inspect the read-only /workspace against every requirement. Run "
@@ -595,7 +834,7 @@ def run_task(
             messages=messages, logs=logs / "solo", max_turns=20,
         )
         route = "single_strong_full_access"
-    elif execution_method in {"PlanExecute", "MTSequential"}:
+    elif execution_method in {"PlanExecute", "MTSequential", "MTReplan"}:
         # TeamBench's official no-verifier ablation: a strong Planner transfers
         # the full-spec plan to a weak, brief-only Executor. There is no
         # independent review, so the controller supplies the protocol-required
@@ -611,13 +850,63 @@ def run_task(
             ),
             messages=messages, logs=logs / "planning", max_turns=6,
         )
+        plan_delivered = _message_exists(
+            messages, sender="planner", recipient="executor"
+        )
+        plan_retry_used = False
+        if execution_method == "MTReplan" and not plan_delivered:
+            plan_retry_used = True
+            prior_plan_count = _message_count(
+                messages, sender="planner", recipient="executor"
+            )
+            role_counts["planner"] += 1
+            _run_phase(
+                role="planner",
+                adapter=planner,
+                prompt=prompts["planner_retry"],
+                config=_phase_config(
+                    "planner",
+                    task=task,
+                    workspace=workspace,
+                    reports=reports,
+                    messages=messages,
+                    submission=submission,
+                    image=image,
+                ),
+                messages=messages,
+                logs=logs / "planning_retry",
+                max_turns=2,
+                stop_when=lambda: _message_count(
+                    messages, sender="planner", recipient="executor"
+                )
+                > prior_plan_count,
+            )
+            plan_delivered = _message_count(
+                messages, sender="planner", recipient="executor"
+            ) > prior_plan_count
+        execution_logs = logs / "execution"
+        command_timeout_s = (
+            int(controller.get("replan_command_timeout_s", 30))
+            if execution_method == "MTReplan"
+            else 120
+        )
         executor_turns = _run_phase(
             role="executor", adapter=executor, prompt=prompts["executor"],
             config=_phase_config(
                 "executor", task=task, workspace=workspace, reports=reports,
                 messages=messages, submission=submission, image=image,
+                command_timeout_s=command_timeout_s,
             ),
-            messages=messages, logs=logs / "execution", max_turns=12,
+            messages=messages,
+            logs=execution_logs,
+            max_turns=12,
+            stop_when=(
+                lambda: _should_interrupt_for_replan(
+                    execution_logs / "executor", controller
+                )
+                if execution_method == "MTReplan"
+                else False
+            ),
         )
         execution_validator = _runtime_validator(
             turns=executor_turns,
@@ -637,7 +926,7 @@ def run_task(
                 source="fixed_strategy_protocol_controller",
             )
             route = "fixed_plan_execute"
-        else:
+        elif execution_method == "MTSequential":
             candidates = run_dir / "candidates"
             plan_execute_snapshot = candidates / "plan_execute"
             _snapshot_workspace(workspace, plan_execute_snapshot)
@@ -762,6 +1051,154 @@ def run_task(
                         source="frozen_deterministic_runtime_controller",
                     )
                     route = "sequential_review:plan_execute_rollback"
+        else:
+            candidates = run_dir / "candidates"
+            plan_execute_snapshot = candidates / "plan_execute"
+            _snapshot_workspace(workspace, plan_execute_snapshot)
+            decision = _replan_decision(
+                execution_validator,
+                plan_delivered=plan_delivered,
+                plan_retry_used=plan_retry_used,
+                consumed_tokens=_usage(adapters)["total_tokens"],
+                controller=controller,
+            )
+            decision_trace.append({"step": 0, "phase": "post_execution", **decision})
+            if decision["action"] == "stop":
+                _controller_attestation(
+                    submission,
+                    str(row["task_id"]),
+                    f"mt_replan_stop:{decision['reason']}",
+                    source="frozen_deterministic_replan_controller",
+                )
+                route = f"replan_stop:{decision['reason']}"
+            else:
+                prior_plan_count = _message_count(
+                    messages, sender="planner", recipient="executor"
+                )
+                incident = json.dumps(
+                    {
+                        "triggers": decision["triggers"],
+                        "runtime": execution_validator,
+                        "failure_evidence": _command_failure_evidence(executor_turns),
+                    },
+                    ensure_ascii=False,
+                    sort_keys=True,
+                )
+                role_counts["planner"] += 1
+                _run_phase(
+                    role="planner",
+                    adapter=planner,
+                    prompt=f"{prompts['replan']}\n\nCONTROLLER OBSERVATION:\n{incident}",
+                    config=_phase_config(
+                        "planner",
+                        task=task,
+                        workspace=workspace,
+                        reports=reports,
+                        messages=messages,
+                        submission=submission,
+                        image=image,
+                        planner_reads_workspace=True,
+                        command_timeout_s=command_timeout_s,
+                    ),
+                    messages=messages,
+                    logs=logs / "replanning",
+                    max_turns=int(controller.get("replan_planner_turns", 3)),
+                    stop_when=lambda: _message_count(
+                        messages, sender="planner", recipient="executor"
+                    )
+                    > prior_plan_count,
+                )
+                recovery_plan_delivered = _message_count(
+                    messages, sender="planner", recipient="executor"
+                ) > prior_plan_count
+                consumed = _usage(adapters)["total_tokens"]
+                token_budget = int(controller.get("replan_max_total_tokens", 90_000))
+                should_delegate = recovery_plan_delivered and consumed < token_budget
+                decision_trace.append({
+                    "schema_version": "multitown-replan-decision-v1",
+                    "step": 1,
+                    "phase": "post_replan",
+                    "policy_source": "frozen_deterministic_replan_controller",
+                    "action_space": list(controller.get("replan_action_space", [])),
+                    "state": {
+                        "recovery_plan_delivered": recovery_plan_delivered,
+                        "consumed_tokens": consumed,
+                        "remaining_token_budget": max(0, token_budget - consumed),
+                    },
+                    "action": "delegate" if should_delegate else "stop",
+                    "reason": (
+                        "recovery_plan_ready"
+                        if should_delegate
+                        else "replan_failed_or_budget_exhausted"
+                    ),
+                    "triggers": decision["triggers"],
+                })
+                if not should_delegate:
+                    _restore_workspace(plan_execute_snapshot, workspace)
+                    selected = "plan_execute_rollback"
+                else:
+                    role_counts["executor"] += 1
+                    before_recovery = tree_sha256(workspace)
+                    recovery_logs = logs / "recovery"
+                    recovery_turns = _run_phase(
+                        role="executor",
+                        adapter=executor,
+                        prompt=prompts["recovery"],
+                        config=_phase_config(
+                            "executor",
+                            task=task,
+                            workspace=workspace,
+                            reports=reports,
+                            messages=messages,
+                            submission=submission,
+                            image=image,
+                            command_timeout_s=command_timeout_s,
+                        ),
+                        messages=messages,
+                        logs=recovery_logs,
+                        max_turns=int(controller.get("replan_executor_turns", 6)),
+                        stop_when=lambda: _should_interrupt_for_replan(
+                            recovery_logs / "executor", controller
+                        ),
+                    )
+                    recovery_validator = _runtime_validator(
+                        turns=recovery_turns,
+                        initial_hash=before_recovery,
+                        workspace=workspace,
+                        category=str(row.get("category") or "Other"),
+                        difficulty=str(row.get("difficulty") or "unknown"),
+                        controller=controller,
+                        max_turns=int(controller.get("replan_executor_turns", 6)),
+                    )
+                    validators.append(recovery_validator)
+                    keep_recovery = bool(
+                        recovery_validator["workspace_changed"]
+                        and recovery_validator["reliability_score"]
+                        >= execution_validator["reliability_score"]
+                    )
+                    if keep_recovery:
+                        selected = "recovered"
+                    else:
+                        _restore_workspace(plan_execute_snapshot, workspace)
+                        selected = "plan_execute_rollback"
+                _controller_attestation(
+                    submission,
+                    str(row["task_id"]),
+                    f"mt_replan_{selected}",
+                    source="frozen_deterministic_replan_controller",
+                )
+                decision_trace.append({
+                    "schema_version": "multitown-replan-decision-v1",
+                    "step": 2,
+                    "phase": "post_recovery",
+                    "policy_source": "frozen_deterministic_replan_controller",
+                    "action_space": list(controller.get("replan_action_space", [])),
+                    "state": {"selected_candidate": selected},
+                    "action": "stop",
+                    "reason": selected,
+                    "triggers": [],
+                })
+                route = f"replan:{selected}"
     elif execution_method == "ExecuteReview":
         # TeamBench's official no-planner ablation: a weak Executor works from
         # the public brief, then an independent strong Verifier reads the full
@@ -1097,7 +1534,7 @@ def main() -> None:
         "--method",
         choices=(
             "Solo", "PlanExecute", "ExecuteReview", "A4", "A8",
-            "MTSelector", "MTSequential",
+            "MTSelector", "MTSequential", "MTReplan",
         ),
         required=True,
     )
@@ -1142,6 +1579,8 @@ def main() -> None:
         parser.error("--policy-config is only valid for MTSelector")
     if args.method == "MTSequential":
         _validate_sequential_controller(controller)
+    if args.method == "MTReplan":
+        _validate_replan_controller(controller)
     rows = [row for row in split["rows"] if row["split"] == args.split]
     if args.task:
         selected = set(args.task)
