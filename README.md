@@ -130,6 +130,14 @@ reviews produced a remediation. MultiTown therefore labels it a development
 candidate—not a benchmark winner—until the frozen seed-2 comparison completes.
 See the [development record](public_bench/records/TEAMBENCH_SEQUENTIAL_DEV_V1.md).
 
+The subsequent matched seed-2 pair rejects this controller: it produces 16/89
+passes versus PlanExecute-TB's 17/89, adds 52.31% tokens and 33.02% latency,
+and its +0.01135 partial-score difference has a 95% CI of [-0.01247, +0.03955].
+Only one of 80 reviews changes the final workspace, with zero score benefit.
+The required same-seed Solo rank anchor remains pending, and v1 is not a
+benchmark winner. See the
+[seed-2 paired record](public_bench/records/TEAMBENCH_SEQUENTIAL_SEED2.md).
+
 ## Public TeamBench transfer result (historical v1.2)
 
 The `public_bench/` subproject evaluates the same fixed and selective

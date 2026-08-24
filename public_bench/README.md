@@ -125,6 +125,16 @@ other reviews mostly added cost. This is a competitive development result, not
 a benchmark-win claim. See the
 [`development record`](records/TEAMBENCH_SEQUENTIAL_DEV_V1.md).
 
+The matched 89-task seed-2 PlanExecute/candidate pair is also complete and
+rejects v1 as a controller. MT-Sequential-v1 records 16 passes, 0.62805 mean
+partial score and 73,288 tokens/task versus PlanExecute-TB's 17 passes, 0.61670
+and 48,117 tokens/task. The +0.01135 paired partial difference is uncertain
+(95% CI [-0.01247, +0.03955]), while tokens increase 52.31%. More importantly,
+only one of 80 reviews changes a final workspace, and that task gains no score.
+The protocol-required same-seed Solo rank anchor is still pending, so no
+benchmark-best claim is made. See the
+[`seed-2 paired record`](records/TEAMBENCH_SEQUENTIAL_SEED2.md).
+
 ## Historical v1.2 A4/A8 result
 
 | Metric | A4-TB — fixed full team | A8-TB — selective team |
