@@ -1,6 +1,18 @@
 # A26: Risk-Calibrated Policy Improvement
 
-Status: frozen protocol candidate; no test result is implied by this document.
+Status: completed negative result on the once-opened OOD split.
+
+## Result
+
+A26 selected threshold `0.7`. On 1,000 paired OOD episodes it achieved 18.9%
+autonomous success versus 18.7% for A8, a +0.2 percentage-point difference
+with paired 95% CI −2.2 to +2.6. Unsafe episodes were 18.3% versus 16.2%, so
+A26 exceeded the `A8 + 0.02` ceiling by 0.1 percentage points. Tokens also rose
+from 3,329.9 to 3,409.2 per episode.
+
+The result failed the success and unsafe gates and is not an improvement claim.
+It motivated A28's specialist-first disagreement path; the consumed A26 test
+rows were not reused to select A28's threshold.
 
 ## Why A26 exists
 
@@ -64,11 +76,10 @@ Agentic RL. Its learned decisions are the specialist map and calibrated review
 gate; the remainder of the workflow is deterministic. It trains no language
 model weights.
 
-This is intentional. A26 becomes the baseline/fallback for the next sequential
-RL experiment. That successor may deviate from A26 only when conservative
-advantage and action-support tests pass; otherwise it executes the frozen A26
-action. Calling that successor Agentic RL will additionally require multi-step
-credit assignment and policy training on train data only.
+This boundary was intentional. Because A26 failed, it did not become the next
+sequential learner's fallback; the independently confirmed A28 controller now
+fills that role. Calling a successor Agentic RL will additionally require
+multi-step credit assignment and policy training on train data only.
 
 ## Related-work decisions
 

@@ -93,12 +93,21 @@ MultiTown retains both positive optimization results and safety failures:
 | A9-v2 masked PPO | Success 23.83% → 34.00%; +10.17 pp (95% CI +7.87 to +12.47); tokens −25.41% | Train-only controller result; unsafe episodes rose 15.73% → 66.00% |
 | A9-v3 hard-shield diagnostic | Unsafe episodes 66.00% → 5.84% | Autonomous success fell 34.00% → 0%; safety–utility negative result |
 | A22 constrained-PPO follow-up | 60 fits, 345,600 rollouts, 36,000 calibration rows and 9,000 outer rows | Measured safety margins recovered, but success noninferiority was not stable and tokens increased |
+| A26 risk-calibrated router | 18.9% vs 18.7% success on the repaired non-leaking OOD fixture | Negative result; success CI crossed zero and unsafe ceiling was missed by 0.1 pp |
+| **A28 specialist-first router** | **30.9% vs 18.6% success; +12.3 pp (paired 95% CI +9.1 to +15.5); tokens −3.17%** | All frozen confirmation gates passed; constrained learned routing, not full Agentic RL |
 
 The historical A10 long-horizon run is not listed as a positive result because
 a later audit found that policy-visible fields deterministically revealed the
 correct action. A23 was invalidated by snapshot-binding failure, and the Stage
 W CR axis was inert. These failures are preserved in the research evidence but
 their raw records are intentionally outside this code-only repository.
+
+A28 is the first positive controller result on the repaired fixture where the
+correct action is independent of policy-visible family, failure-mode and
+severity fields. On its independent 1,000-episode OOD confirmation, unsafe
+episodes were 11.6% versus 14.0% for A8; the paired interval crossed zero, so
+this supports safety noninferiority rather than a significant safety-reduction
+claim. See [the frozen A28 protocol and result](docs/A28_CONSERVATIVE_ROUTER.md).
 
 ## Install
 

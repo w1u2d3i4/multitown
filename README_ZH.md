@@ -83,10 +83,17 @@ MultiTown 同时保留优化收益和安全失败：
 | A9-v2 masked PPO | 成功率 23.83% → 34.00%，提高 10.17 pp（95% CI +7.87 至 +12.47），Token −25.41% | 仅为 train-only 控制器结果；unsafe episode 从 15.73% 上升至 66.00% |
 | A9-v3 hard-shield diagnostic | unsafe episode 从 66.00% 降至 5.84% | autonomous success 从 34.00% 降至 0%，属于安全—效用负结果 |
 | A22 constrained-PPO follow-up | 60 次拟合、345,600 条 rollout、36,000 条 calibration row、9,000 条 outer row | 所测安全边界恢复，但 success noninferiority 不稳定且 Token 增加 |
+| A26 风险校准路由 | 修复泄漏后的 OOD Fixture 上成功率 18.9% vs 18.7% | 负结果；成功区间跨 0，unsafe 上限差 0.1 pp 未通过 |
+| **A28 专家优先路由** | **成功率 30.9% vs 18.6%；+12.3 pp（配对 95% CI +9.1 至 +15.5）；Token −3.17%** | 冻结 confirmation 门禁全部通过；是带约束学习式路由，不是完整 Agentic RL |
 
 历史 A10 long-horizon 结果没有作为正结果展示，因为后续审计发现策略可见字段能够
 确定性泄露正确动作。A23 因 snapshot binding 失败而失效，Stage W 的 CR 轴为 inert。
 这些失败继续保留在研究证据中，但原始记录不会进入本代码-only仓库。
+
+A28 是修复环境后的首个正向控制器结果：正确动作与策略可见的任务族、失败模式和严重度字段相互
+独立。在 1,000 个独立 OOD episode 上，unsafe episode 为 11.6%，A8 为 14.0%；配对区间跨 0，
+因此只能声称安全非劣门通过，不能声称显著降低 unsafe。详见
+[A28 冻结协议与结果](docs/A28_CONSERVATIVE_ROUTER_ZH.md)。
 
 ## 安装
 

@@ -56,6 +56,8 @@ mechanism and safety findings:
 | A9-v2 | Train-only masked PPO | Success 23.83% → 34.00% and tokens −25.41%; unsafe episodes rose 15.73% → 66.00% |
 | A9-v3 | Hard review shield diagnostic | Unsafe episodes fell 66.00% → 5.84%, but autonomous success fell 34.00% → 0% |
 | A22 | Constrained-PPO follow-up across 60 fits | Safety margins recovered in the measured protocol; success noninferiority was unstable and tokens increased |
+| A26 | Non-leaking risk-calibrated router | Negative: 18.9% vs 18.7% success; unsafe ceiling missed by 0.1 pp |
+| A28 | Agreement-gated specialist-first router | 30.9% vs 18.6% success (paired 95% CI for difference +9.1 to +15.5 pp); tokens −3.17%; all frozen gates passed |
 
 These results show why cost-only policy improvement is not enough: an agentic
 controller can become cheaper and apparently more successful while learning an
@@ -74,14 +76,16 @@ unsafe stopping or execution policy.
 | `multitown/a22_constrained_ppo.py` | Lagrangian and shield mechanism primitives |
 | `multitown/a25_method_conformance.py` | Method and claim-conformance checks |
 | `multitown/a26_safe_router.py` | Non-leaking fixture and risk-calibrated policy-improvement baseline |
+| `multitown/a28_conservative_router.py` | Confirmed specialist-first controller and next-RL fallback |
 
 The next frozen protocol is [A26 risk-calibrated policy improvement](A26_SAFE_POLICY_IMPROVEMENT.md).
 It first establishes a safer learned routing baseline; it is explicitly not
 called full Agentic RL.
 
-A26 subsequently failed its OOD gates. The frozen successor is
+A26 subsequently failed its OOD gates. Its frozen successor,
 [A28 agreement-gated specialist-first routing](A28_CONSERVATIVE_ROUTER.md),
-which changes the unsafe disagreement path and uses a new confirmation bank.
+changed the unsafe disagreement path, used a new confirmation bank, and passed
+all pre-registered gates. A28 is still not full Agentic RL.
 
 ## Explore the public entry points
 

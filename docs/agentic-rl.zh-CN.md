@@ -50,6 +50,8 @@ A9 offline controller 的终止奖励可以概括为：
 | A9-v2 | Train-only masked PPO | 成功率 23.83% → 34.00%、Token −25.41%，但 unsafe episode 15.73% → 66.00% |
 | A9-v3 | Hard review shield 诊断 | unsafe episode 66.00% → 5.84%，但 autonomous success 34.00% → 0% |
 | A22 | 60 次拟合的 constrained-PPO 后续实验 | 所测协议中的安全边界恢复，但成功率 noninferiority 不稳定且 Token 增加 |
+| A26 | 非泄漏风险校准路由 | 负结果：成功率 18.9% vs 18.7%；unsafe 上限差 0.1 pp 未通过 |
+| A28 | 一致性门控的专家优先路由 | 成功率 30.9% vs 18.6%（差值配对 95% CI +9.1 至 +15.5 pp）；Token −3.17%；冻结门禁全部通过 |
 
 这些结果说明只优化成本是不够的：Agentic controller 可能变得更便宜、表面成功率更高，
 同时学会了危险的停止或执行策略。
@@ -67,13 +69,14 @@ A9 offline controller 的终止奖励可以概括为：
 | `multitown/a22_constrained_ppo.py` | Lagrangian 与 Shield 机制实现 |
 | `multitown/a25_method_conformance.py` | 方法与声明一致性检查 |
 | `multitown/a26_safe_router.py` | 非泄漏 Fixture 与风险校准策略改进基线 |
+| `multitown/a28_conservative_router.py` | 已确认的专家优先控制器与下一阶段 RL 回退策略 |
 
 下一项冻结协议是 [A26 风险校准策略改进](A26_SAFE_POLICY_IMPROVEMENT_ZH.md)。
 它先建立更安全的学习式路由基线，明确不冒充完整 Agentic RL。
 
-A26 随后未通过 OOD 门禁。冻结的后继方案是
-[A28 一致性门控的专家优先路由](A28_CONSERVATIVE_ROUTER_ZH.md)，它修复不安全的分歧路径，
-并使用新的独立 confirmation bank。
+A26 随后未通过 OOD 门禁。冻结的后继方案
+[A28 一致性门控的专家优先路由](A28_CONSERVATIVE_ROUTER_ZH.md) 修复不安全的分歧路径，
+使用新的独立 confirmation bank，并通过全部预注册门禁；它仍不是完整 Agentic RL。
 
 ## 查看公开命令
 

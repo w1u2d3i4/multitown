@@ -1,6 +1,28 @@
 # A28: Agreement-Gated Specialist-First Router
 
-Status: confirmation protocol frozen before opening its independent OOD bank.
+Status: completed; all pre-registered confirmation gates passed.
+
+## Independent confirmation result
+
+On 1,000 paired, independently generated OOD episodes:
+
+| Metric | A8 | A28 | Paired A28 − A8 |
+| --- | ---: | ---: | ---: |
+| Autonomous success | 18.6% | **30.9%** | **+12.3 pp**, 95% CI **+9.1 to +15.5** |
+| Unsafe episode | 14.0% | **11.6%** | −2.4 pp, 95% CI −5.3 to +0.4 |
+| Tokens / episode | 3,316.3 | **3,211.2** | **−105.1**, 95% CI **−134.0 to −76.5** |
+| Mean return | 1.388 | **2.593** | **+1.204**, 95% CI **+0.949 to +1.459** |
+
+A28 also reduced wrong executions per incident from 2.728% to 2.292%, with
+zero invalid actions and zero budget violations. The unsafe point estimate was
+lower, but its interval crossed zero; the supported safety statement is that
+the frozen noninferiority margins passed, not that unsafe episodes were
+significantly reduced.
+
+The selected threshold was `1.01`: every sensor–specialist agreement may skip
+review, while every disagreement switches to the learned preferred specialist
+before review. The train-learned map routed families 0/2 to the weak specialist
+and families 1/3 to the strong specialist.
 
 ## Predecessor and one permitted change
 
@@ -50,7 +72,7 @@ only an improvement on this synthetic non-leaking fixture. It cannot establish
 general multi-agent superiority; the separate `public-bench` branch carries
 TeamBench evidence.
 
-If A28 passes, it becomes the immutable fallback policy for the next offline
+A28 now becomes the immutable fallback policy for the next offline
 sequential learner. The RL policy may deviate only on train-supported actions
 whose pessimistic advantage over A28 is positive and whose calibrated risk is
 within the frozen budget.
