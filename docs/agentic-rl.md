@@ -98,6 +98,9 @@ mechanics; they do not reproduce the private headline runs by themselves.
 - `main` is the stable public runtime and Arena branch.
 - `agentic-rl` is the research surface for learned controller code,
   documentation, and reproducible public fixtures.
+- `agentic-rpg` is the future playable narrative surface. Learned delegation,
+  budget, review and human-handoff mechanics developed here may feed that
+  branch only after they pass their evidence and safety gates.
 - A learned-policy result should move to `main` only after frozen held-out
   evaluation, equal-budget comparison against A8, leakage checks, safety
   accounting, and tests that can run from public inputs.

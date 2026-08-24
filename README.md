@@ -21,6 +21,24 @@ cost-aware multi-agent control. Its Arena turns otherwise invisible routing,
 model calls, validation, escalation, token use, and results into a town you can
 watch and compare.
 
+## Why this branch exists
+
+`main` demonstrates the best currently validated deterministic controller. This
+branch asks the next research question: can a learned sequential policy decide
+when to stop, delegate, escalate, review or ask a human while preserving task
+quality, budget and safety?
+
+That control layer is also groundwork for the future tabletop-RPG direction.
+A role-playing town needs characters that can form teams, spend limited action
+and model budgets, react to uncertainty, request help and yield decisions to a
+player. This branch develops those controller mechanics; the playable narrative
+experience itself belongs on
+[`agentic-rpg`](https://github.com/w1u2d3i4/multitown/tree/agentic-rpg).
+
+This is an experimental evidence branch, not a claim that reinforcement
+learning already beats A8. A learned controller moves to `main` only after a
+frozen held-out, equal-budget and safety-audited comparison.
+
 This repository is a code-only public surface with concise, audited result
 summaries. It intentionally excludes raw experiment records, generated result
 files, model checkpoints, benchmark datasets, internal process notes,
