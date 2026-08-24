@@ -492,7 +492,7 @@ def run_task(
             ),
             messages=messages, logs=logs / "planning", max_turns=6,
         )
-        _run_phase(
+        executor_turns = _run_phase(
             role="executor", adapter=executor, prompt=prompts["executor"],
             config=_phase_config(
                 "executor", task=task, workspace=workspace, reports=reports,
@@ -500,6 +500,14 @@ def run_task(
             ),
             messages=messages, logs=logs / "execution", max_turns=12,
         )
+        validators.append(_runtime_validator(
+            turns=executor_turns,
+            initial_hash=meta["initial_workspace_sha256"],
+            workspace=workspace,
+            category=str(row.get("category") or "Other"),
+            difficulty=str(row.get("difficulty") or "unknown"),
+            controller=controller,
+        ))
         _controller_attestation(
             submission,
             str(row["task_id"]),
@@ -514,7 +522,7 @@ def run_task(
         executor = adapter("executor", weak)
         verifier = adapter("verifier", strong)
         role_counts.update(executor=1, verifier=1)
-        _run_phase(
+        executor_turns = _run_phase(
             role="executor", adapter=executor, prompt=prompts["initial_executor"],
             config=_phase_config(
                 "executor", task=task, workspace=workspace, reports=reports,
@@ -522,6 +530,14 @@ def run_task(
             ),
             messages=messages, logs=logs / "execution", max_turns=12,
         )
+        validators.append(_runtime_validator(
+            turns=executor_turns,
+            initial_hash=meta["initial_workspace_sha256"],
+            workspace=workspace,
+            category=str(row.get("category") or "Other"),
+            difficulty=str(row.get("difficulty") or "unknown"),
+            controller=controller,
+        ))
         (submission / "attestation.json").unlink(missing_ok=True)
         _run_phase(
             role="verifier", adapter=verifier, prompt=prompts["verifier"],
@@ -546,7 +562,7 @@ def run_task(
             ),
             messages=messages, logs=logs / "planning", max_turns=6,
         )
-        _run_phase(
+        executor_turns = _run_phase(
             role="executor", adapter=executor, prompt=prompts["executor"],
             config=_phase_config(
                 "executor", task=task, workspace=workspace, reports=reports,
@@ -554,6 +570,14 @@ def run_task(
             ),
             messages=messages, logs=logs / "execution", max_turns=12,
         )
+        validators.append(_runtime_validator(
+            turns=executor_turns,
+            initial_hash=meta["initial_workspace_sha256"],
+            workspace=workspace,
+            category=str(row.get("category") or "Other"),
+            difficulty=str(row.get("difficulty") or "unknown"),
+            controller=controller,
+        ))
         (submission / "attestation.json").unlink(missing_ok=True)
         _run_phase(
             role="verifier", adapter=verifier, prompt=prompts["verifier"],
