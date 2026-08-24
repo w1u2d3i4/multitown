@@ -40,7 +40,7 @@ cross-paper numbers it does not treat as directly comparable.
 - [AgentConductor](https://arxiv.org/abs/2602.17100) learns task-conditioned
   topology density and refines the organization from execution feedback. It
   motivates evaluating topology changes as budgeted actions, while MultiTown's
-  current v2 keeps a much smaller, auditable Planner/Executor action space.
+  current v2.1 keeps a much smaller, auditable Planner/Executor action space.
 - [Agent-as-a-Router](https://arxiv.org/abs/2606.22902) frames coding-model
   routing as a Context→Action→Feedback→Context loop and reports that
   execution-grounded history closes an information deficit left by one-shot
@@ -69,7 +69,7 @@ organizations, and cites frameworks only to explain the family they belong to.
 | Sequential role pipeline / SOP | [MetaGPT](https://arxiv.org/abs/2308.00352) and [ChatDev](https://arxiv.org/abs/2307.07924) | Specialized roles pass artifacts through a fixed workflow | **FixedTeam-TB** is the full Planner -> Executor -> Verifier pipeline; **PlanExecute-TB** and **ExecuteReview-TB** are its role ablations. |
 | Peer conversation / role play | [CAMEL](https://arxiv.org/abs/2303.17760) and AutoGen | Agents converse under assigned roles, sometimes without a central controller | Context only. The current benchmark intentionally tests auditable privilege separation rather than free-form shared-history chat. |
 | Dynamic selection / pruning | DyLAN and AgentPrune | Select useful agents or prune communication according to the task | **MultiTown-TB** is the direct local dynamic-activation method. It is analogous at the organization level, but is not a reproduction of either algorithm. |
-| Execution-feedback topology control | FlowSteer, AgentConductor and Agent-as-a-Router | Change workflow or routing after environment feedback | **MT-Replan-v2** is the local deterministic precursor: interrupt a hard failure, replan once, then delegate bounded recovery. It is not yet a learned or RL policy. |
+| Execution-feedback topology control | FlowSteer, AgentConductor and Agent-as-a-Router | Change workflow or routing after environment feedback | **MT-Replan-v2.1** is the local deterministic precursor: interrupt a hard failure, replan once, then delegate bounded recovery. It is not yet a learned or RL policy. |
 
 This boundary prevents a misleading claim such as “MultiTown beats MetaGPT”
 when MetaGPT has not been run under the same model, task and access contract.

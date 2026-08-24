@@ -62,7 +62,8 @@ DEFAULT_CONTROLLER = {
     ],
     "replan_command_timeout_s": 30,
     "replan_interrupt_timeouts": 1,
-    "replan_interrupt_failed_command_repetitions": 2,
+    "replan_interrupt_failed_command_repetitions": 3,
+    "replan_workspace_unchanged_requires_no_success": True,
     "replan_failed_without_success": 2,
     "replan_max_total_tokens": 90_000,
     "replan_planner_turns": 3,
@@ -333,7 +334,7 @@ def _should_interrupt_for_replan(log_dir: Path, controller: dict[str, Any]) -> b
         signals["timed_out_commands"]
         >= int(controller.get("replan_interrupt_timeouts", 1))
         or signals["max_failed_command_repetitions"]
-        >= int(controller.get("replan_interrupt_failed_command_repetitions", 2))
+        >= int(controller.get("replan_interrupt_failed_command_repetitions", 3))
     )
 
 
@@ -543,13 +544,22 @@ def _replan_decision(
     ):
         triggers.append("command_timeout")
     if int(validator.get("max_failed_command_repetitions", 0)) >= int(
-        controller.get("replan_interrupt_failed_command_repetitions", 2)
+        controller.get("replan_interrupt_failed_command_repetitions", 3)
     ):
         triggers.append("repeated_command")
-    if not bool(validator.get("workspace_changed", False)):
-        triggers.append("workspace_unchanged")
+    workspace_unchanged = not bool(validator.get("workspace_changed", False))
+    successful_commands = int(validator.get("successful_commands", 0))
+    require_no_success = bool(
+        controller.get("replan_workspace_unchanged_requires_no_success", True)
+    )
+    if workspace_unchanged and (not require_no_success or successful_commands == 0):
+        triggers.append(
+            "workspace_unchanged_no_success"
+            if require_no_success
+            else "workspace_unchanged"
+        )
     if (
-        int(validator.get("successful_commands", 0)) == 0
+        successful_commands == 0
         and int(validator.get("failed_commands", 0))
         >= int(controller.get("replan_failed_without_success", 2))
     ):
@@ -605,6 +615,12 @@ def _validate_replan_controller(controller: dict[str, Any]) -> None:
     ):
         if int(controller.get(key, 0)) <= 0:
             raise ValueError(f"{key} must be a positive integer")
+    if not isinstance(
+        controller.get("replan_workspace_unchanged_requires_no_success", True), bool
+    ):
+        raise ValueError(
+            "replan_workspace_unchanged_requires_no_success must be a boolean"
+        )
 
 
 def _attestation(submission: Path) -> dict[str, Any] | None:

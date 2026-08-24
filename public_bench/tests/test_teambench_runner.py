@@ -147,7 +147,7 @@ def test_replan_decision_escalates_hard_runtime_failure_with_budget() -> None:
         "successful_commands": 0,
         "failed_commands": 2,
         "timed_out_commands": 1,
-        "max_failed_command_repetitions": 2,
+        "max_failed_command_repetitions": 3,
         "turns_used": 3,
     }
 
@@ -167,10 +167,52 @@ def test_replan_decision_escalates_hard_runtime_failure_with_budget() -> None:
     ]
 
 
+def test_replan_ignores_unchanged_workspace_after_successful_report_check() -> None:
+    validator = {
+        "workspace_changed": False,
+        "successful_commands": 1,
+        "failed_commands": 0,
+        "timed_out_commands": 0,
+        "max_failed_command_repetitions": 0,
+        "turns_used": 5,
+    }
+
+    decision = _replan_decision(
+        validator,
+        plan_delivered=True,
+        consumed_tokens=30_000,
+        controller=DEFAULT_CONTROLLER,
+    )
+
+    assert decision["action"] == "stop"
+    assert decision["triggers"] == []
+
+
+def test_replan_escalates_unchanged_workspace_without_success() -> None:
+    validator = {
+        "workspace_changed": False,
+        "successful_commands": 0,
+        "failed_commands": 0,
+        "timed_out_commands": 0,
+        "max_failed_command_repetitions": 0,
+        "turns_used": 5,
+    }
+
+    decision = _replan_decision(
+        validator,
+        plan_delivered=True,
+        consumed_tokens=30_000,
+        controller=DEFAULT_CONTROLLER,
+    )
+
+    assert decision["action"] == "escalate"
+    assert decision["triggers"] == ["workspace_unchanged_no_success"]
+
+
 def test_logged_command_signals_drive_live_replan_interrupt(tmp_path: Path) -> None:
     log_dir = tmp_path / "executor"
     log_dir.mkdir()
-    for index in range(2):
+    for index in range(3):
         (log_dir / f"turn_{index:03d}.json").write_text(
             '{"tool_calls":[{"name":"run","args":{"cmd":"npm install"}}],'
             '"tool_results":[{"stdout":"","stderr":"","exit_code":1}]}'
@@ -178,9 +220,9 @@ def test_logged_command_signals_drive_live_replan_interrupt(tmp_path: Path) -> N
 
     signals = _logged_command_signals(log_dir)
 
-    assert signals["failed_commands"] == 2
-    assert signals["max_command_repetitions"] == 2
-    assert signals["max_failed_command_repetitions"] == 2
+    assert signals["failed_commands"] == 3
+    assert signals["max_command_repetitions"] == 3
+    assert signals["max_failed_command_repetitions"] == 3
     assert _should_interrupt_for_replan(log_dir, DEFAULT_CONTROLLER)
 
 

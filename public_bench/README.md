@@ -64,7 +64,7 @@ may request one repair:
   observable runtime evidence indicates that execution is stuck. It emits a
   state/action/budget trace and preserves a byte-for-byte PlanExecute fallback.
   Seed-2 rejected it because review was broad and rarely changed the result.
-- **MT-Replan-v2 — current unscored candidate:** retain the PlanExecute roles,
+- **MT-Replan-v2.1 — current unscored candidate:** retain the PlanExecute roles,
   interrupt only on high-precision runtime failures, ask the strong Planner to
   inspect the workspace read-only and issue one recovery plan, then delegate a
   bounded repair to the weak Executor. It has no Verifier and no result claim
@@ -145,10 +145,14 @@ benchmark-best claim is made. See the
 [`seed-2 paired record`](records/TEAMBENCH_SEQUENTIAL_SEED2.md).
 
 The next candidate is frozen in the
-[`MT-Replan-v2 protocol`](docs/TEAMBENCH_REPLAN_V2_PROTOCOL.md). It turns the v1
+[`MT-Replan-v2.1 protocol`](docs/TEAMBENCH_REPLAN_V2.1_PROTOCOL.md). It turns the v1
 failure into two testable changes: intervene before repeated failed or timed-out
 commands, and replace broad post-hoc verification with a short
-execution-feedback/replanning loop. No v2 benchmark result is claimed yet.
+execution-feedback/replanning loop. No v2.1 benchmark result is claimed yet.
+An offline trigger-only audit superseded the unrun v2 draft before any model
+invocation: v2.1 projects 16 rather than 44 escalations on discovery traces and
+does not treat a successfully tested report-only task as failed merely because
+the code workspace is unchanged.
 
 ## Historical v1.2 A4/A8 result
 
@@ -256,9 +260,9 @@ general-mas-run-teambench --method MTSequential --split dev \
 
 general-mas-run-teambench --method MTReplan --split dev \
   --project-root "$PWD" \
-  --controller-config configs/mt-replan-teambench-v2.json \
+  --controller-config configs/mt-replan-teambench-v2.1.json \
   --sampling-seed 20260824 --temperature 0 \
-  --output-dir artifacts/teambench-dev-mt-replan-v2
+  --output-dir artifacts/teambench-dev-mt-replan-v2.1
 
 general-mas-report --a4-dir artifacts/teambench-dev-a4 \
   --a8-dir artifacts/teambench-dev-a8 --expected-task-count 30 \

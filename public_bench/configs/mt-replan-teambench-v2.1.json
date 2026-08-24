@@ -1,7 +1,7 @@
 {
   "schema_version": "multitown-replan-controller-v1",
-  "policy_id": "mt-replan-v2",
-  "selection_source": "TeamBench development trajectories plus completed public discovery diagnostics; no task-specific allowlist",
+  "policy_id": "mt-replan-v2.1",
+  "selection_source": "TeamBench development trajectories plus completed public discovery trigger diagnostics; no task-specific allowlist",
   "policy_kind": "frozen deterministic feedback controller; not Agentic RL",
   "replan_action_space": [
     "stop",
@@ -12,8 +12,8 @@
   ],
   "replan_command_timeout_s": 30,
   "replan_interrupt_timeouts": 1,
-  "replan_interrupt_failed_command_repetitions": 2,
-  "replan_workspace_unchanged_requires_no_success": false,
+  "replan_interrupt_failed_command_repetitions": 3,
+  "replan_workspace_unchanged_requires_no_success": true,
   "replan_failed_without_success": 2,
   "replan_max_total_tokens": 90000,
   "replan_planner_turns": 3,

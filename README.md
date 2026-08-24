@@ -138,13 +138,15 @@ The required same-seed Solo rank anchor remains pending, and v1 is not a
 benchmark winner. See the
 [seed-2 paired record](public_bench/records/TEAMBENCH_SEQUENTIAL_SEED2.md).
 
-The next unscored candidate, `MT-Replan-v2`, preserves the efficient
+The next unscored candidate, `MT-Replan-v2.1`, preserves the efficient
 Planner→Executor baseline but moves intervention into execution: repeated
 failed or timed-out commands can stop early, the strong Planner gets one
 read-only replan, and the weak Executor receives one bounded recovery. It
 removes the broad post-hoc Verifier that made v1 expensive. This is still a
 frozen deterministic controller—not Agentic RL—and it has no result claim yet.
-See the [v2 protocol](public_bench/docs/TEAMBENCH_REPLAN_V2_PROTOCOL.md).
+An offline trigger audit narrowed the unrun v2 draft from 44 projected
+escalations to 16 before any candidate model call. See the
+[v2.1 protocol](public_bench/docs/TEAMBENCH_REPLAN_V2.1_PROTOCOL.md).
 
 ## Public TeamBench transfer result (historical v1.2)
 

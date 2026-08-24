@@ -1,7 +1,8 @@
 # MT-Replan-v2 TeamBench protocol
 
-Status: implementation and thresholds frozen before the first `MTReplan`
-development run. Public generator seed 2 is a discovery set because it exposed
+Status: superseded by MT-Replan-v2.1 after an offline activation audit and
+before any v2 model invocation. This v2 policy remains a design record, not an
+experimental result. Public generator seed 2 is a discovery set because it exposed
 the failure pattern of MT-Sequential-v1; it is not a confirmation set for this
 version. The next untouched confirmation seed is 3.
 
@@ -82,3 +83,13 @@ The machine-readable controller is
 
 Raw prompts, workspaces and telemetry remain local. Public records contain only
 aggregate results, paired statistics, provenance hashes and the frozen policy.
+
+## Preflight outcome
+
+Replaying only the observable trigger calculation over completed seed-2
+discovery traces projected escalation on 44/89 tasks. Twenty-eight triggers
+came from an unchanged workspace, including report-producing tasks for which
+that signal is not a reliable failure indicator. A threshold of two identical
+failed commands would also interrupt three trajectories that eventually pass.
+No model was called and no candidate score was generated under v2. The
+superseding v2.1 policy narrows both conditions before its first run.
