@@ -51,6 +51,21 @@ frozen results. The animated work order is a deterministic explanatory scenario,
 not a raw experimental episode. See [`demo/`](demo/) for the automatic GIF
 generation command.
 
+## How to read the experiment labels
+
+The `A` numbers are organization experiment IDs, not model versions or a
+ranking. The result section mainly uses four designs:
+
+| ID | Plain-language meaning |
+| --- | --- |
+| A4 | Fixed full team: always call a strong Planner, three weak Workers and an independent strong Verifier. |
+| A6 | Statistical pre-task router: choose one complete organization before execution using cross-fitted scenario statistics and a budget. |
+| A7 | Learned pre-task router: predict quality, tokens and latency from safe task features, then choose an organization before execution. |
+| A8 | Execution-time adaptive controller: start with an economical agent and delegate, escalate or review only when validation evidence requires it. |
+
+A8 is a deterministic selective-delegation controller, not a trained RL
+policy. Learned-controller attempts are isolated on the `agentic-rl` branch.
+
 ## Selected benchmark results
 
 The strongest frozen MultiTown result is the deterministic A8 execution-time
