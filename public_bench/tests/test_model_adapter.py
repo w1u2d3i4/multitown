@@ -1,4 +1,4 @@
-from general_mas_bench.model_adapter import compact_messages
+from general_mas_bench.model_adapter import compact_messages, deterministic_request_seed
 
 
 def test_compaction_preserves_task_prompt_and_recent_turns() -> None:
@@ -28,3 +28,16 @@ def test_short_history_is_unchanged() -> None:
 
     assert effective == messages
     assert metadata["dropped_message_count"] == 0
+
+
+def test_request_seed_is_stable_across_method_runs() -> None:
+    first = deterministic_request_seed(
+        20260824, task_id="task-1", role="executor", request_index=2
+    )
+    assert first == deterministic_request_seed(
+        20260824, task_id="task-1", role="executor", request_index=2
+    )
+    assert first != deterministic_request_seed(
+        20260824, task_id="task-1", role="executor", request_index=3
+    )
+    assert 0 <= first <= 0x7FFFFFFF

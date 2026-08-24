@@ -421,6 +421,7 @@ def run_task(
     max_tokens: int,
     temperature: float,
     policy: dict[str, Any] | None = None,
+    sampling_seed: int | None = None,
 ) -> dict[str, Any]:
     reported_method = method
     execution_method = method
@@ -456,6 +457,7 @@ def run_task(
             model=str(tier["model"]),
             max_tokens=max_tokens,
             temperature=temperature,
+            sampling_seed=sampling_seed,
         )
         adapters.append(value)
         return value
@@ -868,6 +870,7 @@ def main() -> None:
     parser.add_argument("--weak-model", default="qwen-mm-backup")
     parser.add_argument("--max-tokens", type=int, default=2048)
     parser.add_argument("--temperature", type=float, default=0.0)
+    parser.add_argument("--sampling-seed", type=int)
     parser.add_argument("--monitor-interval", type=float, default=5.0)
     parser.add_argument("--resume", action=argparse.BooleanOptionalAction, default=True)
     args = parser.parse_args()
@@ -917,6 +920,10 @@ def main() -> None:
         "max_tokens": args.max_tokens,
         "temperature": args.temperature,
     }
+    if args.sampling_seed is not None:
+        if args.sampling_seed < 0:
+            parser.error("--sampling-seed must be non-negative")
+        config["sampling_seed"] = args.sampling_seed
     if args.seed_override is not None:
         canonical_instances = json.dumps(
             rows, sort_keys=True, separators=(",", ":"), ensure_ascii=False
@@ -974,6 +981,7 @@ def main() -> None:
                     max_tokens=args.max_tokens,
                     temperature=args.temperature,
                     policy=policy,
+                    sampling_seed=args.sampling_seed,
                 )
             except Exception as exc:
                 errors += 1

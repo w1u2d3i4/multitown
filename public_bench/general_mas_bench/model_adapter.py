@@ -3,14 +3,37 @@ from __future__ import annotations
 import hashlib
 import json
 import time
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from harness.adapters.openai_adapter import OpenAIAdapter
 from harness.agent_interface import AdapterResponse, ToolCallAdapter
 
-
 DEFAULT_HISTORY_CHAR_BUDGET = 20_000
+
+
+def deterministic_request_seed(
+    base_seed: int,
+    *,
+    task_id: str,
+    role: str,
+    request_index: int,
+) -> int:
+    material = f"{base_seed}\0{task_id}\0{role}\0{request_index}".encode()
+    return int.from_bytes(hashlib.sha256(material).digest()[:4], "big") & 0x7FFFFFFF
+
+
+class SeededOpenAIAdapter(OpenAIAdapter):
+    """Attach a per-request seed without patching the upstream TeamBench adapter."""
+
+    def __init__(self, *args: Any, seed_provider: Callable[[], int], **kwargs: Any):
+        super().__init__(*args, **kwargs)
+        self._seed_provider = seed_provider
+
+    def _call_with_retry(self, max_retries: int = 8, **kwargs: Any) -> Any:
+        kwargs["seed"] = self._seed_provider()
+        return super()._call_with_retry(max_retries=max_retries, **kwargs)
 
 
 def _message_chars(message: dict[str, Any]) -> int:
@@ -103,19 +126,30 @@ class RecordedAdapter(ToolCallAdapter):
         model: str,
         max_tokens: int,
         temperature: float,
+        sampling_seed: int | None = None,
     ):
         self.role = role
         self.task_id = task_id
         self.method = method
         self.request_log = request_log
         self.request_index = 0
-        self.inner = OpenAIAdapter(
+        adapter_class = SeededOpenAIAdapter if sampling_seed is not None else OpenAIAdapter
+        adapter_kwargs: dict[str, Any] = {}
+        if sampling_seed is not None:
+            adapter_kwargs["seed_provider"] = lambda: deterministic_request_seed(
+                sampling_seed,
+                task_id=self.task_id,
+                role=self.role,
+                request_index=self.request_index,
+            )
+        self.inner = adapter_class(
             api_key=api_key,
             model=model,
             base_url=endpoint,
             max_tokens=max_tokens,
             temperature=temperature,
             lenient_mode=True,
+            **adapter_kwargs,
         )
 
     def generate_with_tools(
