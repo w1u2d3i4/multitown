@@ -101,6 +101,7 @@ multitown-a24-portable-fixture = "multitown.a24_portable_fixture:main"
 multitown-a25-numerical = "multitown.a25_full_numerical_q0_runner:main"
 multitown-a25-check-contract = "multitown.a25_independent_verifier:main"
 multitown-a25-portable-checker = "multitown.a25_portable_checker:main"
+multitown-a26-safe-router = "multitown.a26_safe_router:main"
 multitown-a27-tail-diagnostic = "multitown.a27_tail_diagnostic:main"
 multitown-audit-public-release = "multitown.public_release:main"
 

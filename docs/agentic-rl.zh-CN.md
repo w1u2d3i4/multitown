@@ -66,6 +66,10 @@ A9 offline controller 的终止奖励可以概括为：
 | `multitown/a9_safety_development.py` | Review Shield 安全诊断 |
 | `multitown/a22_constrained_ppo.py` | Lagrangian 与 Shield 机制实现 |
 | `multitown/a25_method_conformance.py` | 方法与声明一致性检查 |
+| `multitown/a26_safe_router.py` | 非泄漏 Fixture 与风险校准策略改进基线 |
+
+下一项冻结协议是 [A26 风险校准策略改进](A26_SAFE_POLICY_IMPROVEMENT_ZH.md)。
+它先建立更安全的学习式路由基线，明确不冒充完整 Agentic RL。
 
 ## 查看公开命令
 
@@ -80,6 +84,7 @@ multitown-a9-ppo-oof --help
 multitown-a9-review-shield --help
 multitown-a22-adaptive --help
 multitown-a22-report --help
+multitown-a26-safe-router --help
 ```
 
 仓库有意排除了原始实验记录、私有 episode bank、Checkpoint 和模型输出。因此这些命令

@@ -73,6 +73,11 @@ unsafe stopping or execution policy.
 | `multitown/a9_safety_development.py` | Review-shield safety diagnostic |
 | `multitown/a22_constrained_ppo.py` | Lagrangian and shield mechanism primitives |
 | `multitown/a25_method_conformance.py` | Method and claim-conformance checks |
+| `multitown/a26_safe_router.py` | Non-leaking fixture and risk-calibrated policy-improvement baseline |
+
+The next frozen protocol is [A26 risk-calibrated policy improvement](A26_SAFE_POLICY_IMPROVEMENT.md).
+It first establishes a safer learned routing baseline; it is explicitly not
+called full Agentic RL.
 
 ## Explore the public entry points
 
@@ -87,6 +92,7 @@ multitown-a9-ppo-oof --help
 multitown-a9-review-shield --help
 multitown-a22-adaptive --help
 multitown-a22-report --help
+multitown-a26-safe-router --help
 ```
 
 The repository intentionally excludes raw experiment records, private episode
