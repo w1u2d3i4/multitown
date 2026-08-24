@@ -114,6 +114,14 @@ it remains a useful negative result and redesign target. See the
 [formal comparison](public_bench/records/TEAMBENCH_STRATEGY_QUALITY_V2.md) and
 [mainstream-strategy mapping](public_bench/docs/RELATED_WORK_AND_EVIDENCE.md).
 
+A subsequent seed-1 confirmation rejected a static task-category router.  Its
+whole-run score appeared 0.01011 higher than PlanExecute-TB, but the three tasks
+where it actually changed strategy lost 0.13333 partial-score points, lost one
+pass and used 63.30% more tokens; all apparent gain came from backend variation
+on the 86 unchanged controls.  MultiTown therefore advances only candidates
+whose action-changing subset and fresh-seed result both pass the gate.  See the
+[selector confirmation](public_bench/records/TEAMBENCH_SELECTOR_SEED1.md).
+
 ## Public TeamBench transfer result (historical v1.2)
 
 The `public_bench/` subproject evaluates the same fixed and selective

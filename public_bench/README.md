@@ -99,6 +99,14 @@ evidence and negative finding that **more roles—and especially review without 
 repair path—can hurt**. See the
 [`formal record`](records/TEAMBENCH_STRATEGY_QUALITY_V2.md).
 
+The next frozen static router also failed causal confirmation.  Although its
+seed-1 whole-run mean was +0.01011 above PlanExecute-TB, the three tasks where
+it actually changed organization were -0.13333 worse, lost one pass and used
+63.30% more tokens.  The apparent aggregate gain came from local-backend
+variation on 86 unchanged controls.  The
+[`seed-1 selector record`](records/TEAMBENCH_SELECTOR_SEED1.md) therefore marks
+it as a negative result and motivates runtime sequential control.
+
 ## Historical v1.2 A4/A8 result
 
 | Metric | A4-TB — fixed full team | A8-TB — selective team |
