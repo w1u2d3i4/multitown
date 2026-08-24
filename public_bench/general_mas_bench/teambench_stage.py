@@ -162,8 +162,11 @@ def grade_in_sandbox(
         if expected.is_file():
             command.append("/reports/expected.json")
         args = common + [image, *command]
+    grader_timeout_s = 240
     try:
-        result = subprocess.run(args, text=True, capture_output=True, timeout=240, check=False)
+        result = subprocess.run(
+            args, text=True, capture_output=True, timeout=grader_timeout_s, check=False
+        )
     except subprocess.TimeoutExpired:
         if cidfile.is_file():
             container_id = cidfile.read_text(encoding="utf-8").strip()
@@ -175,7 +178,19 @@ def grade_in_sandbox(
                     timeout=30,
                     check=False,
                 )
-        raise
+        # A submitted program can make an upstream shell grader hang (for
+        # example, when the grader invokes a generated service without its own
+        # timeout).  This is a deterministic task failure, not an LLM/provider
+        # invocation error.  Fail closed so one bad candidate cannot invalidate
+        # or stall an otherwise comparable benchmark sweep.
+        return {
+            "pass": False,
+            "primary": {"success": 0},
+            "secondary": {"partial_score": 0.0},
+            "failure_modes": ["grader_timeout"],
+            "grader_exit_code": 124,
+            "grader_timeout_s": grader_timeout_s,
+        }
     finally:
         if row["grader"] == "workspace/check_solution.py":
             placeholder.unlink(missing_ok=True)
