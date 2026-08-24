@@ -1,0 +1,53 @@
+{
+  "schema_version": "multitown-teambench-selector-v1",
+  "policy_id": "mt-efficient-v2",
+  "policy_type": "conservative_contextual_router",
+  "claim_class": "contextual_bandit_not_agentic_rl",
+  "frozen_before_public_replay": true,
+  "observable_features": [
+    "category",
+    "difficulty"
+  ],
+  "methods": [
+    "Solo",
+    "PlanExecute"
+  ],
+  "default_method": "PlanExecute",
+  "feature_method": {
+    "[\"Adversarial\",\"hard\"]": "Solo",
+    "[\"Code Review\",\"hard\"]": "PlanExecute",
+    "[\"Cross-System Integration\",\"hard\"]": "PlanExecute",
+    "[\"Data Engineering\",\"medium\"]": "Solo",
+    "[\"Distributed Systems\",\"hard\"]": "Solo",
+    "[\"Incident Response\",\"hard\"]": "PlanExecute",
+    "[\"Information Retrieval\",\"easy\"]": "Solo",
+    "[\"Information Retrieval\",\"medium\"]": "PlanExecute",
+    "[\"Long-Horizon\",\"hard\"]": "PlanExecute",
+    "[\"Multi-language\",\"hard\"]": "PlanExecute",
+    "[\"Operations\",\"easy\"]": "PlanExecute",
+    "[\"Operations\",\"hard\"]": "PlanExecute",
+    "[\"Policy\",\"easy\"]": "PlanExecute",
+    "[\"Policy\",\"medium\"]": "PlanExecute",
+    "[\"Security\",\"hard\"]": "PlanExecute",
+    "[\"Software Eng.\",\"medium\"]": "Solo",
+    "[\"Testing\",\"hard\"]": "PlanExecute",
+    "[\"Testing\",\"medium\"]": "PlanExecute"
+  },
+  "training": {
+    "split": "dev",
+    "task_count": 30,
+    "alpha": 1.0,
+    "switch_margin": 0.03,
+    "reward": "partial_score + 0.25*passed - 0.05*log1p(total_tokens/reference_median_tokens) - 0.25*invocation_error",
+    "selection_set_loo": {
+      "passes": 6,
+      "mean_partial_score": 0.6459866666666667,
+      "mean_total_tokens": 51760.166666666664
+    }
+  },
+  "provenance": {
+    "split_sha256": "376c01ba6c78819bc22b53b9ba6561b5cae5e4db9133b7f307e834755b964809",
+    "task_ids_sha256": "bfde4d634edf710774ffd11bd4a4edcefd7963ded30e8af6530ad7f8708a7901",
+    "full_training_policy_sha256": "b54930857329ae0c6a4b69346d5a5e2cc491b20ccf6a4acaae812445e7cdaf9a"
+  }
+}

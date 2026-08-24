@@ -112,16 +112,32 @@ def _mean(values: Iterable[float]) -> float:
     return sum(materialized) / len(materialized)
 
 
+def _feature_key(row: dict[str, Any], features: tuple[str, ...]) -> str:
+    values = [str(row.get(feature) or "unknown") for feature in features]
+    return json.dumps(values, ensure_ascii=False, separators=(",", ":"))
+
+
 def fit_policy(
     task_ids: list[str],
     rows: dict[str, dict[str, dict[str, Any]]],
     *,
     alpha: float = 5.0,
+    methods: tuple[str, ...] = METHODS,
+    features: tuple[str, ...] = ("category",),
+    switch_margin: float = 0.0,
 ) -> dict[str, Any]:
     if not task_ids:
         raise ValueError("cannot fit an empty policy")
     if alpha < 0:
         raise ValueError("alpha must be non-negative")
+    if not methods or "PlanExecute" not in methods:
+        raise ValueError("methods must include PlanExecute as the conservative fallback")
+    if any(method not in METHODS for method in methods):
+        raise ValueError(f"unsupported method subset: {methods}")
+    if not features or any(feature not in {"category", "difficulty"} for feature in features):
+        raise ValueError(f"unsupported observable features: {features}")
+    if switch_margin < 0:
+        raise ValueError("switch margin must be non-negative")
     reference = statistics.median(
         float(rows["PlanExecute"][task_id]["total_tokens"]) for task_id in task_ids
     )
@@ -130,53 +146,59 @@ def fit_policy(
             task_id: outcome_reward(rows[method][task_id], reference)
             for task_id in task_ids
         }
-        for method in METHODS
+        for method in methods
     }
     global_reward = {
         method: _mean(rewards[method][task_id] for task_id in task_ids)
-        for method in METHODS
+        for method in methods
     }
     mean_tokens = {
         method: _mean(float(rows[method][task_id]["total_tokens"]) for task_id in task_ids)
-        for method in METHODS
+        for method in methods
     }
 
     def best(scores: dict[str, float]) -> str:
-        return max(METHODS, key=lambda method: (scores[method], -mean_tokens[method], method))
+        return max(methods, key=lambda method: (scores[method], -mean_tokens[method], method))
 
-    categories = sorted(
-        {str(rows["Solo"][task_id].get("category") or "Other") for task_id in task_ids}
+    groups = sorted(
+        {_feature_key(rows["Solo"][task_id], features) for task_id in task_ids}
     )
-    category_method: dict[str, str] = {}
-    category_scores: dict[str, dict[str, float]] = {}
-    category_counts: dict[str, int] = {}
-    for category in categories:
+    feature_method: dict[str, str] = {}
+    feature_scores: dict[str, dict[str, float]] = {}
+    feature_counts: dict[str, int] = {}
+    for group in groups:
         selected = [
             task_id for task_id in task_ids
-            if str(rows["Solo"][task_id].get("category") or "Other") == category
+            if _feature_key(rows["Solo"][task_id], features) == group
         ]
-        category_counts[category] = len(selected)
+        feature_counts[group] = len(selected)
         scores = {
             method: (
                 sum(rewards[method][task_id] for task_id in selected)
                 + alpha * global_reward[method]
             ) / (len(selected) + alpha)
-            for method in METHODS
+            for method in methods
         }
-        category_scores[category] = scores
-        category_method[category] = best(scores)
+        feature_scores[group] = scores
+        candidate = best(scores)
+        feature_method[group] = (
+            candidate
+            if scores[candidate] >= scores["PlanExecute"] + switch_margin
+            else "PlanExecute"
+        )
 
     return {
         "schema_version": SCHEMA_VERSION,
         "policy_type": "empirical_bayes_contextual_router",
         "claim_class": "contextual_bandit_not_agentic_rl",
-        "observable_features": ["category"],
-        "methods": list(METHODS),
-        "default_method": best(global_reward),
-        "category_method": category_method,
+        "observable_features": list(features),
+        "methods": list(methods),
+        "default_method": "PlanExecute",
+        "feature_method": feature_method,
         "training": {
             "task_count": len(task_ids),
             "alpha": alpha,
+            "switch_margin": switch_margin,
             "reference_median_tokens": reference,
             "reward": (
                 "partial_score + 0.25*passed - "
@@ -185,8 +207,8 @@ def fit_policy(
             ),
             "global_mean_reward": global_reward,
             "mean_tokens": mean_tokens,
-            "category_count": category_counts,
-            "category_posterior_reward": category_scores,
+            "feature_count": feature_counts,
+            "feature_posterior_reward": feature_scores,
         },
     }
 
@@ -194,8 +216,9 @@ def fit_policy(
 def select_method(policy: dict[str, Any], row: dict[str, Any]) -> str:
     if policy.get("schema_version") != SCHEMA_VERSION:
         raise ValueError("unsupported selector policy schema")
-    category = str(row.get("category") or "Other")
-    method = policy.get("category_method", {}).get(category, policy.get("default_method"))
+    features = tuple(str(value) for value in policy.get("observable_features", []))
+    key = _feature_key(row, features)
+    method = policy.get("feature_method", {}).get(key, policy.get("default_method"))
     if method not in METHODS:
         raise ValueError(f"selector chose unsupported method {method!r}")
     return str(method)
@@ -224,12 +247,22 @@ def leave_one_out_summary(
     rows: dict[str, dict[str, dict[str, Any]]],
     *,
     alpha: float,
+    methods: tuple[str, ...] = METHODS,
+    features: tuple[str, ...] = ("category",),
+    switch_margin: float = 0.0,
 ) -> dict[str, Any]:
     selected_rows: list[dict[str, Any]] = []
     actions: list[str] = []
     for held_out in task_ids:
         training = [task_id for task_id in task_ids if task_id != held_out]
-        policy = fit_policy(training, rows, alpha=alpha)
+        policy = fit_policy(
+            training,
+            rows,
+            alpha=alpha,
+            methods=methods,
+            features=features,
+            switch_margin=switch_margin,
+        )
         action = select_method(policy, rows["Solo"][held_out])
         actions.append(action)
         selected_rows.append(rows[action][held_out])
@@ -248,12 +281,29 @@ def train_selector(
     *,
     output: Path,
     alpha: float,
+    methods: tuple[str, ...] = METHODS,
+    features: tuple[str, ...] = ("category",),
+    switch_margin: float = 0.0,
 ) -> dict[str, Any]:
     task_ids, rows, provenance = load_paired_runs(directories)
-    policy = fit_policy(task_ids, rows, alpha=alpha)
+    policy = fit_policy(
+        task_ids,
+        rows,
+        alpha=alpha,
+        methods=methods,
+        features=features,
+        switch_margin=switch_margin,
+    )
     policy["provenance"] = provenance
     policy["selection_set_fit"] = summarize_policy(task_ids, rows, policy)
-    policy["selection_set_loo"] = leave_one_out_summary(task_ids, rows, alpha=alpha)
+    policy["selection_set_loo"] = leave_one_out_summary(
+        task_ids,
+        rows,
+        alpha=alpha,
+        methods=methods,
+        features=features,
+        switch_margin=switch_margin,
+    )
     write_json(output, policy)
     return policy
 
@@ -267,6 +317,19 @@ def main() -> None:
     parser.add_argument("--a8-dir", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--alpha", type=float, default=5.0)
+    parser.add_argument(
+        "--methods",
+        nargs="+",
+        choices=METHODS,
+        default=list(METHODS),
+    )
+    parser.add_argument(
+        "--features",
+        nargs="+",
+        choices=("category", "difficulty"),
+        default=["category"],
+    )
+    parser.add_argument("--switch-margin", type=float, default=0.0)
     args = parser.parse_args()
     directories = {
         "Solo": args.solo_dir,
@@ -281,11 +344,14 @@ def main() -> None:
         {method: path.resolve() for method, path in directories.items()},
         output=args.output.resolve(),
         alpha=args.alpha,
+        methods=tuple(args.methods),
+        features=tuple(args.features),
+        switch_margin=args.switch_margin,
     )
     print(json.dumps({
         "output": str(args.output.resolve()),
         "default_method": policy["default_method"],
-        "category_method": policy["category_method"],
+        "feature_method": policy["feature_method"],
         "selection_set_loo": policy["selection_set_loo"],
     }, indent=2, sort_keys=True))
 

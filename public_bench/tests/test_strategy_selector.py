@@ -61,6 +61,25 @@ def test_policy_uses_observable_category_and_falls_back() -> None:
     assert loo["passes"] == 2
 
 
+def test_policy_supports_conservative_feature_pair() -> None:
+    task_ids, rows = _matrix()
+    for method_rows in rows.values():
+        for row in method_rows.values():
+            row["difficulty"] = "hard"
+    policy = fit_policy(
+        task_ids,
+        rows,
+        alpha=1,
+        methods=("Solo", "PlanExecute"),
+        features=("category", "difficulty"),
+        switch_margin=0.05,
+    )
+    assert policy["default_method"] == "PlanExecute"
+    assert policy["observable_features"] == ["category", "difficulty"]
+    assert select_method(policy, {"category": "Hard", "difficulty": "hard"}) == "Solo"
+    assert select_method(policy, {"category": "Unseen", "difficulty": "hard"}) == "PlanExecute"
+
+
 def test_loader_rejects_nonpaired_runs(tmp_path: Path) -> None:
     directories = {}
     for method in METHODS:

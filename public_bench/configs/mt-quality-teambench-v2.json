@@ -1,0 +1,37 @@
+{
+  "schema_version": "multitown-teambench-selector-v1",
+  "policy_id": "mt-quality-v2",
+  "policy_type": "conservative_contextual_router",
+  "claim_class": "contextual_bandit_not_agentic_rl",
+  "frozen_before_public_replay": true,
+  "observable_features": [
+    "difficulty"
+  ],
+  "methods": [
+    "PlanExecute",
+    "A4"
+  ],
+  "default_method": "PlanExecute",
+  "feature_method": {
+    "[\"easy\"]": "PlanExecute",
+    "[\"hard\"]": "A4",
+    "[\"medium\"]": "PlanExecute"
+  },
+  "training": {
+    "split": "dev",
+    "task_count": 30,
+    "alpha": 0.0,
+    "switch_margin": 0.02,
+    "reward": "partial_score + 0.25*passed - 0.05*log1p(total_tokens/reference_median_tokens) - 0.25*invocation_error",
+    "selection_set_loo": {
+      "passes": 7,
+      "mean_partial_score": 0.664,
+      "mean_total_tokens": 82624.5
+    }
+  },
+  "provenance": {
+    "split_sha256": "376c01ba6c78819bc22b53b9ba6561b5cae5e4db9133b7f307e834755b964809",
+    "task_ids_sha256": "bfde4d634edf710774ffd11bd4a4edcefd7963ded30e8af6530ad7f8708a7901",
+    "full_training_policy_sha256": "bc0ef77f31f34ae0972b2292a6c1be7d882e1de0c4871b190162f11349ed2441"
+  }
+}
