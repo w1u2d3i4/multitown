@@ -115,6 +115,16 @@ next experiment is defined in the
 [`MT-Sequential-v1 protocol`](docs/TEAMBENCH_SEQUENTIAL_V1_PROTOCOL.md); no
 winning result is claimed before its development and fresh-seed gates finish.
 
+The frozen 30-task development run is now complete. `MT-Sequential-v1`
+achieved 6/30 passes, 0.65433 mean partial score and 66,370 mean tokens/task.
+Its point estimate is slightly above the best fixed development baseline
+(`FixedTeam-TB`, 0.65267) while using 33.40% fewer tokens, but its paired
+partial-score difference versus PlanExecute-TB is +0.03501 with a 95% CI of
+[-0.02699, +0.10224]. Only 2/24 reviews produced an accepted remediation; the
+other reviews mostly added cost. This is a competitive development result, not
+a benchmark-win claim. See the
+[`development record`](records/TEAMBENCH_SEQUENTIAL_DEV_V1.md).
+
 ## Historical v1.2 A4/A8 result
 
 | Metric | A4-TB — fixed full team | A8-TB — selective team |

@@ -1,0 +1,40 @@
+{
+  "schema_version": "multitown-sequential-development-summary-v1",
+  "status": "competitive_development_result_not_confirmed",
+  "tasks": 30,
+  "methods": {
+    "Solo-TB": {"passes": 4, "mean_partial_score": 0.62232, "mean_total_tokens": 76253.16666666667},
+    "PlanExecute-TB": {"passes": 6, "mean_partial_score": 0.61932, "mean_total_tokens": 45629.03333333333},
+    "ExecuteReview-TB": {"passes": 1, "mean_partial_score": 0.5183166666666666, "mean_total_tokens": 58363.1},
+    "FixedTeam-TB": {"passes": 4, "mean_partial_score": 0.6526666666666667, "mean_total_tokens": 99658.26666666666},
+    "MultiTown-TB": {"passes": 4, "mean_partial_score": 0.6231133333333332, "mean_total_tokens": 66509.46666666666},
+    "MT-Sequential-v1": {"passes": 6, "mean_partial_score": 0.6543333333333332, "mean_total_tokens": 66370.2}
+  },
+  "quality_token_pareto_frontier": ["PlanExecute-TB", "MT-Sequential-v1"],
+  "paired_vs_plan_execute": {
+    "mean_partial_score_difference": 0.03501333333333334,
+    "partial_score_ci95": [-0.026986666666666662, 0.10223666666666667],
+    "mean_total_token_difference": 20741.166666666668,
+    "total_token_ci95": [13749.49, 27908.74833333333],
+    "candidate_only_passes": 2,
+    "plan_execute_only_passes": 2
+  },
+  "routes": {
+    "runtime_clear_stop": 6,
+    "review_plan_execute_rollback": 18,
+    "review_verifier_passed": 4,
+    "review_remediated": 2
+  },
+  "accepted_remediation_tasks": ["CROSS4_auth_federation", "D2_data_quality"],
+  "claim_boundary": {
+    "benchmark_winner": false,
+    "agentic_rl": false,
+    "fresh_seed_confirmation_required": true
+  },
+  "provenance": {
+    "runner_revision": "67ad64a1b231c1bba5124393220e34f6f203945d",
+    "controller_sha256": "cdfb8fe55829e7a4455426195f588fc98d46c9e87aa36a12eb51df79f1d79d40",
+    "split_sha256": "376c01ba6c78819bc22b53b9ba6561b5cae5e4db9133b7f307e834755b964809",
+    "results_sha256": "d2e45f641e1865777a10c546cf8886756246c52dd6ec783c5c6dce6dd0f0abb4"
+  }
+}

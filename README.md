@@ -122,6 +122,14 @@ on the 86 unchanged controls.  MultiTown therefore advances only candidates
 whose action-changing subset and fresh-seed result both pass the gate.  See the
 [selector confirmation](public_bench/records/TEAMBENCH_SELECTOR_SEED1.md).
 
+The replacement runtime controller is more promising on the 30-task
+development split: `MT-Sequential-v1` reached the highest point-estimate mean
+partial score among six local strategies (0.65433) with 66,370 tokens/task.
+However, its uncertainty versus PlanExecute crosses zero and only 2 of 24
+reviews produced a remediation. MultiTown therefore labels it a development
+candidate—not a benchmark winner—until the frozen seed-2 comparison completes.
+See the [development record](public_bench/records/TEAMBENCH_SEQUENTIAL_DEV_V1.md).
+
 ## Public TeamBench transfer result (historical v1.2)
 
 The `public_bench/` subproject evaluates the same fixed and selective
