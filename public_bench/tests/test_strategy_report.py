@@ -69,7 +69,8 @@ def test_five_strategy_report_is_paired_and_auditable(tmp_path: Path) -> None:
         seed=11,
     )
 
-    assert report["schema_version"] == "general-mas-teambench-strategy-comparison-v1"
+    assert report["schema_version"] == "general-mas-teambench-strategy-comparison-v2"
+    assert report["comparison_scope"] == "same_harness_all_metrics"
     assert report["paired_tasks"] == 2
     assert set(report["methods"]) == set(METHODS)
     assert len(report["pairwise"]) == 10
@@ -80,3 +81,63 @@ def test_five_strategy_report_is_paired_and_auditable(tmp_path: Path) -> None:
     assert [row["task_id"] for row in rows] == task_ids
     assert (output / "quality_cost_five_way.png").stat().st_size > 0
     assert (output / "REPORT.md").stat().st_size > 0
+
+
+def test_report_rejects_mixed_revisions_unless_quality_only(tmp_path: Path) -> None:
+    directories = {method: tmp_path / method.lower() for method in METHODS}
+    for index, (method, path) in enumerate(directories.items()):
+        path.mkdir()
+        _write_json(
+            path / "config.json",
+            {
+                "tasks": ["task-a"],
+                "method": method,
+                "source": {"revision": f"rev-{index}", "dirty": False},
+                "split_sha256": "split",
+                "docker_image_id": "image",
+                "temperature": 0,
+                "max_tokens": 100,
+                "strong": {"model": "strong"},
+                "weak": {"model": "weak"},
+            },
+        )
+        _write_jsonl(path / "system_metrics.jsonl", [])
+        _write_jsonl(
+            path / "results.jsonl",
+            [
+                {
+                    "task_id": "task-a",
+                    "request_errors": 0,
+                    "role_activations": {},
+                    "passed": True,
+                    "partial_score": 1.0,
+                    "total_tokens": 10,
+                    "latency_s": 1,
+                }
+            ],
+        )
+
+    kwargs = {
+        "solo_dir": directories["Solo"],
+        "plan_execute_dir": directories["PlanExecute"],
+        "execute_review_dir": directories["ExecuteReview"],
+        "a4_dir": directories["A4"],
+        "a8_dir": directories["A8"],
+        "expected_count": 1,
+        "bootstrap_samples": 10,
+        "seed": 1,
+    }
+    import pytest
+
+    with pytest.raises(ValueError, match="runtime provenance differs"):
+        build_strategy_report(output=tmp_path / "strict", **kwargs)
+
+    report = build_strategy_report(
+        output=tmp_path / "quality", quality_only=True, **kwargs
+    )
+    assert report["comparison_scope"] == "quality_and_tokens_only"
+    assert report["provenance_compatibility"]["runtime_compatible"] is False
+    assert report["system_monitoring"] == {method: None for method in METHODS}
+    assert "mean_latency_reduction" not in report["pairwise"]["A8_minus_A4"]
+    header = (tmp_path / "quality" / "paired_tasks.csv").read_text().splitlines()[0]
+    assert "latency" not in header

@@ -14,13 +14,14 @@ new product story or tune the synthetic town benchmark. It asks whether the
 current organization-control idea survives contact with public, general-purpose
 tasks.
 
-The evidence matrix compares five systems under one task list, sandbox and
-measurement contract: TeamBench's canonical strong single agent (Solo-TB),
+The evidence matrix compares five systems under one task list and deterministic
+quality/token contract: TeamBench's canonical strong single agent (Solo-TB),
 planning-without-review (PlanExecute-TB), execution-with-independent-review
 (ExecuteReview-TB), a fixed Planner–Executor–Verifier pipeline (FixedTeam-TB),
 and MultiTown's weak-first selective organization (MultiTown-TB). Claims are
-separated into task quality, tokens, latency, energy and role activation; a
-cost advantage is never presented as universal method superiority.
+separated into task quality and tokens. Runtime and energy are compared only
+between post-fix runs with compatible provenance; a cost advantage is never
+presented as universal method superiority.
 
 The underlying multi-agent value proposition is separation of duties: unlike
 Solo-TB, no role-separated organization lets one agent read the full
@@ -84,6 +85,35 @@ frozen results. The animated work order is a deterministic explanatory scenario,
 not a raw experimental episode. See [`demo/`](demo/) for the automatic GIF
 generation command.
 
+## Public TeamBench mainstream-strategy result
+
+The completed 89-task paired matrix now includes a strong Solo anchor and four
+role-separated organizations:
+
+| Strategy | Fully passed | Mean partial score | Mean tokens/task |
+| --- | ---: | ---: | ---: |
+| Solo-TB | 16 / 89 | **0.64180** | 82,869 |
+| PlanExecute-TB | **18 / 89** | 0.62434 | **49,166** |
+| ExecuteReview-TB | 10 / 89 | 0.54940 | 67,011 |
+| FixedTeam-TB | 14 / 89 | 0.63375 | 108,381 |
+| MultiTown-TB | 11 / 89 | 0.58251 | 68,218 |
+
+The quality/token Pareto frontier is **Solo-TB and PlanExecute-TB**.
+PlanExecute-TB used **40.67% fewer tokens** than Solo-TB and produced the
+largest pass count, but its partial-score difference was -0.01745 (95% CI
+[-0.05573, +0.01861]); this is an efficiency trade-off, not evidence of higher
+quality. ExecuteReview-TB was significantly worse than PlanExecute-TB in mean
+partial score (-0.07494, 95% CI [-0.11236, -0.04090]) while using 36.30% more
+tokens. FixedTeam-TB used 120.44% more tokens than PlanExecute-TB without a
+clear partial-score gain.
+
+The practical result is sharper than “multi-agent is better”: **planning and
+handoff can be efficient, while adding roles without a repair path can make the
+system worse**. The current MultiTown-TB dynamic controller is not the winner;
+it remains a useful negative result and redesign target. See the
+[formal comparison](public_bench/records/TEAMBENCH_STRATEGY_QUALITY_V2.md) and
+[mainstream-strategy mapping](public_bench/docs/RELATED_WORK_AND_EVIDENCE.md).
+
 ## Public TeamBench transfer result (historical v1.2)
 
 The `public_bench/` subproject evaluates the same fixed and selective
@@ -118,7 +148,11 @@ See the [formal record](public_bench/records/TEAMBENCH_TEST_V1.2.md).
 A later sandbox audit found that timed-out Docker commands could remain alive
 after the client returned. The v1.2 task scores remain historical evidence, but
 its latency/energy are not combined with new methods. The repaired five-way
-rerun is frozen in the [v2 protocol](public_bench/docs/TEAMBENCH_STRATEGY_MATRIX_V2_PROTOCOL.md).
+runtime rerun remains governed by the
+[v2 protocol](public_bench/docs/TEAMBENCH_STRATEGY_MATRIX_V2_PROTOCOL.md). The
+published five-way bridge therefore compares only compatible quality/token
+fields; clean latency and energy are currently reported for Solo-TB,
+PlanExecute-TB and ExecuteReview-TB.
 
 ## Selected benchmark results
 

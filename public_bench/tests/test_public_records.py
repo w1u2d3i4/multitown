@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pytest
 
-
 ROOT = Path(__file__).resolve().parents[1]
 RECORDS = ROOT / "records"
 
@@ -37,6 +36,28 @@ def test_public_paired_table_has_89_unique_tasks() -> None:
     assert len(rows) == 89
     assert len(set(task_ids)) == 89
     assert all(row["a4_route"] and row["a8_route"] for row in rows)
+
+
+def test_mainstream_strategy_summary_preserves_negative_result() -> None:
+    summary = json.loads(
+        (RECORDS / "teambench-strategy-quality-v2-summary.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert summary["paired_tasks"] == 89
+    assert summary["comparison_scope"] == "quality_and_tokens_only"
+    assert summary["runtime_compatible_across_all_five"] is False
+    assert summary["quality_token_pareto_frontier"] == [
+        "Solo-TB",
+        "PlanExecute-TB",
+    ]
+    methods = summary["methods"]
+    assert methods["PlanExecute-TB"]["passes"] == 18
+    assert methods["MultiTown-TB"]["passes"] == 11
+    assert methods["ExecuteReview-TB"]["mean_partial_score"] < methods[
+        "PlanExecute-TB"
+    ]["mean_partial_score"]
+    assert summary["invocation_errors"] == 0
 
 
 def test_public_records_do_not_expose_machine_local_paths() -> None:

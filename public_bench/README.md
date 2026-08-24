@@ -75,6 +75,30 @@ compared fairly under TeamBench role isolation. Debate, independent voting and
 free-form peer-chat systems are documented as related families, not falsely
 reported as reproduced experiments.
 
+## Mainstream-strategy result
+
+| Strategy | Fully passed | Mean partial score | Mean tokens/task |
+| --- | ---: | ---: | ---: |
+| Solo-TB | 16 / 89 | **0.64180** | 82,869 |
+| PlanExecute-TB | **18 / 89** | 0.62434 | **49,166** |
+| ExecuteReview-TB | 10 / 89 | 0.54940 | 67,011 |
+| FixedTeam-TB | 14 / 89 | 0.63375 | 108,381 |
+| MultiTown-TB | 11 / 89 | 0.58251 | 68,218 |
+
+**Solo-TB and PlanExecute-TB form the quality/token Pareto frontier.**
+PlanExecute-TB used 40.67% fewer tokens than Solo-TB; its partial-score
+difference was -0.01745 (95% CI [-0.05573, +0.01861]), so this is an efficiency
+result rather than a quality-superiority result. ExecuteReview-TB was worse than
+PlanExecute-TB by -0.07494 partial-score points (95% CI [-0.11236, -0.04090])
+while using 36.30% more tokens. FixedTeam-TB used 120.44% more tokens than
+PlanExecute-TB without a clear partial-score improvement.
+
+The current MultiTown-TB controller did not beat Solo-TB or PlanExecute-TB. The
+publishable contribution is therefore the controlled strategy matrix, Pareto
+evidence and negative finding that **more roles—and especially review without a
+repair path—can hurt**. See the
+[`formal record`](records/TEAMBENCH_STRATEGY_QUALITY_V2.md).
+
 ## Historical v1.2 A4/A8 result
 
 | Metric | A4-TB — fixed full team | A8-TB — selective team |
@@ -99,7 +123,10 @@ with the current A8-TB controller. The complete interpretation is in
 These deterministic task scores remain an auditable historical record. Because
 the later sandbox audit found that a timed-out command could leave a container
 running, v1.2 latency and energy are not mixed with post-fix methods in a new
-five-way claim. All five methods are rerun from task 1 for that comparison.
+five-way runtime claim. The current five-way bridge is explicitly quality/token
+only. Clean runtime and energy are reported for the three post-fix methods;
+completing post-fix A4/A8 reruns remains required for a clean five-way runtime
+claim.
 
 ## What is published
 
@@ -190,6 +217,11 @@ general-mas-strategy-report \
   --expected-task-count 30 \
   --output-dir artifacts/teambench-dev-strategy-report
 ```
+
+The strategy report rejects mismatched source revisions for runtime claims. Use
+`--quality-only` only for an intentional bridge across revisions that still
+matches the frozen task hash, sandbox image, models, temperature and token cap;
+that mode removes latency and energy from the report.
 
 Use `--strong-endpoint`, `--strong-model`, `--weak-endpoint` and `--weak-model`
 to select local endpoints. Formal test results must not be used to tune another

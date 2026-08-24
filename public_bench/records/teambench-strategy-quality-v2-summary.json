@@ -1,0 +1,56 @@
+{
+  "schema_version": "multitown-public-strategy-quality-v2",
+  "paired_tasks": 89,
+  "task_ids_sha256": "f1e99c3f7348c18c779652aeed8ece98e0786c90dd6f058b69838860b8919b04",
+  "comparison_scope": "quality_and_tokens_only",
+  "quality_token_compatible": true,
+  "runtime_compatible_across_all_five": false,
+  "methods": {
+    "Solo-TB": {"passes": 16, "mean_partial_score": 0.6417973783, "mean_tokens": 82869.2247},
+    "PlanExecute-TB": {"passes": 18, "mean_partial_score": 0.6243445693, "mean_tokens": 49166.1348},
+    "ExecuteReview-TB": {"passes": 10, "mean_partial_score": 0.5494007491, "mean_tokens": 67011.0225},
+    "FixedTeam-TB": {"passes": 14, "mean_partial_score": 0.6337456929, "mean_tokens": 108381.3483},
+    "MultiTown-TB": {"passes": 11, "mean_partial_score": 0.5825097378, "mean_tokens": 68218.3258}
+  },
+  "quality_token_pareto_frontier": ["Solo-TB", "PlanExecute-TB"],
+  "key_pairwise": {
+    "PlanExecute-TB_minus_Solo-TB": {
+      "partial_score_difference": {"mean": -0.0174528090, "ci95_lower": -0.0557303371, "ci95_upper": 0.0186146067},
+      "pass_mcnemar_exact_p": 0.7744140625,
+      "mean_token_reduction": 0.4067021262
+    },
+    "ExecuteReview-TB_minus_PlanExecute-TB": {
+      "partial_score_difference": {"mean": -0.0749438202, "ci95_lower": -0.1123595506, "ci95_upper": -0.0408988764},
+      "pass_mcnemar_exact_p": 0.021484375,
+      "mean_token_reduction": -0.3629507933
+    },
+    "FixedTeam-TB_minus_PlanExecute-TB": {
+      "partial_score_difference": {"mean": 0.0094011236, "ci95_lower": -0.0274546910, "ci95_upper": 0.0494020506},
+      "pass_mcnemar_exact_p": 0.4239501953,
+      "mean_token_reduction": -1.2043902513
+    },
+    "MultiTown-TB_minus_PlanExecute-TB": {
+      "partial_score_difference": {"mean": -0.0418348315, "ci95_lower": -0.0748303652, "ci95_upper": -0.0073033708},
+      "pass_mcnemar_exact_p": 0.0390625,
+      "mean_token_reduction": -0.3875063817
+    },
+    "MultiTown-TB_minus_ExecuteReview-TB": {
+      "partial_score_difference": {"mean": 0.0331089888, "ci95_lower": 0.0016091854, "ci95_upper": 0.0659179775},
+      "pass_mcnemar_exact_p": 1.0,
+      "mean_token_reduction": -0.0180164893
+    }
+  },
+  "clean_v2_runtime": {
+    "source_revision": "eccf237db9d2d362de3e1ea673775adfb994522f",
+    "Solo-TB": {"median_latency_s": 48.1221404411, "p95_latency_s": 96.8602790013, "energy_wh": 78.6699883156, "request_errors": 0},
+    "PlanExecute-TB": {"median_latency_s": 37.4943987530, "p95_latency_s": 85.1637237334, "energy_wh": 59.2955074921, "request_errors": 0},
+    "ExecuteReview-TB": {"median_latency_s": 35.9633448779, "p95_latency_s": 124.1848387195, "energy_wh": 62.9975679944, "request_errors": 0}
+  },
+  "result_sha256": {
+    "Solo-TB": "48ef8611bc52202240867f15a54cd4816bf9a3f55d982bb563710e2141ea18d7",
+    "PlanExecute-TB": "798c09293925a39bb789d5dc90545fc60ddac7af408bf76d3237311076b4e5ec",
+    "ExecuteReview-TB": "92ad8abae66525fea4e62b0b5540d6478f383cb0ef77a8fb83afddfad2d76709"
+  },
+  "invocation_errors": 0,
+  "raw_artifacts_published": false
+}

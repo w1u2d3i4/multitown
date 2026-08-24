@@ -77,6 +77,17 @@ The two new fixed baselines mirror TeamBench's official `team_no_verify` and
 Their protocol and the five-method matrix were frozen before formal invocation
 in [`TEAMBENCH_STRATEGY_MATRIX_PROTOCOL.md`](TEAMBENCH_STRATEGY_MATRIX_PROTOCOL.md).
 
+The completed paired result puts **Solo-TB and PlanExecute-TB on the
+quality/token Pareto frontier**. PlanExecute-TB produced 18 passes versus 16 for
+Solo-TB while using 40.67% fewer tokens, but its paired partial-score interval
+crossed zero, so this is not a quality-superiority claim. ExecuteReview-TB was
+significantly worse in mean partial score than PlanExecute-TB and used more
+tokens; FixedTeam-TB also used substantially more tokens without a clear
+partial-score gain. The local evidence therefore supports selective
+organization design, not the slogan that adding agents is inherently better.
+The full numbers and provenance boundary are in
+[`../records/TEAMBENCH_STRATEGY_QUALITY_V2.md`](../records/TEAMBENCH_STRATEGY_QUALITY_V2.md).
+
 Required outputs are pass rate, deterministic partial score, paired bootstrap
 intervals, exact McNemar tests, tokens, latency, monitored energy, route mix,
 role activations and invocation failures. Solo-TB was protocol-frozen on

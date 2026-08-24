@@ -12,11 +12,11 @@
 `public-bench` 是 MultiTown 的外部证据分支。它不增加新的产品故事，也不继续调整小镇
 合成 Benchmark，而是回答：当前组织控制方法放到公开、通用任务上后是否仍然成立。
 
-证据矩阵在同一任务列表、沙箱和测量协议下比较五种系统：TeamBench 标准的单强 Agent
+证据矩阵在同一任务列表和确定性质量/Token 协议下比较五种系统：TeamBench 标准的单强 Agent
 （Solo-TB）、只规划后执行（PlanExecute-TB）、先执行再独立复核（ExecuteReview-TB）、
 固定 Planner–Executor–Verifier 流水线（FixedTeam-TB），以及 MultiTown 的弱模型优先
-选择性组织（MultiTown-TB）。结论会分别报告任务质量、Token、延迟、能耗和角色启用
-次数；成本优势不会被包装成方法全面领先。
+选择性组织（MultiTown-TB）。五种方法直接比较质量和 Token；只有来源版本兼容的修复后
+运行才比较延迟与能耗。成本优势不会被包装成方法全面领先。
 
 这里的多智能体价值主张是职责分离：与 Solo-TB 不同，角色隔离组织不会让同一个 Agent
 同时读取完整要求、修改工作区并自我验收。A8-TB 要检验的是，能否保留这条治理边界，
@@ -72,6 +72,30 @@ python3 -m http.server 8000 --directory demo
 工单是解释控制流程的确定性演示场景，不是某一条原始实验轨迹。自动生成 GIF 的命令
 见 [`demo/`](demo/)。
 
+## TeamBench 主流策略对比结果
+
+89 个公开任务的配对矩阵现已包含一个强 Solo 锚点和四种角色隔离组织：
+
+| 策略 | 完全通过 | 平均部分分 | 平均 Token/任务 |
+| --- | ---: | ---: | ---: |
+| Solo-TB | 16 / 89 | **0.64180** | 82,869 |
+| PlanExecute-TB | **18 / 89** | 0.62434 | **49,166** |
+| ExecuteReview-TB | 10 / 89 | 0.54940 | 67,011 |
+| FixedTeam-TB | 14 / 89 | 0.63375 | 108,381 |
+| MultiTown-TB | 11 / 89 | 0.58251 | 68,218 |
+
+质量/Token Pareto 前沿由 **Solo-TB 和 PlanExecute-TB** 构成。PlanExecute-TB
+比 Solo-TB 少用 **40.67% Token**，完全通过数最高，但部分分差为 -0.01745
+（95% CI [-0.05573, +0.01861]），因此这是效率权衡，不能声称质量更强。
+ExecuteReview-TB 的平均部分分显著低于 PlanExecute-TB（-0.07494，95% CI
+[-0.11236, -0.04090]），同时多用 36.30% Token；FixedTeam-TB 多用
+120.44% Token，却没有明确的部分分收益。
+
+因此证据不是简单的“多 Agent 更好”，而是：**规划与交接可以很高效；没有修复闭环时，
+盲目增加角色反而可能更差。** 当前 MultiTown-TB 动态控制器并非五种策略中的赢家，
+应作为有价值的负结果和下一步重设计目标。详见[正式对比记录](public_bench/records/TEAMBENCH_STRATEGY_QUALITY_V2.md)
+与[主流策略映射](public_bench/docs/RELATED_WORK_AND_EVIDENCE.md)。
+
 ## TeamBench 公开任务迁移结果（历史 v1.2）
 
 `public_bench/` 子项目在 TeamBench 公开测试列表中当前可评测的 89 个任务上，对比固定
@@ -99,8 +123,10 @@ A8-TB 将平均 Token 减少 **37.06%**、监控能耗减少 **14.48%**，但 A8
 冻结规则允许的范围。详见[正式记录](public_bench/records/TEAMBENCH_TEST_V1.2.md)。
 
 后续沙箱审计发现，Docker 命令超时后其容器可能继续运行。因此 v1.2 的确定性任务分数
-仍作为历史证据保留，但延迟/能耗不会与修复后的新方法混合比较。五种方法将从第一个
-任务开始全部重跑，口径见 [v2 协议](public_bench/docs/TEAMBENCH_STRATEGY_MATRIX_V2_PROTOCOL.md)。
+仍作为历史证据保留，但延迟/能耗不会与修复后的新方法混合比较。完整五策略运行时重跑
+继续受 [v2 协议](public_bench/docs/TEAMBENCH_STRATEGY_MATRIX_V2_PROTOCOL.md)约束；当前公开
+五策略桥接表只比较兼容的质量/Token 字段，修复后的延迟与能耗仅报告 Solo-TB、
+PlanExecute-TB 和 ExecuteReview-TB。
 
 ## 代表性 Benchmark 结果
 
