@@ -2,6 +2,12 @@
 
 Status: frozen before the first `MTAgenticRLExplore` model request.
 
+One-task preflight on `DIST4_clock_skew` found that the inherited result timer
+stopped after hidden grading. The evaluator was corrected before the formal
+30-task collection so `latency_s` stops before grading. The preflight is not a
+training episode and no controller state, prompt, action, candidate or score
+was changed by this evaluator-only correction.
+
 ## Scope
 
 This protocol trains the orchestration controller, not the Planner, Executor or

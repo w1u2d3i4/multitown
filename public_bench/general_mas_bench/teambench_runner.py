@@ -1736,10 +1736,10 @@ def run_task(
         })
     selected_workspace_sha256 = tree_sha256(workspace)
     selected_reports_sha256 = tree_sha256(reports)
+    policy_latency_s = time.perf_counter() - started
     score = grade_in_sandbox(
         row=row, team_root=team_root, run_dir=run_dir, image=image
     )
-    policy_latency_s = time.perf_counter() - started
     shadow_plan_execute: dict[str, Any] | None = None
     shadow_recovery: dict[str, Any] | None = None
     if execution_method in {
