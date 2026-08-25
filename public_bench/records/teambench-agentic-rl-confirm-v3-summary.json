@@ -1,0 +1,154 @@
+{
+  "schema_version": "multitown-teambench-agentic-rl-confirm-v3-summary",
+  "claim_class": "trained_offline_new-pass-candidate_failed-frozen-cost-gate",
+  "protocol": "../docs/TEAMBENCH_AGENTIC_RL_V3_PROTOCOL.md",
+  "training": {
+    "complete_counterfactual_episodes": 85,
+    "generator_seeds": [0, 1, 2],
+    "budget_reserve_quantile": 0.9,
+    "action_reserve_tokens": {
+      "post_execution": 29787,
+      "post_replan": 26855,
+      "post_recovery": 0
+    },
+    "leave_one_seed_out": {
+      "prefix_passes": 13,
+      "candidate_passes": 15,
+      "prefix_mean_partial_score": 0.6513976470588234,
+      "candidate_mean_partial_score": 0.6640694117647058,
+      "prefix_mean_total_tokens": 47367.57647058823,
+      "candidate_mean_total_tokens": 56724.2,
+      "token_overhead_ratio": 0.1975322409670155
+    }
+  },
+  "independent_confirmation": {
+    "generator_seed": 4,
+    "sampling_seed": 20260830,
+    "paired_tasks": 30,
+    "candidate": {
+      "passes": 6,
+      "mean_partial_score": 0.6766666666666665,
+      "mean_total_tokens": 55488.666666666664,
+      "mean_latency_s": 63.66903484364351,
+      "median_latency_s": 58.34832736046519,
+      "p95_latency_s": 96.68685051470527
+    },
+    "same_trajectory_plan_execute": {
+      "passes": 5,
+      "mean_partial_score": 0.6450966666666667,
+      "mean_total_tokens": 46154.6,
+      "mean_latency_s": 52.66570760276324,
+      "median_latency_s": 47.1465190150775,
+      "p95_latency_s": 88.03557238193459
+    },
+    "candidate_minus_plan_execute": {
+      "pass_delta": 1,
+      "partial_score": {
+        "mean": 0.03157,
+        "ci95_lower": 0.0,
+        "ci95_upper": 0.09170999999999999,
+        "bootstrap_samples": 100000,
+        "bootstrap_seed": 20260833
+      },
+      "total_tokens": {
+        "mean": 9334.066666666668,
+        "ci95_lower": 6370.069166666667,
+        "ci95_upper": 12339.5,
+        "relative_mean": 0.2022348079425813,
+        "bootstrap_samples": 100000,
+        "bootstrap_seed": 20260834
+      },
+      "latency_s": {
+        "mean": 11.00332724088027,
+        "ci95_lower": 7.215222421436921,
+        "ci95_upper": 15.010751992245202,
+        "bootstrap_samples": 100000,
+        "bootstrap_seed": 20260835
+      },
+      "wins": 2,
+      "ties": 28,
+      "losses": 0,
+      "new_passes": ["CROSS4_auth_federation"],
+      "lost_passes": [],
+      "quality_changes": [
+        {
+          "task_id": "CROSS4_auth_federation",
+          "prefix_partial_score": 0.1429,
+          "candidate_partial_score": 1.0,
+          "delta": 0.8571
+        },
+        {
+          "task_id": "D2_data_quality",
+          "prefix_partial_score": 0.73,
+          "candidate_partial_score": 0.82,
+          "delta": 0.09
+        }
+      ]
+    },
+    "routes": {
+      "direct_stop": 10,
+      "replan_then_stop": 5,
+      "recovery_kept": 10,
+      "recovery_rolled_back": 5
+    },
+    "role_activations": {
+      "planner": 50,
+      "executor": 45,
+      "verifier": 0
+    },
+    "budget_control": {
+      "request_blocked_tasks": 8,
+      "completion_capped_tasks": 5,
+      "provider_overrun_tasks": 0,
+      "tasks_over_90000_tokens": 0,
+      "maximum_task_tokens": 74734
+    },
+    "integrity": {
+      "invocation_errors": 0,
+      "selected_prefix_hash_mismatches": 0
+    },
+    "monitoring": {
+      "duration_s": 2032.0230665160343,
+      "samples": 404,
+      "gpu_util_percent_mean": 78.67079207920793,
+      "gpu_power_w_mean": 47.00611386138614,
+      "gpu_temperature_c_max": 83.0,
+      "whole_run_energy_wh": 26.58674997873312,
+      "energy_is_not_arm_attributable": true
+    }
+  },
+  "frozen_basic_gate": {
+    "passes_not_lower": true,
+    "partial_score_strictly_higher": true,
+    "mean_token_overhead_at_most_20_percent": false,
+    "no_task_over_90000_tokens": true,
+    "zero_errors_or_provider_overruns": true,
+    "passed": false
+  },
+  "strong_quality_gate": {
+    "at_least_one_new_pass": true,
+    "no_lost_passes": true,
+    "partial_score_ci_lower_above_zero": false,
+    "passed": false
+  },
+  "decision": {
+    "trained_agentic_rl_supported": true,
+    "same_trajectory_new_pass_supported": true,
+    "observed_pinned_endpoint_budget_compliance_supported": true,
+    "statistically_separated_quality_gain_supported": false,
+    "replace_plan_execute_supported": false,
+    "benchmark_best_supported": false,
+    "advance_to_expanded_development_data": true
+  },
+  "provenance": {
+    "benchmark_source_revision": "2f060a33501b19fbc8d26f8ccdad7580e3b04635",
+    "runner_revision": "9b8e8c827579f7c3488370457f02d327abebd3b2",
+    "internal_policy_sha256": "8dab24919431c7c6b216661439b94a18668f89e385233c646603f0eff57aa507",
+    "policy_file_sha256": "e67144f1ca7d40acaf4b1c2c32677dbd293db4669cd805055a9fd9690c7fb02d",
+    "training_dataset_sha256": "093fda10d49720d9b646d5067551a2c76de32f8d7d601e783de95a7c615edaf3",
+    "config_sha256": "c40d21be872fa55662e4a7a93955d90d425d15b875baa0a9be58212484a85074",
+    "results_sha256": "d2e64156906110f0dce8886b001d6f918f06d227d18eafdf60b854d67032400d",
+    "requests_sha256": "3a2dc30453c334af625f449c36394865cb002342c33eca56f63f4082c8b8a907",
+    "system_metrics_sha256": "788d5747d8b611bc06b78e8f51f8f7d13cd94a4d0f481f452f1eb66a26c3cb9b"
+  }
+}

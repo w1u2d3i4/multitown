@@ -168,6 +168,13 @@ PlanExecute 都是 7/30 通过，平均部分分从 0.68465 提高到 0.69343，
 还不是 benchmark 最优或严格预算结果。详见
 [Agentic RL v2 正式记录](public_bench/records/TEAMBENCH_AGENTIC_RL_CONFIRM_V2.md)。
 
+MT-Agentic-RL-v3 进一步加入 p90 尾部成本储备和请求级预算守卫。在 seed 4 上，
+它把通过数从 5/30 提高到 6/30，平均部分分从 0.64510 提高到 0.67667，且没有
+任务超过 90k Token；但平均 Token 增幅为 20.223%，比冻结的 20% 上限高
+0.223 个百分点，质量区间下界仍为 0。实验后没有放宽阈值：这是目前最强的
+因果修复证据，但还不是 benchmark 胜出。详见
+[Agentic RL v3 正式记录](public_bench/records/TEAMBENCH_AGENTIC_RL_CONFIRM_V3.md)。
+
 后续的 A9、A22 是学习型控制器尝试的时间顺序研究编号，不是大模型版本；只有同时
 通过质量、成本和安全门，它们才能替代 A8。
 
@@ -175,6 +182,7 @@ PlanExecute 都是 7/30 通过，平均部分分从 0.68465 提高到 0.69343，
 | --- | --- | --- |
 | TeamBench Agentic RL v1——fitted-Q 编排控制器 | 新 sampling seed 的 30/30 个状态均选择 PlanExecute 回退；质量与 Token 完全相同 | 属于真正训练的控制器，但性能结果为负，不能声称 benchmark 最优 |
 | TeamBench Agentic RL v2——悲观集成编排控制器 | Seed 3 两组均 7/30 通过；部分分 0.68465 → 0.69343；2 胜 / 28 平 / 0 负 | 点估计门通过，但无新增完整通过、质量区间接触 0、Token +18.98%，且严格预算失败 |
+| TeamBench Agentic RL v3——尾部预算控制器 | Seed 4 通过数 5 → 6；部分分 0.64510 → 0.67667；0 个任务超过 90k | 新增完整通过且无损失，但成本 +20.223%，未过冻结的 +20% 门 |
 | A9-v1——离线 fitted-Q 控制器 | 成功率 75.00%，对应 A8 基线为 72.22% | 差值区间跨零，不能声称显著优于 A8 |
 | A9-v2——带动作屏蔽的 PPO 控制器 | 成功率 23.83% → 34.00%，提高 10.17 pp（95% CI +7.87 至 +12.47），Token −25.41% | 仅为 train-only 控制器结果；unsafe episode 从 15.73% 上升至 66.00% |
 | A9-v3——强制复核安全盾 | unsafe episode 从 66.00% 降至 5.84% | autonomous success 从 34.00% 降至 0%，属于安全—效用负结果 |

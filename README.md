@@ -165,6 +165,14 @@ no new full pass, and two tasks exceed the declared 90k budget. It is a genuine
 quality-positive research candidate, not a benchmark-best or strict-budget
 result. See the [Agentic RL v2 record](public_bench/records/TEAMBENCH_AGENTIC_RL_CONFIRM_V2.md).
 
+`MT-Agentic-RL-v3` adds p90 tail-cost reserves and a conservative request-level
+budget guard. On seed 4 it creates one new full pass with no lost pass and
+raises mean partial score from 0.64510 to 0.67667; no task exceeds 90k tokens.
+However, mean token overhead is 20.223%, narrowly above the frozen 20% limit,
+and the quality interval still touches zero. The threshold was not changed
+after the run: v3 is the strongest causal repair evidence so far, but still not
+a benchmark win. See the [v3 record](public_bench/records/TEAMBENCH_AGENTIC_RL_CONFIRM_V3.md).
+
 ## Public TeamBench transfer result (historical v1.2)
 
 The `public_bench/` subproject evaluates the same fixed and selective
@@ -241,6 +249,7 @@ replace A8 unless they pass the stated quality, cost and safety checks.
 | --- | --- | --- |
 | TeamBench Agentic RL v1 — fitted-Q orchestration | 30/30 fresh states choose PlanExecute fallback; identical quality and tokens | Genuine trained controller, but negative performance result; not benchmark-best |
 | TeamBench Agentic RL v2 — pessimistic ensemble orchestration | Seed 3: 7/30 passes in both arms; partial score 0.68465 → 0.69343; 2 wins / 28 ties / 0 losses | Point-estimate gate passes, but no new pass, quality CI touches zero, tokens +18.98%, and strict budget fails |
+| TeamBench Agentic RL v3 — tail-budget controller | Seed 4: passes 5 → 6; partial score 0.64510 → 0.67667; 0 tasks over 90k | New pass with no loss and budget compliance, but frozen cost gate fails at +20.223% vs +20% |
 | A9-v1 — offline fitted-Q controller | 75.00% success vs 72.22% for the matched A8 baseline | Difference interval crossed zero; no significant advantage claim |
 | A9-v2 — masked PPO controller | Success 23.83% → 34.00%; +10.17 pp (95% CI +7.87 to +12.47); tokens −25.41% | Train-only controller result; unsafe episodes rose 15.73% → 66.00% |
 | A9-v3 — hard review shield | Unsafe episodes 66.00% → 5.84% | Autonomous success fell 34.00% → 0%; safety–utility negative result |

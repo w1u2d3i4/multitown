@@ -148,6 +148,30 @@ def test_agentic_rl_v2_record_preserves_bounded_positive_result() -> None:
     assert summary["decision"]["strict_budget_enforcement_supported"] is False
 
 
+def test_agentic_rl_v3_record_preserves_new_pass_and_failed_cost_gate() -> None:
+    summary = json.loads(
+        (RECORDS / "teambench-agentic-rl-confirm-v3-summary.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    online = summary["independent_confirmation"]
+    assert online["paired_tasks"] == 30
+    assert online["candidate"]["passes"] == 6
+    assert online["same_trajectory_plan_execute"]["passes"] == 5
+    paired = online["candidate_minus_plan_execute"]
+    assert paired["partial_score"]["mean"] == pytest.approx(0.03157)
+    assert paired["new_passes"] == ["CROSS4_auth_federation"]
+    assert paired["lost_passes"] == []
+    assert online["budget_control"]["tasks_over_90000_tokens"] == 0
+    assert online["budget_control"]["provider_overrun_tasks"] == 0
+    assert summary["frozen_basic_gate"]["passed"] is False
+    assert summary["frozen_basic_gate"][
+        "mean_token_overhead_at_most_20_percent"
+    ] is False
+    assert summary["strong_quality_gate"]["passed"] is False
+    assert summary["decision"]["benchmark_best_supported"] is False
+
+
 def test_public_records_do_not_expose_machine_local_paths() -> None:
     for path in RECORDS.iterdir():
         if path.suffix not in {".json", ".md", ".csv"}:

@@ -80,6 +80,10 @@ may request one repair:
   intervention, and replace the unreliable LLM review with learned
   keep-or-byte-exact-rollback selection. Seed 3 produces two partial repairs
   without a task-level loss, but no new full pass.
+- **MT-Agentic-RL-v3 — tail-budget candidate:** retain the pessimistic policy,
+  raise action reserves to p90 and guard every request against the remaining
+  total-token budget. Seed 4 produces one new full pass with no lost pass and
+  no 90k overrun, but narrowly fails the frozen mean-cost gate.
 
 MT-Sequential-v1 and MT-Replan-v2.1 are hand-written and are not Agentic RL.
 MT-Agentic-RL-v1 and v2 are trained from finite-horizon trajectories. V1 is a
@@ -195,6 +199,15 @@ from 0.68465 to 0.69343: 2 wins, 28 ties and 0 losses. Mean tokens increase
 two tasks exceed the declared 90k token budget. V2 passes its basic frozen
 point-estimate gate but not its stronger improvement gate. See the
 [`Agentic RL v2 record`](records/TEAMBENCH_AGENTIC_RL_CONFIRM_V2.md).
+
+V3 then adds p90 tail-cost reserves and a conservative request guard. On the
+untouched seed-4 confirmation it records 6/30 versus 5/30 passes and 0.67667
+versus 0.64510 mean partial score, with 2 wins, 28 ties and 0 losses. No task
+exceeds 90k tokens. Mean token overhead is 20.223%, however, just above the
+frozen 20% gate, and the quality interval touches zero. The threshold remains
+unchanged, so v3 is a promising causal repair result rather than a benchmark
+winner. See the
+[`Agentic RL v3 record`](records/TEAMBENCH_AGENTIC_RL_CONFIRM_V3.md).
 
 ## Historical v1.2 A4/A8 result
 
