@@ -233,3 +233,12 @@ def test_v2_can_train_with_tail_budget_reserves() -> None:
     assert tail["budget_reserve_tokens"]["post_replan"] >= default[
         "budget_reserve_tokens"
     ]["post_replan"]
+
+
+def test_v2_can_select_phase_specific_margins() -> None:
+    policy = train_policy_v2(_v2_dataset(), phase_specific_margins=True)
+    validate_policy_v2(policy)
+    assert policy["training"]["phase_specific_margin_search"] is True
+    assert set(policy["conservative_margin_by_phase"]) == {
+        "post_execution", "post_replan", "post_recovery",
+    }

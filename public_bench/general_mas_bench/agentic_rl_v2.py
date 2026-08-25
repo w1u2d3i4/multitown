@@ -14,6 +14,7 @@ import json
 import math
 import re
 from collections import Counter
+from itertools import product
 from pathlib import Path
 from typing import Any
 
@@ -282,6 +283,13 @@ def _decision(
     return BASELINE_ACTION[phase]
 
 
+def _phase_margin(policy: dict[str, Any], phase: str) -> float:
+    margins = policy.get("conservative_margin_by_phase")
+    if isinstance(margins, dict):
+        return float(margins[phase])
+    return float(policy["conservative_margin"])
+
+
 def _budget_allows(
     phase: str, state: dict[str, Any], reserves: dict[str, int]
 ) -> bool:
@@ -301,7 +309,7 @@ def select_action(policy: dict[str, Any], phase: str, state: dict[str, Any]) -> 
         uncertainty_beta=float(policy["uncertainty_beta"]),
     )
     action = _decision(
-        phase, estimate, margin=float(policy["conservative_margin"])
+        phase, estimate, margin=_phase_margin(policy, phase)
     )
     budget_allowed = _budget_allows(
         phase, state, policy.get("budget_reserve_tokens", {})
@@ -347,6 +355,14 @@ def validate_policy(policy: dict[str, Any]) -> None:
         raise ValueError("Agentic RL v2 requires a positive uncertainty penalty")
     if float(policy.get("conservative_margin", -1.0)) < 0.0:
         raise ValueError("Agentic RL v2 requires a non-negative action margin")
+    phase_margins = policy.get("conservative_margin_by_phase")
+    if phase_margins is not None:
+        if not isinstance(phase_margins, dict) or set(phase_margins) != set(
+            PHASE_ACTIONS
+        ):
+            raise ValueError("Agentic RL v2 phase margin keys mismatch")
+        if any(float(value) < 0.0 for value in phase_margins.values()):
+            raise ValueError("Agentic RL v2 phase margins must be non-negative")
     reserves = policy.get("budget_reserve_tokens")
     if not isinstance(reserves, dict) or set(reserves) != set(PHASE_ACTIONS):
         raise ValueError("Agentic RL v2 budget reserve phases mismatch")
@@ -391,7 +407,7 @@ def _rollout(
     spec: dict[str, Any],
     models: dict[str, list[list[float]]],
     uncertainty_beta: float,
-    margin: float,
+    margins: dict[str, float],
     budget_reserve_tokens: dict[str, int],
 ) -> tuple[list[str], dict[str, Any]]:
     actions: list[str] = []
@@ -403,7 +419,7 @@ def _rollout(
             models=models,
             uncertainty_beta=uncertainty_beta,
         )
-        action = _decision(phase, estimate, margin=margin)
+        action = _decision(phase, estimate, margin=margins[phase])
         if action == INTERVENTION_ACTION[phase] and not _budget_allows(
             phase, episode["states"][phase], budget_reserve_tokens
         ):
@@ -435,7 +451,7 @@ def _cross_validate(
     *,
     alpha: float,
     uncertainty_beta: float,
-    margin: float,
+    margins: dict[str, float],
     reference_tokens: float,
     reference_latency_s: float,
     budget_reserve_quantile: float,
@@ -467,7 +483,7 @@ def _cross_validate(
                 spec=spec,
                 models=models,
                 uncertainty_beta=uncertainty_beta,
-                margin=margin,
+                margins=margins,
                 budget_reserve_tokens=budget_reserve_tokens,
             )
             rows.append({
@@ -483,7 +499,7 @@ def _cross_validate(
     return {
         "alpha": alpha,
         "uncertainty_beta": uncertainty_beta,
-        "margin": margin,
+        "margins": margins,
         "budget_reserve_quantile": budget_reserve_quantile,
         "passes": sum(bool(row["passed"]) for row in rows),
         "mean_partial_score": float(np.mean([row["partial_score"] for row in rows])),
@@ -666,7 +682,8 @@ def build_dataset(run_dirs: list[Path]) -> dict[str, Any]:
 
 
 def train_policy(
-    dataset: dict[str, Any], *, budget_reserve_quantile: float = 0.75
+    dataset: dict[str, Any], *, budget_reserve_quantile: float = 0.75,
+    phase_specific_margins: bool = False,
 ) -> dict[str, Any]:
     episodes = validate_dataset(dataset)
     reference_tokens = float(np.median([
@@ -676,19 +693,34 @@ def train_policy(
         episode["outcomes"]["prefix"]["latency_s"] for episode in episodes
     ]))
     baseline_passes = sum(bool(row["outcomes"]["prefix"]["passed"]) for row in episodes)
+    margin_candidates = (
+        [
+            dict(zip(PHASE_ACTIONS, values, strict=True))
+            for values in product(
+                (0.0, 0.01, 0.02, 0.03, 0.04),
+                (0.0, 0.01, 0.02),
+                (0.0, 0.01),
+            )
+        ]
+        if phase_specific_margins
+        else [
+            {phase: margin for phase in PHASE_ACTIONS}
+            for margin in (0.0, 0.01)
+        ]
+    )
     candidates = [
         _cross_validate(
             episodes,
             alpha=alpha,
             uncertainty_beta=beta,
-            margin=margin,
+            margins=margins,
             reference_tokens=reference_tokens,
             reference_latency_s=reference_latency_s,
             budget_reserve_quantile=budget_reserve_quantile,
         )
         for alpha in (10.0, 100.0)
         for beta in (0.5, 1.0, 2.0)
-        for margin in (0.0, 0.01)
+        for margins in margin_candidates
     ]
     feasible = [row for row in candidates if row["passes"] >= baseline_passes]
     selected = max(
@@ -696,7 +728,8 @@ def train_policy(
         key=lambda row: (
             row["passes"], row["mean_reward"], row["mean_partial_score"],
             -row["mean_total_tokens"], -row["mean_latency_s"],
-            row["uncertainty_beta"], row["margin"], row["alpha"],
+            row["uncertainty_beta"],
+            sum(row["margins"].values()), row["alpha"],
         ),
     )
     spec = _feature_spec([
@@ -746,6 +779,7 @@ def train_policy(
                 "maximize pass count and cost-aware reward"
             ),
             "budget_reserve_quantile": budget_reserve_quantile,
+            "phase_specific_margin_search": phase_specific_margins,
             "selected_cross_validation": selected,
             "all_cross_validation": [
                 {key: value for key, value in row.items() if key != "rows"}
@@ -755,7 +789,10 @@ def train_policy(
         "feature_spec": spec,
         "alpha": float(selected["alpha"]),
         "uncertainty_beta": float(selected["uncertainty_beta"]),
-        "conservative_margin": float(selected["margin"]),
+        "conservative_margin": 0.0,
+        "conservative_margin_by_phase": {
+            phase: float(selected["margins"][phase]) for phase in PHASE_ACTIONS
+        },
         "budget_reserve_tokens": budget_reserve_tokens,
         "ensemble_size": 64,
         "advantage_ensemble": ensemble,
@@ -773,6 +810,7 @@ def main() -> None:
     parser.add_argument(
         "--budget-reserve-quantile", type=float, default=0.75
     )
+    parser.add_argument("--phase-specific-margins", action="store_true")
     args = parser.parse_args()
     if bool(args.run_dir) == bool(args.dataset):
         parser.error("provide either one or more --run-dir values or --dataset")
@@ -784,7 +822,9 @@ def main() -> None:
     else:
         dataset = read_json(args.dataset.resolve())
     policy = train_policy(
-        dataset, budget_reserve_quantile=args.budget_reserve_quantile
+        dataset,
+        budget_reserve_quantile=args.budget_reserve_quantile,
+        phase_specific_margins=args.phase_specific_margins,
     )
     write_json(args.output.resolve(), policy)
     selected = policy["training"]["selected_cross_validation"]
@@ -795,6 +835,9 @@ def main() -> None:
         "alpha": policy["alpha"],
         "uncertainty_beta": policy["uncertainty_beta"],
         "conservative_margin": policy["conservative_margin"],
+        "conservative_margin_by_phase": policy[
+            "conservative_margin_by_phase"
+        ],
         "cross_validation": {
             key: selected[key] for key in (
                 "passes", "mean_partial_score", "mean_total_tokens",
