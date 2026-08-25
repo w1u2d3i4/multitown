@@ -1,7 +1,5 @@
 from pathlib import Path
 
-from harness.agent_loop import AgentTurn
-
 from general_mas_bench.teambench_runner import (
     DEFAULT_CONTROLLER,
     _allow_initial_early_stop,
@@ -18,6 +16,7 @@ from general_mas_bench.teambench_runner import (
     _should_interrupt_for_replan,
     _snapshot_candidate,
 )
+from harness.agent_loop import AgentTurn
 
 
 def test_runtime_validator_uses_observable_execution_signals(tmp_path: Path) -> None:

@@ -14,6 +14,9 @@ from typing import Any
 from harness.agent_interface import RoleConfig
 from harness.agent_loop import AgentLoop, AgentTurn
 
+from .agentic_rl import ACTION_SPACE
+from .agentic_rl import select_action as select_rl_action
+from .agentic_rl import validate_policy as validate_rl_policy
 from .common import append_jsonl, read_json, write_json
 from .model_adapter import OutcomeStopAdapter, RecordedAdapter
 from .monitor import SystemMonitor
@@ -696,6 +699,51 @@ def _restore_candidate(snapshot: Path, workspace: Path, reports: Path) -> None:
     _restore_workspace(snapshot / "reports", reports)
 
 
+def _grade_snapshot(
+    *,
+    snapshot: Path,
+    label: str,
+    task_id: str,
+    row: dict[str, Any],
+    team_root: Path,
+    run_dir: Path,
+    image: str,
+) -> dict[str, Any]:
+    shadow_run = run_dir / "counterfactuals" / label
+    _snapshot_candidate(
+        snapshot / "workspace", snapshot / "reports", shadow_run
+    )
+    _controller_attestation(
+        shadow_run / "submission",
+        task_id,
+        f"evaluation_only_{label}",
+        source="counterfactual_evaluator_not_policy_input",
+    )
+    workspace_hash = tree_sha256(shadow_run / "workspace")
+    reports_hash = tree_sha256(shadow_run / "reports")
+    started = time.perf_counter()
+    score = grade_in_sandbox(
+        row=row, team_root=team_root, run_dir=shadow_run, image=image
+    )
+    return {
+        "passed": bool(score.get("pass", False)),
+        "partial_score": float(
+            score.get("secondary", {}).get(
+                "partial_score", 1.0 if score.get("pass") else 0.0
+            )
+        ),
+        "failure_modes": score.get("failure_modes", []),
+        "workspace_sha256": workspace_hash,
+        "reports_sha256": reports_hash,
+        "grader_latency_s": time.perf_counter() - started,
+        "invocation_error": False,
+        "safety_violation": bool(
+            "grader_timeout" in set(score.get("failure_modes", []))
+        ),
+        "policy_input": False,
+    }
+
+
 def _select_failed_review_candidate(
     *,
     initial: dict[str, Any],
@@ -850,6 +898,8 @@ def run_task(
     decision_trace: list[dict[str, Any]] = []
     route = ""
     replan_prefix_snapshot: Path | None = None
+    recovery_snapshot: Path | None = None
+    training_states: dict[str, dict[str, Any]] = {}
 
     if execution_method == "Solo":
         solo = adapter("solo", strong)
@@ -863,7 +913,10 @@ def run_task(
             messages=messages, logs=logs / "solo", max_turns=20,
         )
         route = "single_strong_full_access"
-    elif execution_method in {"PlanExecute", "MTSequential", "MTReplan"}:
+    elif execution_method in {
+        "PlanExecute", "MTSequential", "MTReplan",
+        "MTAgenticRL", "MTAgenticRLExplore",
+    }:
         # TeamBench's official no-verifier ablation: a strong Planner transfers
         # the full-spec plan to a weak, brief-only Executor. There is no
         # independent review, so the controller supplies the protocol-required
@@ -1085,29 +1138,82 @@ def run_task(
             plan_execute_snapshot = candidates / "plan_execute"
             _snapshot_candidate(workspace, reports, plan_execute_snapshot)
             replan_prefix_snapshot = plan_execute_snapshot
-            decision = _replan_decision(
-                execution_validator,
-                plan_delivered=plan_delivered,
-                plan_retry_used=plan_retry_used,
-                consumed_tokens=_usage(adapters)["total_tokens"],
-                controller=controller,
-            )
-            decision_trace.append({"step": 0, "phase": "post_execution", **decision})
-            if decision["action"] == "stop":
-                _controller_attestation(
-                    submission,
-                    str(row["task_id"]),
-                    f"mt_replan_stop:{decision['reason']}",
-                    source="frozen_deterministic_replan_controller",
+            token_budget = int(controller.get("replan_max_total_tokens", 90_000))
+            prefix_usage = _usage(adapters)
+            post_execution_state = {
+                "category": str(row.get("category") or "Other"),
+                "difficulty": str(row.get("difficulty") or "unknown"),
+                "validator": execution_validator,
+                "plan_delivered": plan_delivered,
+                "plan_retry_used": plan_retry_used,
+                "recovery_plan_delivered": False,
+                "consumed_tokens": prefix_usage["total_tokens"],
+                "remaining_token_budget": max(
+                    0, token_budget - prefix_usage["total_tokens"]
+                ),
+                "consumed_latency_s": time.perf_counter() - started,
+            }
+            training_states["post_execution"] = post_execution_state
+            if execution_method == "MTReplan":
+                decision = _replan_decision(
+                    execution_validator,
+                    plan_delivered=plan_delivered,
+                    plan_retry_used=plan_retry_used,
+                    consumed_tokens=prefix_usage["total_tokens"],
+                    controller=controller,
                 )
-                route = f"replan_stop:{decision['reason']}"
+            elif execution_method == "MTAgenticRLExplore":
+                decision = {
+                    "schema_version": "multitown-agentic-rl-exploration-v1",
+                    "policy_source": "development_counterfactual_exploration",
+                    "action_space": list(ACTION_SPACE),
+                    "valid_actions": ["stop", "escalate", "human/abstain"],
+                    "state": post_execution_state,
+                    "q_values": {},
+                    "action": "escalate",
+                    "reason": "collect_counterfactual",
+                    "triggers": ["development_exploration"],
+                }
+            else:
+                if policy is None:
+                    raise ValueError("MTAgenticRL requires a trained policy")
+                decision = select_rl_action(
+                    policy, "post_execution", post_execution_state
+                )
+            decision_trace.append({"step": 0, "phase": "post_execution", **decision})
+            if decision["action"] in {"stop", "human/abstain"}:
+                human = decision["action"] == "human/abstain"
+                if human:
+                    write_json(submission / "attestation.json", {
+                        "task_id": str(row["task_id"]),
+                        "verdict": "fail",
+                        "checklist": [],
+                        "source": "trained_offline_fitted_q",
+                        "reason": "human_abstain",
+                    })
+                else:
+                    _controller_attestation(
+                        submission,
+                        str(row["task_id"]),
+                        f"mt_replan_stop:{decision.get('reason', 'policy_stop')}",
+                        source=(
+                            "frozen_deterministic_replan_controller"
+                            if execution_method == "MTReplan"
+                            else "trained_offline_fitted_q"
+                        ),
+                    )
+                route = (
+                    "agentic_rl:human_abstain"
+                    if human
+                    else f"replan_stop:{decision.get('reason', 'policy_stop')}"
+                )
             else:
                 prior_plan_count = _message_count(
                     messages, sender="planner", recipient="executor"
                 )
                 incident = json.dumps(
                     {
-                        "triggers": decision["triggers"],
+                        "triggers": decision.get("triggers", []),
                         "runtime": execution_validator,
                         "failure_evidence": _command_failure_evidence(executor_turns),
                     },
@@ -1142,30 +1248,69 @@ def run_task(
                     messages, sender="planner", recipient="executor"
                 ) > prior_plan_count
                 consumed = _usage(adapters)["total_tokens"]
-                token_budget = int(controller.get("replan_max_total_tokens", 90_000))
-                should_delegate = recovery_plan_delivered and consumed < token_budget
+                post_replan_state = {
+                    **post_execution_state,
+                    "recovery_plan_delivered": recovery_plan_delivered,
+                    "consumed_tokens": consumed,
+                    "remaining_token_budget": max(0, token_budget - consumed),
+                    "consumed_latency_s": time.perf_counter() - started,
+                }
+                training_states["post_replan"] = post_replan_state
+                can_delegate = recovery_plan_delivered and consumed < token_budget
+                if execution_method == "MTReplan":
+                    followup_action = "delegate" if can_delegate else "stop"
+                    followup = {
+                        "schema_version": "multitown-replan-decision-v1",
+                        "policy_source": "frozen_deterministic_replan_controller",
+                        "action_space": list(
+                            controller.get("replan_action_space", [])
+                        ),
+                        "valid_actions": ["stop", "delegate", "human/abstain"],
+                        "state": post_replan_state,
+                        "action": followup_action,
+                        "reason": (
+                            "recovery_plan_ready"
+                            if followup_action == "delegate"
+                            else "replan_failed_or_budget_exhausted"
+                        ),
+                        "triggers": decision.get("triggers", []),
+                    }
+                elif execution_method == "MTAgenticRLExplore":
+                    followup = {
+                        "schema_version": "multitown-agentic-rl-exploration-v1",
+                        "policy_source": "development_counterfactual_exploration",
+                        "action_space": list(ACTION_SPACE),
+                        "valid_actions": ["stop", "delegate", "human/abstain"],
+                        "state": post_replan_state,
+                        "q_values": {},
+                        "action": "delegate" if can_delegate else "stop",
+                        "reason": (
+                            "collect_counterfactual"
+                            if can_delegate
+                            else "replan_failed_or_budget_exhausted"
+                        ),
+                        "triggers": ["development_exploration"],
+                    }
+                else:
+                    followup = select_rl_action(
+                        policy, "post_replan", post_replan_state
+                    )
+                    if followup["action"] == "delegate" and not can_delegate:
+                        followup = {
+                            **followup,
+                            "action": "stop",
+                            "reason": "replan_failed_or_budget_exhausted",
+                        }
                 decision_trace.append({
-                    "schema_version": "multitown-replan-decision-v1",
-                    "step": 1,
-                    "phase": "post_replan",
-                    "policy_source": "frozen_deterministic_replan_controller",
-                    "action_space": list(controller.get("replan_action_space", [])),
-                    "state": {
-                        "recovery_plan_delivered": recovery_plan_delivered,
-                        "consumed_tokens": consumed,
-                        "remaining_token_budget": max(0, token_budget - consumed),
-                    },
-                    "action": "delegate" if should_delegate else "stop",
-                    "reason": (
-                        "recovery_plan_ready"
-                        if should_delegate
-                        else "replan_failed_or_budget_exhausted"
-                    ),
-                    "triggers": decision["triggers"],
+                    "step": 1, "phase": "post_replan", **followup,
                 })
-                if not should_delegate:
+                if followup["action"] != "delegate":
                     _restore_candidate(plan_execute_snapshot, workspace, reports)
-                    selected = "plan_execute_rollback"
+                    selected = (
+                        "human_abstain"
+                        if followup["action"] == "human/abstain"
+                        else "plan_execute_rollback"
+                    )
                 else:
                     role_counts["executor"] += 1
                     before_recovery = tree_sha256(workspace)
@@ -1201,34 +1346,133 @@ def run_task(
                         max_turns=int(controller.get("replan_executor_turns", 6)),
                     )
                     validators.append(recovery_validator)
-                    keep_recovery = bool(
-                        recovery_validator["workspace_changed"]
-                        and recovery_validator["reliability_score"]
-                        >= execution_validator["reliability_score"]
-                    )
-                    if keep_recovery:
-                        selected = "recovered"
+                    recovery_snapshot = candidates / "recovery"
+                    _snapshot_candidate(workspace, reports, recovery_snapshot)
+                    recovery_usage = _usage(adapters)
+                    post_recovery_state = {
+                        **post_replan_state,
+                        "validator": recovery_validator,
+                        "consumed_tokens": recovery_usage["total_tokens"],
+                        "remaining_token_budget": max(
+                            0, token_budget - recovery_usage["total_tokens"]
+                        ),
+                        "consumed_latency_s": time.perf_counter() - started,
+                    }
+                    training_states["post_recovery"] = post_recovery_state
+                    if execution_method == "MTReplan":
+                        keep_recovery = bool(
+                            recovery_validator["workspace_changed"]
+                            and recovery_validator["reliability_score"]
+                            >= execution_validator["reliability_score"]
+                        )
+                        terminal = {
+                            "schema_version": "multitown-replan-decision-v1",
+                            "policy_source": "frozen_deterministic_replan_controller",
+                            "action_space": list(
+                                controller.get("replan_action_space", [])
+                            ),
+                            "valid_actions": [
+                                "stop", "review", "human/abstain",
+                            ],
+                            "state": post_recovery_state,
+                            "action": "stop",
+                            "reason": (
+                                "recovered" if keep_recovery else "plan_execute_rollback"
+                            ),
+                            "triggers": [],
+                        }
+                        selected = "recovered" if keep_recovery else "plan_execute_rollback"
+                    elif execution_method == "MTAgenticRLExplore":
+                        terminal = {
+                            "schema_version": "multitown-agentic-rl-exploration-v1",
+                            "policy_source": "development_counterfactual_exploration",
+                            "action_space": list(ACTION_SPACE),
+                            "valid_actions": ["stop", "review", "human/abstain"],
+                            "state": post_recovery_state,
+                            "q_values": {},
+                            "action": "review",
+                            "reason": "collect_counterfactual",
+                            "triggers": ["development_exploration"],
+                        }
+                        selected = "pending_review"
                     else:
+                        terminal = select_rl_action(
+                            policy, "post_recovery", post_recovery_state
+                        )
+                        selected = (
+                            "recovered"
+                            if terminal["action"] == "stop"
+                            else "pending_review"
+                        )
+                    decision_trace.append({
+                        "step": 2, "phase": "post_recovery", **terminal,
+                    })
+                    if terminal["action"] == "review":
+                        verifier = adapter("verifier", strong)
+                        role_counts["verifier"] += 1
+                        (submission / "attestation.json").unlink(missing_ok=True)
+                        _run_phase(
+                            role="verifier",
+                            adapter=verifier,
+                            prompt=prompts["verifier"],
+                            config=_phase_config(
+                                "verifier",
+                                task=task,
+                                workspace=workspace,
+                                reports=reports,
+                                messages=messages,
+                                submission=submission,
+                                image=image,
+                            ),
+                            messages=messages,
+                            logs=logs / "agentic_review",
+                            max_turns=int(controller.get("agentic_review_turns", 6)),
+                            stop_when=lambda: _attestation(submission) is not None,
+                        )
+                        att = _attestation(submission)
+                        if att and att.get("verdict") == "pass":
+                            selected = "review_kept_recovery"
+                        else:
+                            _restore_candidate(
+                                plan_execute_snapshot, workspace, reports
+                            )
+                            selected = "review_rollback_plan_execute"
+                    elif terminal["action"] == "human/abstain":
                         _restore_candidate(plan_execute_snapshot, workspace, reports)
-                        selected = "plan_execute_rollback"
-                _controller_attestation(
-                    submission,
-                    str(row["task_id"]),
-                    f"mt_replan_{selected}",
-                    source="frozen_deterministic_replan_controller",
+                        selected = "human_abstain"
+                if selected == "human_abstain":
+                    write_json(submission / "attestation.json", {
+                        "task_id": str(row["task_id"]),
+                        "verdict": "fail",
+                        "checklist": [],
+                        "source": "trained_offline_fitted_q",
+                        "reason": "human_abstain",
+                    })
+                else:
+                    _controller_attestation(
+                        submission,
+                        str(row["task_id"]),
+                        f"mt_replan_{selected}",
+                        source=(
+                            "frozen_deterministic_replan_controller"
+                            if execution_method == "MTReplan"
+                            else (
+                                "development_counterfactual_exploration"
+                                if execution_method == "MTAgenticRLExplore"
+                                else "trained_offline_fitted_q"
+                            )
+                        ),
+                    )
+                route_prefix = (
+                    "replan"
+                    if execution_method == "MTReplan"
+                    else (
+                        "agentic_rl_explore"
+                        if execution_method == "MTAgenticRLExplore"
+                        else "agentic_rl"
+                    )
                 )
-                decision_trace.append({
-                    "schema_version": "multitown-replan-decision-v1",
-                    "step": 2,
-                    "phase": "post_recovery",
-                    "policy_source": "frozen_deterministic_replan_controller",
-                    "action_space": list(controller.get("replan_action_space", [])),
-                    "state": {"selected_candidate": selected},
-                    "action": "stop",
-                    "reason": selected,
-                    "triggers": [],
-                })
-                route = f"replan:{selected}"
+                route = f"{route_prefix}:{selected}"
     elif execution_method == "ExecuteReview":
         # TeamBench's official no-planner ablation: a weak Executor works from
         # the public brief, then an independent strong Verifier reads the full
@@ -1497,41 +1741,31 @@ def run_task(
     )
     policy_latency_s = time.perf_counter() - started
     shadow_plan_execute: dict[str, Any] | None = None
-    if execution_method == "MTReplan" and replan_prefix_snapshot is not None:
+    shadow_recovery: dict[str, Any] | None = None
+    if execution_method in {
+        "MTReplan", "MTAgenticRL", "MTAgenticRLExplore",
+    } and replan_prefix_snapshot is not None:
         # Score the exact pre-replan candidate after routing has ended. The
         # hidden result is evaluation-only and can never influence an action.
-        shadow_run = run_dir / "counterfactuals" / "plan_execute_prefix"
-        _snapshot_candidate(
-            replan_prefix_snapshot / "workspace",
-            replan_prefix_snapshot / "reports",
-            shadow_run,
+        shadow_plan_execute = _grade_snapshot(
+            snapshot=replan_prefix_snapshot,
+            label="plan_execute_prefix",
+            task_id=str(row["task_id"]),
+            row=row,
+            team_root=team_root,
+            run_dir=run_dir,
+            image=image,
         )
-        shadow_submission = shadow_run / "submission"
-        _controller_attestation(
-            shadow_submission,
-            str(row["task_id"]),
-            "fixed_plan_execute_without_independent_review",
-            source="fixed_strategy_protocol_controller",
+    if execution_method == "MTAgenticRLExplore" and recovery_snapshot is not None:
+        shadow_recovery = _grade_snapshot(
+            snapshot=recovery_snapshot,
+            label="recovery",
+            task_id=str(row["task_id"]),
+            row=row,
+            team_root=team_root,
+            run_dir=run_dir,
+            image=image,
         )
-        shadow_workspace_hash = tree_sha256(shadow_run / "workspace")
-        shadow_reports_hash = tree_sha256(shadow_run / "reports")
-        shadow_started = time.perf_counter()
-        shadow_score = grade_in_sandbox(
-            row=row, team_root=team_root, run_dir=shadow_run, image=image
-        )
-        shadow_plan_execute = {
-            "passed": bool(shadow_score.get("pass", False)),
-            "partial_score": float(
-                shadow_score.get("secondary", {}).get(
-                    "partial_score", 1.0 if shadow_score.get("pass") else 0.0
-                )
-            ),
-            "failure_modes": shadow_score.get("failure_modes", []),
-            "workspace_sha256": shadow_workspace_hash,
-            "reports_sha256": shadow_reports_hash,
-            "grader_latency_s": time.perf_counter() - shadow_started,
-            "policy_input": False,
-        }
     usage = _usage(adapters)
     result = {
         "schema_version": "general-mas-teambench-result-v1",
@@ -1557,7 +1791,25 @@ def run_task(
         "request_errors": 0,
     }
     if shadow_plan_execute is not None:
+        prefix_state = training_states.get("post_execution", {})
+        shadow_plan_execute["total_tokens"] = int(
+            prefix_state.get("consumed_tokens", usage["total_tokens"])
+        )
+        shadow_plan_execute["latency_s"] = float(
+            prefix_state.get("consumed_latency_s", policy_latency_s)
+        )
         result["shadow_plan_execute"] = shadow_plan_execute
+    if shadow_recovery is not None:
+        recovery_state = training_states.get("post_recovery", {})
+        shadow_recovery["total_tokens"] = int(
+            recovery_state.get("consumed_tokens", usage["total_tokens"])
+        )
+        shadow_recovery["latency_s"] = float(
+            recovery_state.get("consumed_latency_s", policy_latency_s)
+        )
+        result["shadow_recovery"] = shadow_recovery
+    if training_states:
+        result["training_states"] = training_states
     if reported_method == "MTSelector":
         result["selected_strategy"] = execution_method
     write_json(run_dir / "result.json", result)
@@ -1609,6 +1861,7 @@ def main() -> None:
         choices=(
             "Solo", "PlanExecute", "ExecuteReview", "A4", "A8",
             "MTSelector", "MTSequential", "MTReplan",
+            "MTAgenticRLExplore", "MTAgenticRL",
         ),
         required=True,
     )
@@ -1647,13 +1900,18 @@ def main() -> None:
     split = read_json(split_path.resolve())
     controller = read_json(args.controller_config.resolve()) if args.controller_config else DEFAULT_CONTROLLER
     policy = read_json(args.policy_config.resolve()) if args.policy_config else None
-    if args.method == "MTSelector" and policy is None:
-        parser.error("--policy-config is required for MTSelector")
-    if args.method != "MTSelector" and policy is not None:
-        parser.error("--policy-config is only valid for MTSelector")
+    policy_methods = {"MTSelector", "MTAgenticRL"}
+    if args.method in policy_methods and policy is None:
+        parser.error(f"--policy-config is required for {args.method}")
+    if args.method not in policy_methods and policy is not None:
+        parser.error("--policy-config is only valid for MTSelector or MTAgenticRL")
+    if args.method == "MTAgenticRLExplore" and args.split != "dev":
+        parser.error("MTAgenticRLExplore is restricted to the development split")
+    if args.method == "MTAgenticRL":
+        validate_rl_policy(policy)
     if args.method == "MTSequential":
         _validate_sequential_controller(controller)
-    if args.method == "MTReplan":
+    if args.method in {"MTReplan", "MTAgenticRLExplore", "MTAgenticRL"}:
         _validate_replan_controller(controller)
     rows = [row for row in split["rows"] if row["split"] == args.split]
     if args.task:
