@@ -3,7 +3,9 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
+import re
 import shutil
 import subprocess
 import time
@@ -17,6 +19,9 @@ from harness.agent_loop import AgentLoop, AgentTurn
 from .agentic_rl import ACTION_SPACE
 from .agentic_rl import select_action as select_rl_action
 from .agentic_rl import validate_policy as validate_rl_policy
+from .agentic_rl_v2 import POLICY_SCHEMA as RL_V2_POLICY_SCHEMA
+from .agentic_rl_v2 import select_action as select_rl_v2_action
+from .agentic_rl_v2 import validate_policy as validate_rl_v2_policy
 from .common import append_jsonl, read_json, write_json
 from .model_adapter import OutcomeStopAdapter, RecordedAdapter
 from .monitor import SystemMonitor
@@ -34,6 +39,21 @@ from .teambench_stage import (
     stage_task,
     tree_sha256,
 )
+
+
+def _validate_agentic_policy(policy: dict[str, Any]) -> None:
+    if policy.get("schema_version") == RL_V2_POLICY_SCHEMA:
+        validate_rl_v2_policy(policy)
+    else:
+        validate_rl_policy(policy)
+
+
+def _select_agentic_action(
+    policy: dict[str, Any], phase: str, state: dict[str, Any]
+) -> dict[str, Any]:
+    if policy.get("schema_version") == RL_V2_POLICY_SCHEMA:
+        return select_rl_v2_action(policy, phase, state)
+    return select_rl_action(policy, phase, state)
 
 DEFAULT_CONTROLLER = {
     "schema_version": "general-mas-a8-controller-v2",
@@ -361,6 +381,50 @@ def _command_failure_evidence(
     return evidence[-limit:]
 
 
+def _is_test_command(command: str) -> bool:
+    """Classify public, executor-issued test commands without reading a grader."""
+    value = " ".join(command.lower().split())
+    markers = (
+        "pytest", "unittest", "npm test", "npm run test", "yarn test",
+        "pnpm test", "go test", "cargo test", "mvn test", "gradle test",
+        "./test", " test_", "/tests/", " tests/",
+    )
+    return any(marker in value for marker in markers)
+
+
+def _public_task_features(brief: str, workspace: Path) -> dict[str, float]:
+    """Return bounded public-input features for a leak-free task router."""
+    bins = [0.0] * 16
+    words = re.findall(r"[a-z0-9_+#.-]+", brief.lower())
+    for word in words:
+        digest = hashlib.sha256(word.encode("utf-8")).digest()
+        index = digest[0] % len(bins)
+        sign = 1.0 if digest[1] & 1 else -1.0
+        bins[index] += sign
+    norm = math.sqrt(sum(value * value for value in bins)) or 1.0
+    files = [path for path in workspace.rglob("*") if path.is_file()]
+    suffixes = {path.suffix.lower() for path in files}
+    return {
+        "brief_word_count": float(len(words)),
+        **{
+            f"brief_hash_{index:02d}": value / norm
+            for index, value in enumerate(bins)
+        },
+        "workspace_file_count": float(len(files)),
+        "workspace_test_file_count": float(sum(
+            "test" in path.name.lower() or "tests" in path.parts for path in files
+        )),
+        "workspace_language_count": float(len(suffixes)),
+        "workspace_has_python": float(".py" in suffixes),
+        "workspace_has_javascript": float(bool({".js", ".ts", ".tsx"} & suffixes)),
+        "workspace_has_go": float(".go" in suffixes),
+        "workspace_has_rust": float(".rs" in suffixes),
+        "workspace_has_java": float(bool({".java", ".kt"} & suffixes)),
+        "workspace_has_shell": float(".sh" in suffixes),
+        "workspace_has_data": float(bool({".csv", ".json", ".jsonl", ".sql"} & suffixes)),
+    }
+
+
 def _runtime_validator(
     *,
     turns: list[AgentTurn],
@@ -379,6 +443,10 @@ def _runtime_validator(
         if call.get("name") == "run"
     ]
     commands = [result for _, result in command_pairs]
+    test_pairs = [
+        (call, result) for call, result in command_pairs
+        if _is_test_command(str(call.get("args", {}).get("cmd", "")))
+    ]
     successful_commands = sum(int(result.get("exit_code", 1)) == 0 for result in commands)
     failed_commands = sum(int(result.get("exit_code", 1)) != 0 for result in commands)
     timed_out_commands = sum(
@@ -426,6 +494,16 @@ def _runtime_validator(
         "write_calls": writes,
         "successful_commands": successful_commands,
         "failed_commands": failed_commands,
+        "test_commands": len(test_pairs),
+        "successful_test_commands": sum(
+            int(result.get("exit_code", 1)) == 0 for _, result in test_pairs
+        ),
+        "failed_test_commands": sum(
+            int(result.get("exit_code", 1)) != 0 for _, result in test_pairs
+        ),
+        "last_test_exit_code": (
+            int(test_pairs[-1][1].get("exit_code", 1)) if test_pairs else -1
+        ),
         "timed_out_commands": timed_out_commands,
         "repeated_commands": repeated_commands,
         "max_command_repetitions": max_command_repetitions,
@@ -874,6 +952,7 @@ def run_task(
     spec = (task / "spec.md").read_text(encoding="utf-8")
     brief = (task / "brief.md").read_text(encoding="utf-8")
     prompts = _prompts(str(row["task_id"]), spec, brief)
+    public_task_features = _public_task_features(brief, workspace)
 
     adapters: list[RecordedAdapter] = []
 
@@ -915,7 +994,7 @@ def run_task(
         route = "single_strong_full_access"
     elif execution_method in {
         "PlanExecute", "MTSequential", "MTReplan",
-        "MTAgenticRL", "MTAgenticRLExplore",
+        "MTAgenticRL", "MTAgenticRLExplore", "MTAgenticRLExploreV2",
     }:
         # TeamBench's official no-verifier ablation: a strong Planner transfers
         # the full-spec plan to a weak, brief-only Executor. There is no
@@ -1144,6 +1223,8 @@ def run_task(
                 "category": str(row.get("category") or "Other"),
                 "difficulty": str(row.get("difficulty") or "unknown"),
                 "validator": execution_validator,
+                "execution_validator": execution_validator,
+                **public_task_features,
                 "plan_delivered": plan_delivered,
                 "plan_retry_used": plan_retry_used,
                 "recovery_plan_delivered": False,
@@ -1162,7 +1243,7 @@ def run_task(
                     consumed_tokens=prefix_usage["total_tokens"],
                     controller=controller,
                 )
-            elif execution_method == "MTAgenticRLExplore":
+            elif execution_method in {"MTAgenticRLExplore", "MTAgenticRLExploreV2"}:
                 decision = {
                     "schema_version": "multitown-agentic-rl-exploration-v1",
                     "policy_source": "development_counterfactual_exploration",
@@ -1177,7 +1258,7 @@ def run_task(
             else:
                 if policy is None:
                     raise ValueError("MTAgenticRL requires a trained policy")
-                decision = select_rl_action(
+                decision = _select_agentic_action(
                     policy, "post_execution", post_execution_state
                 )
             decision_trace.append({"step": 0, "phase": "post_execution", **decision})
@@ -1275,7 +1356,7 @@ def run_task(
                         ),
                         "triggers": decision.get("triggers", []),
                     }
-                elif execution_method == "MTAgenticRLExplore":
+                elif execution_method in {"MTAgenticRLExplore", "MTAgenticRLExploreV2"}:
                     followup = {
                         "schema_version": "multitown-agentic-rl-exploration-v1",
                         "policy_source": "development_counterfactual_exploration",
@@ -1292,7 +1373,7 @@ def run_task(
                         "triggers": ["development_exploration"],
                     }
                 else:
-                    followup = select_rl_action(
+                    followup = _select_agentic_action(
                         policy, "post_replan", post_replan_state
                     )
                     if followup["action"] == "delegate" and not can_delegate:
@@ -1382,7 +1463,7 @@ def run_task(
                             "triggers": [],
                         }
                         selected = "recovered" if keep_recovery else "plan_execute_rollback"
-                    elif execution_method == "MTAgenticRLExplore":
+                    elif execution_method in {"MTAgenticRLExplore", "MTAgenticRLExploreV2"}:
                         terminal = {
                             "schema_version": "multitown-agentic-rl-exploration-v1",
                             "policy_source": "development_counterfactual_exploration",
@@ -1390,13 +1471,21 @@ def run_task(
                             "valid_actions": ["stop", "review", "human/abstain"],
                             "state": post_recovery_state,
                             "q_values": {},
-                            "action": "review",
+                            "action": (
+                                "stop"
+                                if execution_method == "MTAgenticRLExploreV2"
+                                else "review"
+                            ),
                             "reason": "collect_counterfactual",
                             "triggers": ["development_exploration"],
                         }
-                        selected = "pending_review"
+                        selected = (
+                            "recovered"
+                            if execution_method == "MTAgenticRLExploreV2"
+                            else "pending_review"
+                        )
                     else:
-                        terminal = select_rl_action(
+                        terminal = _select_agentic_action(
                             policy, "post_recovery", post_recovery_state
                         )
                         selected = (
@@ -1408,35 +1497,46 @@ def run_task(
                         "step": 2, "phase": "post_recovery", **terminal,
                     })
                     if terminal["action"] == "review":
-                        verifier = adapter("verifier", strong)
-                        role_counts["verifier"] += 1
-                        (submission / "attestation.json").unlink(missing_ok=True)
-                        _run_phase(
-                            role="verifier",
-                            adapter=verifier,
-                            prompt=prompts["verifier"],
-                            config=_phase_config(
-                                "verifier",
-                                task=task,
-                                workspace=workspace,
-                                reports=reports,
-                                messages=messages,
-                                submission=submission,
-                                image=image,
-                            ),
-                            messages=messages,
-                            logs=logs / "agentic_review",
-                            max_turns=int(controller.get("agentic_review_turns", 6)),
-                            stop_when=lambda: _attestation(submission) is not None,
-                        )
-                        att = _attestation(submission)
-                        if att and att.get("verdict") == "pass":
-                            selected = "review_kept_recovery"
-                        else:
+                        if (
+                            policy is not None
+                            and policy.get("schema_version") == RL_V2_POLICY_SCHEMA
+                        ):
                             _restore_candidate(
                                 plan_execute_snapshot, workspace, reports
                             )
-                            selected = "review_rollback_plan_execute"
+                            selected = "evidence_review_rollback_plan_execute"
+                        else:
+                            verifier = adapter("verifier", strong)
+                            role_counts["verifier"] += 1
+                            (submission / "attestation.json").unlink(missing_ok=True)
+                            _run_phase(
+                                role="verifier",
+                                adapter=verifier,
+                                prompt=prompts["verifier"],
+                                config=_phase_config(
+                                    "verifier",
+                                    task=task,
+                                    workspace=workspace,
+                                    reports=reports,
+                                    messages=messages,
+                                    submission=submission,
+                                    image=image,
+                                ),
+                                messages=messages,
+                                logs=logs / "agentic_review",
+                                max_turns=int(
+                                    controller.get("agentic_review_turns", 6)
+                                ),
+                                stop_when=lambda: _attestation(submission) is not None,
+                            )
+                            att = _attestation(submission)
+                            if att and att.get("verdict") == "pass":
+                                selected = "review_kept_recovery"
+                            else:
+                                _restore_candidate(
+                                    plan_execute_snapshot, workspace, reports
+                                )
+                                selected = "review_rollback_plan_execute"
                     elif terminal["action"] == "human/abstain":
                         _restore_candidate(plan_execute_snapshot, workspace, reports)
                         selected = "human_abstain"
@@ -1458,7 +1558,9 @@ def run_task(
                             if execution_method == "MTReplan"
                             else (
                                 "development_counterfactual_exploration"
-                                if execution_method == "MTAgenticRLExplore"
+                                if execution_method in {
+                                    "MTAgenticRLExplore", "MTAgenticRLExploreV2",
+                                }
                                 else "trained_offline_fitted_q"
                             )
                         ),
@@ -1468,7 +1570,9 @@ def run_task(
                     if execution_method == "MTReplan"
                     else (
                         "agentic_rl_explore"
-                        if execution_method == "MTAgenticRLExplore"
+                        if execution_method in {
+                            "MTAgenticRLExplore", "MTAgenticRLExploreV2",
+                        }
                         else "agentic_rl"
                     )
                 )
@@ -1744,6 +1848,7 @@ def run_task(
     shadow_recovery: dict[str, Any] | None = None
     if execution_method in {
         "MTReplan", "MTAgenticRL", "MTAgenticRLExplore",
+        "MTAgenticRLExploreV2",
     } and replan_prefix_snapshot is not None:
         # Score the exact pre-replan candidate after routing has ended. The
         # hidden result is evaluation-only and can never influence an action.
@@ -1756,7 +1861,9 @@ def run_task(
             run_dir=run_dir,
             image=image,
         )
-    if execution_method == "MTAgenticRLExplore" and recovery_snapshot is not None:
+    if execution_method in {
+        "MTAgenticRLExplore", "MTAgenticRLExploreV2",
+    } and recovery_snapshot is not None:
         shadow_recovery = _grade_snapshot(
             snapshot=recovery_snapshot,
             label="recovery",
@@ -1861,7 +1968,7 @@ def main() -> None:
         choices=(
             "Solo", "PlanExecute", "ExecuteReview", "A4", "A8",
             "MTSelector", "MTSequential", "MTReplan",
-            "MTAgenticRLExplore", "MTAgenticRL",
+            "MTAgenticRLExplore", "MTAgenticRLExploreV2", "MTAgenticRL",
         ),
         required=True,
     )
@@ -1905,13 +2012,15 @@ def main() -> None:
         parser.error(f"--policy-config is required for {args.method}")
     if args.method not in policy_methods and policy is not None:
         parser.error("--policy-config is only valid for MTSelector or MTAgenticRL")
-    if args.method == "MTAgenticRLExplore" and args.split != "dev":
-        parser.error("MTAgenticRLExplore is restricted to the development split")
+    if args.method in {"MTAgenticRLExplore", "MTAgenticRLExploreV2"} and args.split != "dev":
+        parser.error("Agentic RL exploration is restricted to the development split")
     if args.method == "MTAgenticRL":
-        validate_rl_policy(policy)
+        _validate_agentic_policy(policy)
     if args.method == "MTSequential":
         _validate_sequential_controller(controller)
-    if args.method in {"MTReplan", "MTAgenticRLExplore", "MTAgenticRL"}:
+    if args.method in {
+        "MTReplan", "MTAgenticRLExplore", "MTAgenticRLExploreV2", "MTAgenticRL",
+    }:
         _validate_replan_controller(controller)
     rows = [row for row in split["rows"] if row["split"] == args.split]
     if args.task:

@@ -7,6 +7,10 @@ from general_mas_bench.agentic_rl import (
     train_policy,
     validate_policy,
 )
+from general_mas_bench.agentic_rl_v2 import DATASET_SCHEMA as DATASET_SCHEMA_V2
+from general_mas_bench.agentic_rl_v2 import select_action as select_action_v2
+from general_mas_bench.agentic_rl_v2 import train_policy as train_policy_v2
+from general_mas_bench.agentic_rl_v2 import validate_policy as validate_policy_v2
 
 
 def _outcome(partial: float, tokens: int, latency: float, passed: bool = False):
@@ -116,3 +120,104 @@ def test_train_policy_produces_hashed_sequential_policy() -> None:
         assert "hash mismatch" in str(exc)
     else:
         raise AssertionError("tampered policy was accepted")
+
+
+def _v2_state(failed: int, tokens: int, latency: float, *, recovery: bool = False):
+    execution = {
+        "workspace_changed": True,
+        "successful_commands": 1,
+        "failed_commands": failed,
+        "timed_out_commands": 0,
+        "repeated_commands": 0,
+        "max_failed_command_repetitions": failed,
+        "turns_used": 8,
+        "turn_budget_exhausted": True,
+        "reliability_score": 0.5,
+        "hard_fail": False,
+        "test_commands": 1,
+        "successful_test_commands": 0,
+        "failed_test_commands": 1,
+        "last_test_exit_code": 1,
+    }
+    current = execution | ({
+        "successful_commands": 2,
+        "failed_commands": 0,
+        "reliability_score": 0.9,
+        "successful_test_commands": 1,
+        "failed_test_commands": 0,
+        "last_test_exit_code": 0,
+    } if recovery else {})
+    return {
+        "category": "Testing",
+        "difficulty": "hard",
+        "validator": current,
+        "execution_validator": execution,
+        "plan_delivered": True,
+        "plan_retry_used": False,
+        "recovery_plan_delivered": True,
+        "consumed_tokens": tokens,
+        "remaining_token_budget": 90_000 - tokens,
+        "consumed_latency_s": latency,
+        "brief_word_count": 10,
+        **{f"brief_hash_{index:02d}": float(index == 0) for index in range(16)},
+        "workspace_file_count": 5,
+        "workspace_test_file_count": 1,
+        "workspace_language_count": 1,
+        "workspace_has_python": 1,
+    }
+
+
+def _v2_dataset():
+    episodes = []
+    for seed in range(3):
+        for index in range(3):
+            beneficial = index == 2
+            prefix = _outcome(0.4, 30_000, 30)
+            recovery = _outcome(0.9 if beneficial else 0.4, 42_000, 42)
+            episodes.append({
+                "instance_id": f"task-{index}::seed={seed}",
+                "task_id": f"task-{index}",
+                "seed": seed,
+                "states": {
+                    "post_execution": _v2_state(index, 30_000, 30),
+                    "post_replan": _v2_state(index, 34_000, 34),
+                    "post_recovery": _v2_state(index, 42_000, 42, recovery=True),
+                },
+                "outcomes": {"prefix": prefix, "recovery": recovery},
+            })
+    return {"schema_version": DATASET_SCHEMA_V2, "episodes": episodes}
+
+
+def test_v2_trains_pessimistic_hashed_ensemble() -> None:
+    policy = train_policy_v2(_v2_dataset())
+    validate_policy_v2(policy)
+    assert policy["claim_class"] == "trained_offline_sequential_pessimistic_q_candidate"
+    assert policy["training"]["seeds"] == [0, 1, 2]
+    assert policy["post_recovery_review_mode"] == "deterministic_rollback_to_prefix"
+    decision = select_action_v2(
+        policy, "post_execution", _v2_state(2, 30_000, 30)
+    )
+    assert decision["action"] in {"stop", "escalate"}
+    assert set(decision["advantage"]) == {"mean", "std", "lcb", "min", "max"}
+    assert policy["uncertainty_beta"] > 0
+
+
+def test_v2_rejects_non_pessimistic_or_malformed_policy() -> None:
+    policy = train_policy_v2(_v2_dataset())
+    for key, value, expected in (
+        ("uncertainty_beta", 0.0, "positive uncertainty"),
+        ("budget_reserve_tokens", {"post_execution": -1}, "reserve phases"),
+        ("ensemble_size", 1, "at least two"),
+    ):
+        broken = dict(policy)
+        broken[key] = value
+        broken.pop("policy_sha256")
+        from general_mas_bench.agentic_rl_v2 import _canonical_sha256
+
+        broken["policy_sha256"] = _canonical_sha256(broken)
+        try:
+            validate_policy_v2(broken)
+        except (TypeError, ValueError) as exc:
+            assert expected in str(exc)
+        else:
+            raise AssertionError(f"malformed {key} was accepted")
