@@ -60,6 +60,27 @@ def test_mainstream_strategy_summary_preserves_negative_result() -> None:
     assert summary["invocation_errors"] == 0
 
 
+def test_seed2_three_way_record_preserves_negative_controller_result() -> None:
+    summary = json.loads(
+        (RECORDS / "teambench-sequential-seed2-summary.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert summary["status"] == "three_way_complete_negative_controller"
+    assert summary["paired_tasks"] == 89
+    assert summary["baseline"]["passes"] == 17
+    assert summary["candidate"]["passes"] == 16
+    assert summary["solo"]["passes"] == 13
+    assert summary["quality_token_pareto_frontier"] == [
+        "PlanExecute",
+        "MTSequential",
+    ]
+    assert summary["benchmark_best_supported"] is False
+    assert summary["integrity"]["unique_tasks_each"] == 89
+    assert summary["integrity"]["invocation_errors_each"] == 0
+    assert summary["integrity"]["grader_timeout_rows_each"] == 0
+
+
 def test_public_records_do_not_expose_machine_local_paths() -> None:
     for path in RECORDS.iterdir():
         if path.suffix not in {".json", ".md", ".csv"}:

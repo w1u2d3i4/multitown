@@ -1,16 +1,15 @@
 # MT-Sequential-v1 seed-2 paired confirmation
 
-Status: the matched PlanExecute/candidate pair is complete on all 89 public
-generator-seed-2 tasks. It is a negative controller result. The protocol's
-same-seed Solo rank anchor remains required before closing the full three-way
-confirmation; no benchmark-best claim is made.
+Status: the matched PlanExecute/MT-Sequential/Solo comparison is complete on
+all 89 public generator-seed-2 tasks. It is a negative controller result and
+closes the v1 confirmation. No benchmark-best claim is made.
 
 Raw workspaces, prompts, request logs and system telemetry remain private.
 
 ## Method and controls
 
-Both runs use the same 89 task IDs, generated seed 2, per-request sampling seed
-20260824, strong and weak local model aliases, temperature 0, 2,048-token
+All three runs use the same 89 task IDs, generated seed 2, per-request sampling
+seed 20260824, strong and weak local model aliases, temperature 0, 2,048-token
 per-call cap, Docker image, task order, runner revision and deterministic
 graders. There are 89 unique results in each run, zero invocation errors and
 zero grader-timeout rows.
@@ -21,10 +20,11 @@ frozen deterministic controller, **not Agentic RL**.
 
 ## Whole-run observation
 
-| Method | Fully passed | Mean partial | Mean tokens | Median latency | p95 latency |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| PlanExecute-TB | **17 / 89** | 0.61670 | **48,117** | **36.73 s** | **98.29 s** |
-| MT-Sequential-v1 | 16 / 89 | **0.62805** | 73,288 | 51.23 s | 138.23 s |
+| Method | Fully passed | Mean partial | Mean tokens | Median latency | p95 latency | Energy |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| PlanExecute-TB | **17 / 89** | 0.61670 | **48,117** | **36.73 s** | **98.29 s** | **60.11 Wh** |
+| MT-Sequential-v1 | 16 / 89 | **0.62805** | 73,288 | 51.23 s | 138.23 s | 83.35 Wh |
+| Solo-TB | 13 / 89 | 0.62390 | 84,971 | 49.56 s | 388.35 s | 95.65 Wh |
 
 The candidate-minus-baseline partial-score difference is +0.01135 with a 95%
 paired-bootstrap CI of [-0.01247, +0.03955]. It is better on 7 tasks, tied on
@@ -34,7 +34,22 @@ not established.
 
 The candidate adds 25,171 tokens/task (95% CI [+21,778, +28,357]), a 52.31%
 increase. It adds 20.81 seconds/task (95% CI [+10.98, +33.99]), a 33.02%
-increase. Its p95 token count is 102,081 versus 65,953 for PlanExecute.
+increase. It uses 38.67% more monitored energy. Its p95 token count is 102,081
+versus 65,953 for PlanExecute.
+
+Solo minus PlanExecute is +0.00719 partial score (95% CI [-0.04068, +0.05674])
+while adding 36,854 tokens/task, a 76.59% increase. Solo is better on 17 tasks,
+tied on 43 and worse on 29; pass discordance is eight PlanExecute-only versus
+four Solo-only passes (exact McNemar p=0.3877). Solo therefore does not supply
+a quality-superiority result and is dominated by MT-Sequential on the
+point-estimate quality/token plane.
+
+MT-Sequential minus Solo is +0.00416 partial score (95% CI
+[-0.04026, +0.04940]) while using 11,683 fewer tokens/task (13.75%) and 12.86%
+less monitored energy. The point-estimate Pareto frontier is PlanExecute plus
+MT-Sequential, but the candidate's quality interval versus PlanExecute includes
+zero and its only workspace-changing treatment has no benefit. This is not a
+benchmark-win result.
 
 ## Action-effect audit
 
@@ -62,12 +77,11 @@ treatment has zero quality benefit, the pass count decreases, the quality
 interval includes zero, and review adds substantial token and latency cost.
 It must not be described as the best TeamBench method or as Agentic RL.
 
-Because the whole-run partial point estimate is above PlanExecute, the frozen
-protocol still requires the same-seed Solo anchor before the three-way rank
-record is closed. Independently of that pending rank anchor, v1 is retired as a
-controller. The next version must intervene before repeated long-tail commands,
-use a high-precision failure trigger, and prefer Planner feedback over broad
-post-hoc verification.
+The same-seed Solo anchor is now complete and the three-way rank record is
+closed. V1 remains retired as a controller. The next version must intervene
+before repeated long-tail commands, use a high-precision failure trigger, and
+prefer Planner feedback over broad post-hoc verification. It must pass a fresh
+development gate before any seed-3 confirmation run.
 
 ## Provenance
 
@@ -80,6 +94,8 @@ post-hoc verification.
   `fdf7d942...`, `a6a92069...`, `87c9b7e6...`
 - candidate config/results/request/monitor SHA-256: `3311b6e7...`,
   `1b7c760d...`, `adcaddbf...`, `c70b4500...`
+- Solo config/results/request/monitor SHA-256: `763f82dc...`, `70704fa4...`,
+  `e1619c12...`, `f525e0b0...`
 
 Exact complete hashes and machine-readable statistics are in
 [`teambench-sequential-seed2-summary.json`](teambench-sequential-seed2-summary.json).
