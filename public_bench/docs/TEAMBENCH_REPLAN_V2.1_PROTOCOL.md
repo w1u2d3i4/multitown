@@ -1,8 +1,13 @@
 # MT-Replan-v2.1 TeamBench protocol
 
-Status: frozen after offline trigger preflight and before the first v2.1 model
-invocation. Public generator seed 2 is discovery evidence; generator seed 3 is
-reserved for confirmation if development gates pass.
+Status: the policy was frozen after offline trigger preflight and before its
+first model invocation. A one-task development smoke run then confirmed the
+execution and shadow-grading path but showed that an upstream grader may mutate
+the mounted candidate while grading. Before the formal development run, the
+evaluator was therefore amended to record selected workspace and reports hashes
+before grading. No policy state, trigger, action, prompt, role, budget or model
+setting changed. Public generator seed 2 is discovery evidence; generator seed
+3 is reserved for confirmation if development gates pass.
 
 ## Change from the unrun v2 design
 
@@ -53,6 +58,10 @@ local-model repeat variation in a separately generated baseline. Extra shadow
 grading time is recorded separately and excluded from policy end-to-end
 latency. A separately rerun matched PlanExecute arm remains required as a
 reproducibility anchor.
+
+Both selected and post-grader hashes are retained. Equality checks against the
+shadow prefix use the selected, pre-grader hashes because the grader itself may
+create caches or other files in its mounted workspace.
 
 No Verifier is activated. The policy never sees a hidden grader result, expected
 output, task score or task-specific route. It is a deterministic controller,

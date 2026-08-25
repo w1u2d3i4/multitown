@@ -1490,6 +1490,8 @@ def run_task(
             "task_id": row["task_id"], "verdict": "fail", "checklist": [],
             "source": "fail_closed_missing_attestation",
         })
+    selected_workspace_sha256 = tree_sha256(workspace)
+    selected_reports_sha256 = tree_sha256(reports)
     score = grade_in_sandbox(
         row=row, team_root=team_root, run_dir=run_dir, image=image
     )
@@ -1548,6 +1550,8 @@ def run_task(
         "decision_trace": decision_trace,
         **usage,
         "latency_s": policy_latency_s,
+        "selected_workspace_sha256": selected_workspace_sha256,
+        "selected_reports_sha256": selected_reports_sha256,
         "final_workspace_sha256": tree_sha256(workspace),
         "final_reports_sha256": tree_sha256(reports),
         "request_errors": 0,
