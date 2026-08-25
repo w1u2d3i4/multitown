@@ -18,6 +18,19 @@
   "replan_planner_turns": 3,
   "replan_executor_turns": 6,
   "agentic_review_turns": 6,
+  "high_risk_categories": [
+    "Adversarial",
+    "Cross-System Integration",
+    "Distributed Systems",
+    "Data Engineering",
+    "Long-Horizon",
+    "Multi-language",
+    "Operations",
+    "Security"
+  ],
+  "high_risk_difficulties": [
+    "expert"
+  ],
   "rollback_surfaces": [
     "workspace",
     "reports"
