@@ -1,0 +1,100 @@
+{
+  "schema_version": "multitown-teambench-replan-dev-v2.1-summary-v1",
+  "status": "development_partial_gain_gate_failed",
+  "paired_tasks": 30,
+  "sampling_seed": 20260824,
+  "baseline": {
+    "method": "PlanExecute",
+    "passes": 6,
+    "mean_partial_score": 0.6118733333333333,
+    "mean_total_tokens": 45334.4,
+    "mean_latency_s": 53.60129752972474,
+    "median_latency_s": 53.68732782051666,
+    "p95_latency_s": 107.96707558690105
+  },
+  "candidate": {
+    "method": "MTReplan",
+    "passes": 4,
+    "mean_partial_score": 0.6334300000000002,
+    "mean_total_tokens": 49451.36666666667,
+    "mean_latency_s": 60.389123909924336,
+    "median_latency_s": 54.9369712889893,
+    "p95_latency_s": 138.91715947899502,
+    "routes": {
+      "replan_stop:runtime_checks_clear": 24,
+      "replan:plan_execute_rollback": 4,
+      "replan:recovered": 2
+    }
+  },
+  "paired_candidate_minus_baseline": {
+    "partial_score": {
+      "mean": 0.02155666666666667,
+      "ci95_lower": -0.054663416666666666,
+      "ci95_upper": 0.10144666666666667,
+      "candidate_better": 4,
+      "tied": 23,
+      "baseline_better": 3
+    },
+    "total_tokens": {
+      "mean": 4116.966666666666,
+      "ci95_lower": 812.365,
+      "ci95_upper": 7878.6675000000005
+    },
+    "latency_s": {
+      "mean": 6.787826380199598,
+      "ci95_lower": 1.3762183019102672,
+      "ci95_upper": 13.254027957562744
+    },
+    "mcnemar": {
+      "baseline_pass_candidate_fail": 2,
+      "baseline_fail_candidate_pass": 0,
+      "discordant": 2,
+      "two_sided_exact_p": 0.5
+    }
+  },
+  "same_trajectory_shadow_effect": {
+    "interventions": 6,
+    "accepted_recoveries": 2,
+    "rollbacks": 4,
+    "mean_partial_delta": 0.011113333333333331,
+    "partial_ci95_lower": 0.0,
+    "partial_ci95_upper": 0.033339999999999995,
+    "mean_token_delta": 4436.1,
+    "token_ci95_lower": 1442.8333333333333,
+    "token_ci95_upper": 7909.566666666667,
+    "pass_delta": 0,
+    "intervention_token_delta_total": 133083,
+    "positive_repair": {
+      "task_id": "DIST4_clock_skew",
+      "partial_delta": 0.3333999999999999,
+      "token_delta": 18237
+    },
+    "untouched_hash_mismatches": 0,
+    "rollback_hash_mismatches": 0
+  },
+  "decision": {
+    "advance_to_seed3": false,
+    "benchmark_best_supported": false,
+    "agentic_rl_supported": false
+  },
+  "integrity": {
+    "unique_tasks_each": 30,
+    "invocation_errors_each": 0,
+    "grader_timeout_rows_each": 0,
+    "task_order_sha256": "0c23a49c6c5c2d944815ffe30687e9439e8cda4cc49adb2a7e97a2310a2441be",
+    "runner_revision": "158e3a174f47cab6ef71c855db4f0b95cff1d62b",
+    "controller_sha256": "83d08c2b4991e6118bdb66653fb58e28f5f9bd342d9438aff6a42a2dbec1d016",
+    "baseline": {
+      "config_sha256": "3c071483da0ff4c0079ddd09343fd1579599ec19dda9debdd2c2115e3c276f72",
+      "results_sha256": "972df9cb1fe7b687e0a70dbff6d57facbafed7dfde639c4e273af05264f969cc",
+      "requests_sha256": "7c249166f726650a43fd2e50b0136e77faf780229224714918b4072b8b435725",
+      "system_metrics_sha256": "0afc959953295f6dc103237c67172ecc0b2f0cf3387cd66d842edcd247826d25"
+    },
+    "candidate": {
+      "config_sha256": "85a81beedaeeb9131055d7068631ce5b9ff165fd4ee05ecc76f7c3d6cb906e4a",
+      "results_sha256": "560e6541694349d8ff0c756ffa07ec512dd91c08d3f40b9ebf7b36e1278fcf54",
+      "requests_sha256": "2b8e632e7d841d37eb81e36fb1da4f353111b9a5076b0192c7ce36e4f5e661eb",
+      "system_metrics_sha256": "2d29fe2d5c90e4cdeba50d9224a3a14032b46e7dbad75018772892602fa6b590"
+    }
+  }
+}

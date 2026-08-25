@@ -151,11 +151,20 @@ The next candidate is frozen in the
 [`MT-Replan-v2.1 protocol`](docs/TEAMBENCH_REPLAN_V2.1_PROTOCOL.md). It turns the v1
 failure into two testable changes: intervene before repeated failed or timed-out
 commands, and replace broad post-hoc verification with a short
-execution-feedback/replanning loop. No v2.1 benchmark result is claimed yet.
+execution-feedback/replanning loop.
 An offline trigger-only audit superseded the unrun v2 draft before any model
 invocation: v2.1 projects 16 rather than 44 escalations on discovery traces and
 does not treat a successfully tested report-only task as failed merely because
 the code workspace is unchanged.
+
+The formal 30-task development result is now complete and v2.1 does **not**
+advance to seed 3. It records 4/30 passes, 0.63343 mean partial score and 49,451
+tokens/task versus matched PlanExecute's 6/30, 0.61187 and 45,334. The separate
+paired quality difference is uncertain, while tokens and latency increase.
+Same-trajectory shadow grading does establish one real repair: `DIST4` improves
+from 0.5833 to 0.9167. Across six escalations, however, four roll back, one adds
+no score and none creates a full pass. See the
+[`v2.1 development record`](records/TEAMBENCH_REPLAN_DEV_V2.1.md).
 
 ## Historical v1.2 A4/A8 result
 

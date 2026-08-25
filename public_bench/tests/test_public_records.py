@@ -81,6 +81,26 @@ def test_seed2_three_way_record_preserves_negative_controller_result() -> None:
     assert summary["integrity"]["grader_timeout_rows_each"] == 0
 
 
+def test_replan_dev_record_does_not_overstate_advancement() -> None:
+    summary = json.loads(
+        (RECORDS / "teambench-replan-dev-v2.1-summary.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert summary["paired_tasks"] == 30
+    assert summary["baseline"]["passes"] == 6
+    assert summary["candidate"]["passes"] == 4
+    assert summary["same_trajectory_shadow_effect"]["pass_delta"] == 0
+    assert summary["same_trajectory_shadow_effect"]["positive_repair"][
+        "partial_delta"
+    ] == pytest.approx(0.3334)
+    assert summary["decision"] == {
+        "advance_to_seed3": False,
+        "benchmark_best_supported": False,
+        "agentic_rl_supported": False,
+    }
+
+
 def test_public_records_do_not_expose_machine_local_paths() -> None:
     for path in RECORDS.iterdir():
         if path.suffix not in {".json", ".md", ".csv"}:
