@@ -75,10 +75,17 @@ may request one repair:
   fitted-Q policy over stop, replan/delegate, review and human-abstain actions
   from development counterfactuals. On fresh online development states it
   chooses the exact PlanExecute fallback on all 30 tasks.
+- **MT-Agentic-RL-v2 — pessimistic ensemble candidate:** train on 85 paired
+  episodes across three generator seeds, use bootstrap disagreement to gate
+  intervention, and replace the unreliable LLM review with learned
+  keep-or-byte-exact-rollback selection. Seed 3 produces two partial repairs
+  without a task-level loss, but no new full pass.
 
 MT-Sequential-v1 and MT-Replan-v2.1 are hand-written and are not Agentic RL.
-MT-Agentic-RL-v1 is trained from finite-horizon trajectories, but its learned
-no-op result provides no performance-advantage claim.
+MT-Agentic-RL-v1 and v2 are trained from finite-horizon trajectories. V1 is a
+learned no-op. V2 is quality-positive at the point estimate but its interval
+touches zero, cost rises and strict budget enforcement fails; neither supports
+a benchmark-best claim.
 
 No system can inspect hidden grader outcomes when making a decision. The
 Solo-TB protocol is frozen separately in
@@ -179,6 +186,15 @@ exactly equal to the same-trajectory PlanExecute prefix in passes, partial score
 and tokens, with only 1.454 ms/task of policy overhead. This is a real trained
 controller and a negative performance result, not a benchmark win. See the
 [`Agentic RL v1 record`](records/TEAMBENCH_AGENTIC_RL_DEV_V1.md).
+
+V2 then expands training to 85 paired episodes across generator seeds 0, 1 and
+2 and selects actions with a pessimistic bootstrap-Q ensemble. On the untouched
+seed-3 confirmation, both arms pass 7/30 tasks while mean partial score rises
+from 0.68465 to 0.69343: 2 wins, 28 ties and 0 losses. Mean tokens increase
+18.98%, the quality interval touches zero, no repair creates a new pass, and
+two tasks exceed the declared 90k token budget. V2 passes its basic frozen
+point-estimate gate but not its stronger improvement gate. See the
+[`Agentic RL v2 record`](records/TEAMBENCH_AGENTIC_RL_CONFIRM_V2.md).
 
 ## Historical v1.2 A4/A8 result
 

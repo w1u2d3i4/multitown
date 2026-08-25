@@ -125,6 +125,29 @@ def test_agentic_rl_dev_record_preserves_learned_noop_result() -> None:
     }
 
 
+def test_agentic_rl_v2_record_preserves_bounded_positive_result() -> None:
+    summary = json.loads(
+        (RECORDS / "teambench-agentic-rl-confirm-v2-summary.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    online = summary["independent_confirmation"]
+    assert online["paired_tasks"] == 30
+    assert online["candidate"]["passes"] == 7
+    assert online["same_trajectory_plan_execute"]["passes"] == 7
+    paired = online["candidate_minus_plan_execute"]
+    assert paired["partial_score"]["mean"] == pytest.approx(0.0087766667)
+    assert paired["wins"] == 2
+    assert paired["losses"] == 0
+    assert paired["new_passes"] == []
+    assert online["integrity"]["invocation_errors"] == 0
+    assert len(online["integrity"]["tasks_over_declared_90000_token_budget"]) == 2
+    assert summary["frozen_gate"]["passed"] is True
+    assert summary["strong_improvement_gate"]["passed"] is False
+    assert summary["decision"]["benchmark_best_supported"] is False
+    assert summary["decision"]["strict_budget_enforcement_supported"] is False
+
+
 def test_public_records_do_not_expose_machine_local_paths() -> None:
     for path in RECORDS.iterdir():
         if path.suffix not in {".json", ".md", ".csv"}:

@@ -156,6 +156,15 @@ interventions, but provides no benchmark advantage and does not advance to
 seed 3. See the
 [Agentic RL v1 record](public_bench/records/TEAMBENCH_AGENTIC_RL_DEV_V1.md).
 
+`MT-Agentic-RL-v2` expands training to 85 paired episodes across three
+generator seeds and uses a pessimistic bootstrap-Q ensemble. On the untouched
+seed-3 confirmation it ties PlanExecute at 7/30 passes, improves mean partial
+score from 0.68465 to 0.69343, and records 2 wins, 28 ties and 0 losses. The
+gain costs 18.98% more tokens; its 95% quality interval touches zero, it creates
+no new full pass, and two tasks exceed the declared 90k budget. It is a genuine
+quality-positive research candidate, not a benchmark-best or strict-budget
+result. See the [Agentic RL v2 record](public_bench/records/TEAMBENCH_AGENTIC_RL_CONFIRM_V2.md).
+
 ## Public TeamBench transfer result (historical v1.2)
 
 The `public_bench/` subproject evaluates the same fixed and selective
@@ -231,6 +240,7 @@ replace A8 unless they pass the stated quality, cost and safety checks.
 | Study | Main result | Required interpretation |
 | --- | --- | --- |
 | TeamBench Agentic RL v1 — fitted-Q orchestration | 30/30 fresh states choose PlanExecute fallback; identical quality and tokens | Genuine trained controller, but negative performance result; not benchmark-best |
+| TeamBench Agentic RL v2 — pessimistic ensemble orchestration | Seed 3: 7/30 passes in both arms; partial score 0.68465 → 0.69343; 2 wins / 28 ties / 0 losses | Point-estimate gate passes, but no new pass, quality CI touches zero, tokens +18.98%, and strict budget fails |
 | A9-v1 — offline fitted-Q controller | 75.00% success vs 72.22% for the matched A8 baseline | Difference interval crossed zero; no significant advantage claim |
 | A9-v2 — masked PPO controller | Success 23.83% → 34.00%; +10.17 pp (95% CI +7.87 to +12.47); tokens −25.41% | Train-only controller result; unsafe episodes rose 15.73% → 66.00% |
 | A9-v3 — hard review shield | Unsafe episodes 66.00% → 5.84% | Autonomous success fell 34.00% → 0%; safety–utility negative result |
