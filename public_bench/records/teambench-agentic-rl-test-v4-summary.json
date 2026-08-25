@@ -1,0 +1,165 @@
+{
+  "schema_version": "multitown-teambench-agentic-rl-test-v4-summary",
+  "claim_class": "trained_offline_public-test-negative-result",
+  "protocol": "../docs/TEAMBENCH_AGENTIC_RL_V4_PROTOCOL.md",
+  "training": {
+    "complete_counterfactual_episodes": 85,
+    "generator_seeds": [0, 1, 2],
+    "budget_reserve_quantile": 0.9,
+    "action_reserve_tokens": {
+      "post_execution": 29787,
+      "post_replan": 26855,
+      "post_recovery": 0
+    },
+    "phase_specific_margins": {
+      "post_execution": 0.01,
+      "post_replan": 0.01,
+      "post_recovery": 0.0
+    },
+    "leave_one_seed_out": {
+      "prefix_passes": 13,
+      "candidate_passes": 15,
+      "prefix_mean_partial_score": 0.6513976470588234,
+      "candidate_mean_partial_score": 0.6640694117647058,
+      "prefix_mean_total_tokens": 47367.57647058823,
+      "candidate_mean_total_tokens": 54818.0,
+      "token_overhead_ratio": 0.1572894862208798
+    }
+  },
+  "public_test": {
+    "sampling_seed": 20260836,
+    "paired_tasks": 89,
+    "candidate": {
+      "passes": 19,
+      "mean_partial_score": 0.6359176029962547,
+      "mean_total_tokens": 53564.370786516854,
+      "median_total_tokens": 56269.0,
+      "p95_total_tokens": 72860.0,
+      "mean_latency_s": 64.13206263884034,
+      "median_latency_s": 41.21494666696526,
+      "p95_latency_s": 109.00380418766284
+    },
+    "same_trajectory_plan_execute": {
+      "passes": 19,
+      "mean_partial_score": 0.6373782771535581,
+      "mean_total_tokens": 47941.730337078654,
+      "median_total_tokens": 49731.0,
+      "p95_total_tokens": 64667.99999999999,
+      "mean_latency_s": 59.732103146547246,
+      "median_latency_s": 36.29362681508064,
+      "p95_latency_s": 108.99422299824649
+    },
+    "candidate_minus_plan_execute": {
+      "pass_delta": 0,
+      "partial_score": {
+        "mean": -0.0014606741573033708,
+        "ci95_lower": -0.004382022471910113,
+        "ci95_upper": 0.0,
+        "bootstrap_samples": 100000,
+        "bootstrap_seed": 20260837
+      },
+      "total_tokens": {
+        "mean": 5622.640449438202,
+        "ci95_lower": 3997.122752808989,
+        "ci95_upper": 7343.607584269663,
+        "relative_mean": 0.11728071577528332,
+        "bootstrap_samples": 100000,
+        "bootstrap_seed": 20260838
+      },
+      "latency_s": {
+        "mean": 4.3999594922930925,
+        "ci95_lower": 3.161324374445026,
+        "ci95_upper": 5.734261529452005,
+        "bootstrap_samples": 100000,
+        "bootstrap_seed": 20260839
+      },
+      "wins": 0,
+      "ties": 88,
+      "losses": 1,
+      "new_passes": [],
+      "lost_passes": [],
+      "quality_changes": [
+        {
+          "task_id": "LH2_budgeted_workflow",
+          "prefix_partial_score": 0.83,
+          "candidate_partial_score": 0.7,
+          "delta": -0.13,
+          "route": "agentic_rl:recovered"
+        }
+      ]
+    },
+    "routes": {
+      "agentic_rl:evidence_review_rollback_plan_execute": 2,
+      "agentic_rl:plan_execute_rollback": 11,
+      "agentic_rl:recovered": 25,
+      "replan_stop:insufficient_reserved_budget": 10,
+      "replan_stop:uncertainty_or_cost_gate": 41
+    },
+    "decision_actions": {
+      "delegate": 27,
+      "escalate": 38,
+      "review": 2,
+      "stop": 87
+    },
+    "role_activations": {
+      "planner": 127,
+      "executor": 116,
+      "verifier": 0
+    },
+    "budget_control": {
+      "request_blocked_tasks": 13,
+      "completion_capped_tasks": 4,
+      "provider_overrun_tasks": 0,
+      "tasks_over_90000_tokens": 0,
+      "maximum_task_tokens": 75939
+    },
+    "integrity": {
+      "logged_model_requests": 1306,
+      "invocation_errors": 0,
+      "selected_prefix_hash_mismatches": 0
+    },
+    "monitoring": {
+      "duration_s": 6204.275246944977,
+      "samples": 1233,
+      "gpu_util_percent_mean": 56.175182481751825,
+      "gpu_power_w_mean": 37.355109489051095,
+      "gpu_temperature_c_max": 85.0,
+      "whole_run_energy_wh": 64.43914873184703,
+      "energy_is_not_arm_attributable": true
+    }
+  },
+  "frozen_basic_gate": {
+    "passes_not_lower": true,
+    "partial_score_strictly_higher": false,
+    "mean_token_overhead_at_most_20_percent": true,
+    "no_task_over_90000_tokens": true,
+    "zero_errors_or_provider_overruns": true,
+    "passed": false
+  },
+  "strong_quality_gate": {
+    "at_least_one_new_pass": false,
+    "no_lost_passes": true,
+    "partial_score_ci_lower_above_zero": false,
+    "passed": false
+  },
+  "decision": {
+    "trained_agentic_rl_supported": true,
+    "observed_pinned_endpoint_budget_compliance_supported": true,
+    "same_trajectory_quality_advantage_supported": false,
+    "replace_plan_execute_supported": false,
+    "benchmark_best_supported": false,
+    "reuse_public_test_for_tuning": false,
+    "advance_with_new_development_data": true
+  },
+  "provenance": {
+    "benchmark_source_revision": "2f060a33501b19fbc8d26f8ccdad7580e3b04635",
+    "runner_revision": "5b5154b81f2af5341160044388670a668324331d",
+    "internal_policy_sha256": "ef779285f7378a134f16a243f922551185b4d68b4069ef06de7f43273fcbbb89",
+    "policy_file_sha256": "be52071d07c2384eeecbea6de5c095ca54c56e17997fb755544e3e996b5330b6",
+    "training_dataset_sha256": "52db7d3a9221321677dd6bdc778a554c39a84ca950f2a7c4ec00b977c4eefd42",
+    "config_sha256": "79795c769aa4e0591554731e252202f3956a5d90baa255afe994c8199c7d2bf0",
+    "results_sha256": "a84a23565d187ed75bf7170e29c8a7e9349d48633bb8130a9cbc2b3fb7111dc0",
+    "requests_sha256": "8b6aefa41cc421c8bffe00b1c995df6890173ec47c141f9c49c0151a0000a82c",
+    "system_metrics_sha256": "d608744957d1cd658814b37e197ca34059e82ba5c419886b5b129e1369154faa"
+  }
+}

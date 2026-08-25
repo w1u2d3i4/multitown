@@ -172,6 +172,34 @@ def test_agentic_rl_v3_record_preserves_new_pass_and_failed_cost_gate() -> None:
     assert summary["decision"]["benchmark_best_supported"] is False
 
 
+def test_agentic_rl_v4_record_preserves_public_test_negative_result() -> None:
+    summary = json.loads(
+        (RECORDS / "teambench-agentic-rl-test-v4-summary.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    public_test = summary["public_test"]
+    assert public_test["paired_tasks"] == 89
+    assert public_test["candidate"]["passes"] == 19
+    assert public_test["same_trajectory_plan_execute"]["passes"] == 19
+    paired = public_test["candidate_minus_plan_execute"]
+    assert paired["partial_score"]["mean"] == pytest.approx(-0.0014606742)
+    assert paired["wins"] == 0
+    assert paired["ties"] == 88
+    assert paired["losses"] == 1
+    assert paired["new_passes"] == []
+    assert paired["lost_passes"] == []
+    assert public_test["budget_control"]["tasks_over_90000_tokens"] == 0
+    assert public_test["budget_control"]["provider_overrun_tasks"] == 0
+    assert public_test["integrity"]["invocation_errors"] == 0
+    assert public_test["integrity"]["selected_prefix_hash_mismatches"] == 0
+    assert summary["frozen_basic_gate"]["passed"] is False
+    assert summary["frozen_basic_gate"]["partial_score_strictly_higher"] is False
+    assert summary["strong_quality_gate"]["passed"] is False
+    assert summary["decision"]["benchmark_best_supported"] is False
+    assert summary["decision"]["reuse_public_test_for_tuning"] is False
+
+
 def test_public_records_do_not_expose_machine_local_paths() -> None:
     for path in RECORDS.iterdir():
         if path.suffix not in {".json", ".md", ".csv"}:

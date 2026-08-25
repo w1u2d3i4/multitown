@@ -173,6 +173,15 @@ and the quality interval still touches zero. The threshold was not changed
 after the run: v3 is the strongest causal repair evidence so far, but still not
 a benchmark win. See the [v3 record](public_bench/records/TEAMBENCH_AGENTIC_RL_CONFIRM_V3.md).
 
+`MT-Agentic-RL-v4` then learns separate value-of-information margins for the
+execution, replanning and recovery phases and advances once to the frozen
+89-task public test. It ties its exact same-trajectory PlanExecute prefix at
+19/89 passes, but mean partial score falls from 0.63738 to 0.63592: 0 wins, 88
+ties and 1 loss. Mean tokens rise 11.73%; no task exceeds 90k and there are zero
+invocation or provider-overrun errors. V4 therefore validates the budget and
+rollback machinery but falsifies the public-test performance hypothesis. See
+the [v4 record](public_bench/records/TEAMBENCH_AGENTIC_RL_TEST_V4.md).
+
 ## Public TeamBench transfer result (historical v1.2)
 
 The `public_bench/` subproject evaluates the same fixed and selective
@@ -250,6 +259,7 @@ replace A8 unless they pass the stated quality, cost and safety checks.
 | TeamBench Agentic RL v1 — fitted-Q orchestration | 30/30 fresh states choose PlanExecute fallback; identical quality and tokens | Genuine trained controller, but negative performance result; not benchmark-best |
 | TeamBench Agentic RL v2 — pessimistic ensemble orchestration | Seed 3: 7/30 passes in both arms; partial score 0.68465 → 0.69343; 2 wins / 28 ties / 0 losses | Point-estimate gate passes, but no new pass, quality CI touches zero, tokens +18.98%, and strict budget fails |
 | TeamBench Agentic RL v3 — tail-budget controller | Seed 4: passes 5 → 6; partial score 0.64510 → 0.67667; 0 tasks over 90k | New pass with no loss and budget compliance, but frozen cost gate fails at +20.223% vs +20% |
+| TeamBench Agentic RL v4 — phase-specific value-of-information controller | Public test: both arms 19/89 passes; partial score 0.63738 → 0.63592; tokens +11.73% | Budget and integrity gates pass, but quality is 0 wins / 88 ties / 1 loss; negative result, not benchmark-best |
 | A9-v1 — offline fitted-Q controller | 75.00% success vs 72.22% for the matched A8 baseline | Difference interval crossed zero; no significant advantage claim |
 | A9-v2 — masked PPO controller | Success 23.83% → 34.00%; +10.17 pp (95% CI +7.87 to +12.47); tokens −25.41% | Train-only controller result; unsafe episodes rose 15.73% → 66.00% |
 | A9-v3 — hard review shield | Unsafe episodes 66.00% → 5.84% | Autonomous success fell 34.00% → 0%; safety–utility negative result |

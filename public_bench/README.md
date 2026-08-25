@@ -84,12 +84,16 @@ may request one repair:
   raise action reserves to p90 and guard every request against the remaining
   total-token budget. Seed 4 produces one new full pass with no lost pass and
   no 90k overrun, but narrowly fails the frozen mean-cost gate.
+- **MT-Agentic-RL-v4 — phase-specific value-of-information candidate:** learn
+  separate intervention margins after execution, replanning and recovery while
+  retaining v3's p90 reserves and request guard. Its single frozen public-test
+  run satisfies the cost and budget conditions but loses partial score.
 
 MT-Sequential-v1 and MT-Replan-v2.1 are hand-written and are not Agentic RL.
-MT-Agentic-RL-v1 and v2 are trained from finite-horizon trajectories. V1 is a
-learned no-op. V2 is quality-positive at the point estimate but its interval
-touches zero, cost rises and strict budget enforcement fails; neither supports
-a benchmark-best claim.
+MT-Agentic-RL-v1 through v4 are trained from finite-horizon trajectories. V1 is
+a learned no-op; v2 and v3 produce bounded confirmation-set gains but fail
+their stronger gates; v4 fails to transfer those gains to the public test.
+None supports a benchmark-best claim.
 
 No system can inspect hidden grader outcomes when making a decision. The
 Solo-TB protocol is frozen separately in
@@ -208,6 +212,15 @@ frozen 20% gate, and the quality interval touches zero. The threshold remains
 unchanged, so v3 is a promising causal repair result rather than a benchmark
 winner. See the
 [`Agentic RL v3 record`](records/TEAMBENCH_AGENTIC_RL_CONFIRM_V3.md).
+
+V4 learns separate value-of-information margins for the three decision phases
+and advances once to the full frozen 89-task public test. Candidate and exact
+same-trajectory PlanExecute both pass 19 tasks, while mean partial score moves
+from 0.63738 to 0.63592: 0 wins, 88 ties and 1 loss. Mean tokens increase
+11.73%, but no task exceeds 90k and there are no invocation or provider-overrun
+errors. The frozen quality condition fails, so v4 is a public-test negative
+result and the test split is not reused for tuning. See the
+[`Agentic RL v4 record`](records/TEAMBENCH_AGENTIC_RL_TEST_V4.md).
 
 ## Historical v1.2 A4/A8 result
 
