@@ -43,7 +43,16 @@ The declared action space is `stop`, `delegate`, `escalate`, `review` and
    recovery turns to the weak Executor;
 5. keep recovery only if it changes the workspace and its public runtime
    reliability is no worse than the prefix; otherwise restore the byte-for-byte
-   PlanExecute snapshot, then `stop`.
+   PlanExecute workspace-and-reports snapshot, then `stop`.
+
+After the controller has stopped, the deterministic grader scores both the
+selected candidate and the saved PlanExecute prefix. The prefix score is a
+paired, evaluation-only counterfactual: it is never exposed to the controller,
+Planner or Executor. This separates recovery's actual task-level effect from
+local-model repeat variation in a separately generated baseline. Extra shadow
+grading time is recorded separately and excluded from policy end-to-end
+latency. A separately rerun matched PlanExecute arm remains required as a
+reproducibility anchor.
 
 No Verifier is activated. The policy never sees a hidden grader result, expected
 output, task score or task-specific route. It is a deterministic controller,
@@ -58,7 +67,8 @@ The machine-readable controller is
    successful-rerun paths.
 2. Run all 30 frozen development tasks and compare against matched
    PlanExecute first, then the five fixed development baselines. Report
-   escalated and untouched subsets separately.
+   escalated and untouched subsets separately. For every escalation, report
+   the paired selected-minus-prefix shadow effect.
 3. Advance only if the candidate is non-dominated in pass/partial quality,
    tokens and latency. Freeze the exact runner and controller hashes.
 4. Confirm on all 89 public tasks with generator seed 3 using matched Solo and

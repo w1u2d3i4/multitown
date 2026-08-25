@@ -684,6 +684,18 @@ def _restore_workspace(snapshot: Path, workspace: Path) -> None:
     shutil.copytree(snapshot, workspace, symlinks=True)
 
 
+def _snapshot_candidate(workspace: Path, reports: Path, snapshot: Path) -> None:
+    """Snapshot every grader-visible surface that a worker can modify."""
+    _snapshot_workspace(workspace, snapshot / "workspace")
+    _snapshot_workspace(reports, snapshot / "reports")
+
+
+def _restore_candidate(snapshot: Path, workspace: Path, reports: Path) -> None:
+    """Restore without leaving post-snapshot report artifacts behind."""
+    _restore_workspace(snapshot / "workspace", workspace)
+    _restore_workspace(snapshot / "reports", reports)
+
+
 def _select_failed_review_candidate(
     *,
     initial: dict[str, Any],
@@ -837,6 +849,7 @@ def run_task(
     validators: list[dict[str, Any]] = []
     decision_trace: list[dict[str, Any]] = []
     route = ""
+    replan_prefix_snapshot: Path | None = None
 
     if execution_method == "Solo":
         solo = adapter("solo", strong)
@@ -1070,7 +1083,8 @@ def run_task(
         else:
             candidates = run_dir / "candidates"
             plan_execute_snapshot = candidates / "plan_execute"
-            _snapshot_workspace(workspace, plan_execute_snapshot)
+            _snapshot_candidate(workspace, reports, plan_execute_snapshot)
+            replan_prefix_snapshot = plan_execute_snapshot
             decision = _replan_decision(
                 execution_validator,
                 plan_delivered=plan_delivered,
@@ -1150,7 +1164,7 @@ def run_task(
                     "triggers": decision["triggers"],
                 })
                 if not should_delegate:
-                    _restore_workspace(plan_execute_snapshot, workspace)
+                    _restore_candidate(plan_execute_snapshot, workspace, reports)
                     selected = "plan_execute_rollback"
                 else:
                     role_counts["executor"] += 1
@@ -1195,7 +1209,7 @@ def run_task(
                     if keep_recovery:
                         selected = "recovered"
                     else:
-                        _restore_workspace(plan_execute_snapshot, workspace)
+                        _restore_candidate(plan_execute_snapshot, workspace, reports)
                         selected = "plan_execute_rollback"
                 _controller_attestation(
                     submission,
@@ -1479,6 +1493,43 @@ def run_task(
     score = grade_in_sandbox(
         row=row, team_root=team_root, run_dir=run_dir, image=image
     )
+    policy_latency_s = time.perf_counter() - started
+    shadow_plan_execute: dict[str, Any] | None = None
+    if execution_method == "MTReplan" and replan_prefix_snapshot is not None:
+        # Score the exact pre-replan candidate after routing has ended. The
+        # hidden result is evaluation-only and can never influence an action.
+        shadow_run = run_dir / "counterfactuals" / "plan_execute_prefix"
+        _snapshot_candidate(
+            replan_prefix_snapshot / "workspace",
+            replan_prefix_snapshot / "reports",
+            shadow_run,
+        )
+        shadow_submission = shadow_run / "submission"
+        _controller_attestation(
+            shadow_submission,
+            str(row["task_id"]),
+            "fixed_plan_execute_without_independent_review",
+            source="fixed_strategy_protocol_controller",
+        )
+        shadow_workspace_hash = tree_sha256(shadow_run / "workspace")
+        shadow_reports_hash = tree_sha256(shadow_run / "reports")
+        shadow_started = time.perf_counter()
+        shadow_score = grade_in_sandbox(
+            row=row, team_root=team_root, run_dir=shadow_run, image=image
+        )
+        shadow_plan_execute = {
+            "passed": bool(shadow_score.get("pass", False)),
+            "partial_score": float(
+                shadow_score.get("secondary", {}).get(
+                    "partial_score", 1.0 if shadow_score.get("pass") else 0.0
+                )
+            ),
+            "failure_modes": shadow_score.get("failure_modes", []),
+            "workspace_sha256": shadow_workspace_hash,
+            "reports_sha256": shadow_reports_hash,
+            "grader_latency_s": time.perf_counter() - shadow_started,
+            "policy_input": False,
+        }
     usage = _usage(adapters)
     result = {
         "schema_version": "general-mas-teambench-result-v1",
@@ -1496,10 +1547,13 @@ def run_task(
         "validators": validators,
         "decision_trace": decision_trace,
         **usage,
-        "latency_s": time.perf_counter() - started,
+        "latency_s": policy_latency_s,
         "final_workspace_sha256": tree_sha256(workspace),
+        "final_reports_sha256": tree_sha256(reports),
         "request_errors": 0,
     }
+    if shadow_plan_execute is not None:
+        result["shadow_plan_execute"] = shadow_plan_execute
     if reported_method == "MTSelector":
         result["selected_strategy"] = execution_method
     write_json(run_dir / "result.json", result)

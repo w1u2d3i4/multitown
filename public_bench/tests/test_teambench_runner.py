@@ -11,10 +11,12 @@ from general_mas_bench.teambench_runner import (
     _logged_command_signals,
     _phase_config,
     _replan_decision,
+    _restore_candidate,
     _runtime_validator,
     _select_failed_review_candidate,
     _sequential_decision,
     _should_interrupt_for_replan,
+    _snapshot_candidate,
 )
 
 
@@ -313,6 +315,26 @@ def test_failed_review_falls_back_to_initial_candidate_on_tie(tmp_path: Path) ->
 
     assert selected == "initial"
     assert (workspace / "candidate.txt").read_text() == "initial"
+
+
+def test_candidate_snapshot_restores_workspace_and_reports(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    reports = tmp_path / "reports"
+    snapshot = tmp_path / "candidate"
+    workspace.mkdir()
+    reports.mkdir()
+    (workspace / "code.py").write_text("before\n")
+    (reports / "answer.json").write_text('{"answer": "before"}\n')
+
+    _snapshot_candidate(workspace, reports, snapshot)
+    (workspace / "code.py").write_text("after\n")
+    (reports / "answer.json").write_text('{"answer": "after"}\n')
+    (reports / "recovery-only.txt").write_text("remove me\n")
+    _restore_candidate(snapshot, workspace, reports)
+
+    assert (workspace / "code.py").read_text() == "before\n"
+    assert (reports / "answer.json").read_text() == '{"answer": "before"}\n'
+    assert not (reports / "recovery-only.txt").exists()
 
 
 def test_selective_planner_relative_reads_use_workspace(tmp_path: Path) -> None:

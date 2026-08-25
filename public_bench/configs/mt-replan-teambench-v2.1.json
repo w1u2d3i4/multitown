@@ -18,6 +18,11 @@
   "replan_max_total_tokens": 90000,
   "replan_planner_turns": 3,
   "replan_executor_turns": 6,
+  "rollback_surfaces": [
+    "workspace",
+    "reports"
+  ],
+  "shadow_grade_plan_execute_prefix": true,
   "high_risk_categories": [
     "Adversarial",
     "Cross-System Integration",

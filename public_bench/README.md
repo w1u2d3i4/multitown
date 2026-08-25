@@ -67,8 +67,10 @@ may request one repair:
 - **MT-Replan-v2.1 — current unscored candidate:** retain the PlanExecute roles,
   interrupt only on high-precision runtime failures, ask the strong Planner to
   inspect the workspace read-only and issue one recovery plan, then delegate a
-  bounded repair to the weak Executor. It has no Verifier and no result claim
-  yet.
+  bounded repair to the weak Executor. Its evaluator also scores the exact
+  pre-replan workspace-and-reports snapshot after routing has ended, so repair
+  effects can be separated from repeat-run model drift. It has no Verifier and
+  no result claim yet.
 
 Both sequential controllers are hand-written and are not Agentic RL. The v2
 state/action contract is designed so that a later learned policy can be trained
