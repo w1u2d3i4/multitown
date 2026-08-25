@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from harness.agent_interface import RoleConfig
+from harness.agent_interface import RoleConfig, ToolCallAdapter
 from harness.agent_loop import AgentLoop, AgentTurn
 
 from .agentic_rl import ACTION_SPACE
@@ -23,7 +23,11 @@ from .agentic_rl_v2 import POLICY_SCHEMA as RL_V2_POLICY_SCHEMA
 from .agentic_rl_v2 import select_action as select_rl_v2_action
 from .agentic_rl_v2 import validate_policy as validate_rl_v2_policy
 from .common import append_jsonl, read_json, write_json
-from .model_adapter import OutcomeStopAdapter, RecordedAdapter
+from .model_adapter import (
+    ConservativeTokenBudgetAdapter,
+    OutcomeStopAdapter,
+    RecordedAdapter,
+)
 from .monitor import SystemMonitor
 from .sandbox import (
     DockerCommandTool,
@@ -250,7 +254,7 @@ def _phase_config(
 def _run_phase(
     *,
     role: str,
-    adapter: RecordedAdapter,
+    adapter: ToolCallAdapter,
     prompt: str,
     config: RoleConfig,
     messages: Path,
@@ -702,6 +706,18 @@ def _validate_replan_controller(controller: dict[str, Any]) -> None:
         raise ValueError(
             "replan_workspace_unchanged_requires_no_success must be a boolean"
         )
+    hard_budget = controller.get("conservative_hard_token_budget", False)
+    if not isinstance(hard_budget, bool):
+        raise TypeError("conservative_hard_token_budget must be a boolean")
+    if hard_budget:
+        if int(controller.get("hard_budget_template_overhead_tokens", -1)) < 0:
+            raise ValueError(
+                "hard_budget_template_overhead_tokens must be non-negative"
+            )
+        if int(controller.get("hard_budget_minimum_completion_tokens", 0)) <= 0:
+            raise ValueError(
+                "hard_budget_minimum_completion_tokens must be positive"
+            )
 
 
 def _attestation(submission: Path) -> dict[str, Any] | None:
@@ -955,8 +971,9 @@ def run_task(
     public_task_features = _public_task_features(brief, workspace)
 
     adapters: list[RecordedAdapter] = []
+    budget_adapters: list[ConservativeTokenBudgetAdapter] = []
 
-    def adapter(role: str, tier: dict[str, Any]) -> RecordedAdapter:
+    def adapter(role: str, tier: dict[str, Any]) -> ToolCallAdapter:
         value = RecordedAdapter(
             role=role,
             task_id=str(row["task_id"]),
@@ -970,7 +987,21 @@ def run_task(
             sampling_seed=sampling_seed,
         )
         adapters.append(value)
-        return value
+        if not bool(controller.get("conservative_hard_token_budget", False)):
+            return value
+        bounded = ConservativeTokenBudgetAdapter(
+            value,
+            usage_provider=lambda: _usage(adapters)["total_tokens"],
+            total_budget=int(controller["replan_max_total_tokens"]),
+            template_overhead_tokens=int(
+                controller.get("hard_budget_template_overhead_tokens", 4096)
+            ),
+            minimum_completion_tokens=int(
+                controller.get("hard_budget_minimum_completion_tokens", 64)
+            ),
+        )
+        budget_adapters.append(bounded)
+        return bounded
 
     role_counts = {"solo": 0, "planner": 0, "executor": 0, "verifier": 0}
     validators: list[dict[str, Any]] = []
@@ -1917,6 +1948,28 @@ def run_task(
         result["shadow_recovery"] = shadow_recovery
     if training_states:
         result["training_states"] = training_states
+    if budget_adapters:
+        budget_events = [
+            event for bounded in budget_adapters for event in bounded.events
+        ]
+        result["token_budget_control"] = {
+            "mode": "conservative_utf8_upper_bound",
+            "total_token_budget": int(controller["replan_max_total_tokens"]),
+            "template_overhead_tokens": int(
+                controller.get("hard_budget_template_overhead_tokens", 4096)
+            ),
+            "minimum_completion_tokens": int(
+                controller.get("hard_budget_minimum_completion_tokens", 64)
+            ),
+            "events": budget_events,
+            "request_blocked": any(
+                event["event"] == "request_blocked" for event in budget_events
+            ),
+            "observed_provider_overrun": any(
+                event["event"] == "observed_provider_overrun"
+                for event in budget_events
+            ),
+        }
     if reported_method == "MTSelector":
         result["selected_strategy"] = execution_method
     write_json(run_dir / "result.json", result)

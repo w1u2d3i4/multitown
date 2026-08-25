@@ -438,6 +438,7 @@ def _cross_validate(
     margin: float,
     reference_tokens: float,
     reference_latency_s: float,
+    budget_reserve_quantile: float,
 ) -> dict[str, Any]:
     rows: list[dict[str, Any]] = []
     for fold_index, (train_indices, test_indices) in enumerate(_folds(episodes)):
@@ -456,7 +457,9 @@ def _cross_validate(
             reference_tokens=reference_tokens,
             reference_latency_s=reference_latency_s,
         )
-        budget_reserve_tokens = _budget_reserves(training)
+        budget_reserve_tokens = _budget_reserves(
+            training, quantile=budget_reserve_quantile
+        )
         for index in test_indices:
             episode = episodes[index]
             actions, outcome = _rollout(
@@ -481,6 +484,7 @@ def _cross_validate(
         "alpha": alpha,
         "uncertainty_beta": uncertainty_beta,
         "margin": margin,
+        "budget_reserve_quantile": budget_reserve_quantile,
         "passes": sum(bool(row["passed"]) for row in rows),
         "mean_partial_score": float(np.mean([row["partial_score"] for row in rows])),
         "mean_total_tokens": float(np.mean([row["total_tokens"] for row in rows])),
@@ -508,7 +512,11 @@ def validate_dataset(dataset: dict[str, Any]) -> list[dict[str, Any]]:
     return episodes
 
 
-def _budget_reserves(episodes: list[dict[str, Any]]) -> dict[str, int]:
+def _budget_reserves(
+    episodes: list[dict[str, Any]], *, quantile: float = 0.75
+) -> dict[str, int]:
+    if not 0.5 <= quantile <= 1.0:
+        raise ValueError("budget reserve quantile must be between 0.5 and 1.0")
     escalation = [
         max(
             0,
@@ -526,8 +534,8 @@ def _budget_reserves(episodes: list[dict[str, Any]]) -> dict[str, int]:
         for episode in episodes
     ]
     return {
-        "post_execution": int(np.percentile(escalation, 75)),
-        "post_replan": int(np.percentile(delegation, 75)),
+        "post_execution": int(np.quantile(escalation, quantile, method="higher")),
+        "post_replan": int(np.quantile(delegation, quantile, method="higher")),
         "post_recovery": 0,
     }
 
@@ -657,7 +665,9 @@ def build_dataset(run_dirs: list[Path]) -> dict[str, Any]:
     return dataset
 
 
-def train_policy(dataset: dict[str, Any]) -> dict[str, Any]:
+def train_policy(
+    dataset: dict[str, Any], *, budget_reserve_quantile: float = 0.75
+) -> dict[str, Any]:
     episodes = validate_dataset(dataset)
     reference_tokens = float(np.median([
         episode["outcomes"]["prefix"]["total_tokens"] for episode in episodes
@@ -674,6 +684,7 @@ def train_policy(dataset: dict[str, Any]) -> dict[str, Any]:
             margin=margin,
             reference_tokens=reference_tokens,
             reference_latency_s=reference_latency_s,
+            budget_reserve_quantile=budget_reserve_quantile,
         )
         for alpha in (10.0, 100.0)
         for beta in (0.5, 1.0, 2.0)
@@ -700,7 +711,9 @@ def train_policy(dataset: dict[str, Any]) -> dict[str, Any]:
         reference_tokens=reference_tokens,
         reference_latency_s=reference_latency_s,
     )
-    budget_reserve_tokens = _budget_reserves(episodes)
+    budget_reserve_tokens = _budget_reserves(
+        episodes, quantile=budget_reserve_quantile
+    )
     policy: dict[str, Any] = {
         "schema_version": POLICY_SCHEMA,
         "claim_class": "trained_offline_sequential_pessimistic_q_candidate",
@@ -732,6 +745,7 @@ def train_policy(dataset: dict[str, Any]) -> dict[str, Any]:
                 "leave-one-seed-out when multiple seeds exist; no-pass-regression then "
                 "maximize pass count and cost-aware reward"
             ),
+            "budget_reserve_quantile": budget_reserve_quantile,
             "selected_cross_validation": selected,
             "all_cross_validation": [
                 {key: value for key, value in row.items() if key != "rows"}
@@ -756,6 +770,9 @@ def main() -> None:
     parser.add_argument("--dataset", type=Path)
     parser.add_argument("--dataset-output", type=Path)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument(
+        "--budget-reserve-quantile", type=float, default=0.75
+    )
     args = parser.parse_args()
     if bool(args.run_dir) == bool(args.dataset):
         parser.error("provide either one or more --run-dir values or --dataset")
@@ -766,7 +783,9 @@ def main() -> None:
         write_json(args.dataset_output.resolve(), dataset)
     else:
         dataset = read_json(args.dataset.resolve())
-    policy = train_policy(dataset)
+    policy = train_policy(
+        dataset, budget_reserve_quantile=args.budget_reserve_quantile
+    )
     write_json(args.output.resolve(), policy)
     selected = policy["training"]["selected_cross_validation"]
     print(json.dumps({

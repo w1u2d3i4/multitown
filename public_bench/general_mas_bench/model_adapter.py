@@ -5,12 +5,24 @@ import json
 import time
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 
 from harness.adapters.openai_adapter import OpenAIAdapter
 from harness.agent_interface import AdapterResponse, ToolCallAdapter
 
 DEFAULT_HISTORY_CHAR_BUDGET = 20_000
+
+
+class _BudgetedAdapter(Protocol):
+    configured_max_tokens: int
+
+    def set_request_max_tokens(self, value: int) -> None: ...
+
+    def generate_with_tools(
+        self, messages: list[dict], system_prompt: str, tools: list[dict]
+    ) -> AdapterResponse: ...
+
+    def get_usage(self) -> dict[str, Any]: ...
 
 
 def deterministic_request_seed(
@@ -113,6 +125,98 @@ class OutcomeStopAdapter(ToolCallAdapter):
         return self.inner.get_usage()
 
 
+class ConservativeTokenBudgetAdapter(ToolCallAdapter):
+    """Stop before a request that cannot fit a conservative total-token bound.
+
+    UTF-8 payload bytes upper-bound ordinary byte-fallback tokenizer pieces.
+    A configurable template margin covers provider chat formatting that is not
+    visible in the OpenAI-compatible request. Actual provider usage is audited
+    after every request; an observed overrun is recorded rather than hidden.
+    """
+
+    def __init__(
+        self,
+        inner: _BudgetedAdapter,
+        *,
+        usage_provider: Callable[[], int],
+        total_budget: int,
+        template_overhead_tokens: int = 4096,
+        minimum_completion_tokens: int = 64,
+    ):
+        if total_budget <= 0:
+            raise ValueError("total token budget must be positive")
+        if template_overhead_tokens < 0:
+            raise ValueError("template overhead must be non-negative")
+        if minimum_completion_tokens <= 0:
+            raise ValueError("minimum completion tokens must be positive")
+        self.inner = inner
+        self.usage_provider = usage_provider
+        self.total_budget = total_budget
+        self.template_overhead_tokens = template_overhead_tokens
+        self.minimum_completion_tokens = minimum_completion_tokens
+        self.events: list[dict[str, Any]] = []
+
+    def _prompt_upper_bound(
+        self, messages: list[dict], system_prompt: str, tools: list[dict]
+    ) -> int:
+        effective_messages, _ = compact_messages(messages)
+        payload = json.dumps(
+            {
+                "system_prompt": system_prompt,
+                "messages": effective_messages,
+                "tools": tools,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+            default=str,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        return len(payload) + self.template_overhead_tokens
+
+    def generate_with_tools(
+        self, messages: list[dict], system_prompt: str, tools: list[dict]
+    ) -> AdapterResponse:
+        total_before = int(self.usage_provider())
+        remaining_before = max(0, self.total_budget - total_before)
+        prompt_upper_bound = self._prompt_upper_bound(
+            messages, system_prompt, tools
+        )
+        completion_limit = min(
+            self.inner.configured_max_tokens,
+            max(0, remaining_before - prompt_upper_bound),
+        )
+        if completion_limit < self.minimum_completion_tokens:
+            self.events.append({
+                "event": "request_blocked",
+                "total_tokens_before": total_before,
+                "remaining_tokens_before": remaining_before,
+                "prompt_token_upper_bound": prompt_upper_bound,
+                "minimum_completion_tokens": self.minimum_completion_tokens,
+            })
+            return AdapterResponse(text="DONE", done=True)
+        self.inner.set_request_max_tokens(completion_limit)
+        if completion_limit < self.inner.configured_max_tokens:
+            self.events.append({
+                "event": "completion_capped",
+                "total_tokens_before": total_before,
+                "remaining_tokens_before": remaining_before,
+                "prompt_token_upper_bound": prompt_upper_bound,
+                "completion_token_limit": completion_limit,
+            })
+        response = self.inner.generate_with_tools(messages, system_prompt, tools)
+        total_after = int(self.usage_provider())
+        if total_after > self.total_budget:
+            self.events.append({
+                "event": "observed_provider_overrun",
+                "total_tokens_after": total_after,
+                "overrun_tokens": total_after - self.total_budget,
+            })
+        return response
+
+    def get_usage(self) -> dict[str, Any]:
+        return self.inner.get_usage()
+
+
 class RecordedAdapter(ToolCallAdapter):
     def __init__(
         self,
@@ -134,6 +238,7 @@ class RecordedAdapter(ToolCallAdapter):
         self.request_log = request_log
         self.request_index = 0
         self.sampling_seed = sampling_seed
+        self.configured_max_tokens = max_tokens
         adapter_class = SeededOpenAIAdapter if sampling_seed is not None else OpenAIAdapter
         adapter_kwargs: dict[str, Any] = {}
         if sampling_seed is not None:
@@ -214,3 +319,8 @@ class RecordedAdapter(ToolCallAdapter):
 
     def get_usage(self) -> dict[str, Any]:
         return self.inner.get_usage()
+
+    def set_request_max_tokens(self, value: int) -> None:
+        if value <= 0:
+            raise ValueError("request max tokens must be positive")
+        self.inner.max_tokens = min(value, self.configured_max_tokens)

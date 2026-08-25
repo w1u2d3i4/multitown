@@ -54,6 +54,23 @@ cross-paper numbers it does not treat as directly comparable.
   collaboration with cooperative multi-agent RL. MultiTown's future RL claim
   is narrower: it will optimize the orchestration controller over frozen role
   models and must beat the hand-written controller in this same harness.
+- [Conservative Q-Learning](https://arxiv.org/abs/2006.04779) learns a
+  conservative value function to reduce optimistic action selection under
+  offline distribution shift. MultiTown v2/v3 adopts the narrower principle of
+  penalizing uncertain intervention advantage; it is not a reproduction of the
+  full CQL objective.
+- [Implicit Q-Learning](https://arxiv.org/abs/2110.06169) avoids querying unseen
+  actions while extracting an offline policy. This supports MultiTown's masked
+  phase-specific action space and refusal to infer rewards for missing
+  counterfactual episodes.
+- [Diversified Q-Ensemble](https://arxiv.org/abs/2110.01548) studies ensemble
+  disagreement as an offline-RL uncertainty signal. MultiTown uses bootstrap
+  disagreement in a lower-confidence-bound gate, then checks it under
+  leave-one-generator-seed-out predictions.
+- [LEVER](https://arxiv.org/abs/2302.08468) learns to rank generated programs
+  from execution results. Its verifier lesson motivates using public test and
+  command evidence in the recovery-value model instead of treating an LLM
+  review verdict as ground truth.
 
 ## What “mainstream multi-agent strategy” means here
 

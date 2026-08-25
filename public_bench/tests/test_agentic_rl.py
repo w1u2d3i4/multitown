@@ -221,3 +221,15 @@ def test_v2_rejects_non_pessimistic_or_malformed_policy() -> None:
             assert expected in str(exc)
         else:
             raise AssertionError(f"malformed {key} was accepted")
+
+
+def test_v2_can_train_with_tail_budget_reserves() -> None:
+    default = train_policy_v2(_v2_dataset())
+    tail = train_policy_v2(_v2_dataset(), budget_reserve_quantile=0.95)
+    assert tail["training"]["budget_reserve_quantile"] == 0.95
+    assert tail["budget_reserve_tokens"]["post_execution"] >= default[
+        "budget_reserve_tokens"
+    ]["post_execution"]
+    assert tail["budget_reserve_tokens"]["post_replan"] >= default[
+        "budget_reserve_tokens"
+    ]["post_replan"]

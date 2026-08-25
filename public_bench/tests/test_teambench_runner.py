@@ -15,6 +15,7 @@ from general_mas_bench.teambench_runner import (
     _sequential_decision,
     _should_interrupt_for_replan,
     _snapshot_candidate,
+    _validate_replan_controller,
 )
 from harness.agent_loop import AgentTurn
 
@@ -208,6 +209,34 @@ def test_replan_escalates_unchanged_workspace_without_success() -> None:
 
     assert decision["action"] == "escalate"
     assert decision["triggers"] == ["workspace_unchanged_no_success"]
+
+
+def test_replan_controller_validates_conservative_budget_guard() -> None:
+    controller = {
+        **DEFAULT_CONTROLLER,
+        "replan_action_space": [
+            "stop", "delegate", "escalate", "review", "human/abstain",
+        ],
+        "replan_command_timeout_s": 120,
+        "replan_interrupt_timeouts": 1,
+        "replan_interrupt_failed_command_repetitions": 3,
+        "replan_workspace_unchanged_requires_no_success": True,
+        "replan_failed_without_success": 2,
+        "replan_max_total_tokens": 90_000,
+        "replan_planner_turns": 3,
+        "replan_executor_turns": 6,
+        "conservative_hard_token_budget": True,
+        "hard_budget_template_overhead_tokens": 4096,
+        "hard_budget_minimum_completion_tokens": 64,
+    }
+    _validate_replan_controller(controller)
+    controller["hard_budget_minimum_completion_tokens"] = 0
+    try:
+        _validate_replan_controller(controller)
+    except ValueError as exc:
+        assert "minimum_completion" in str(exc)
+    else:
+        raise AssertionError("zero minimum completion budget was accepted")
 
 
 def test_logged_command_signals_drive_live_replan_interrupt(tmp_path: Path) -> None:
