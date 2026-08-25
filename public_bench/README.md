@@ -64,17 +64,21 @@ may request one repair:
   observable runtime evidence indicates that execution is stuck. It emits a
   state/action/budget trace and preserves a byte-for-byte PlanExecute fallback.
   Seed-2 rejected it because review was broad and rarely changed the result.
-- **MT-Replan-v2.1 — current unscored candidate:** retain the PlanExecute roles,
+- **MT-Replan-v2.1 — retired hand-written replan candidate:** retain the PlanExecute roles,
   interrupt only on high-precision runtime failures, ask the strong Planner to
   inspect the workspace read-only and issue one recovery plan, then delegate a
   bounded repair to the weak Executor. Its evaluator also scores the exact
   pre-replan workspace-and-reports snapshot after routing has ended, so repair
-  effects can be separated from repeat-run model drift. It has no Verifier and
-  no result claim yet.
+  effects can be separated from repeat-run model drift. Its development run
+  found one real repair but reduced full passes and increased cost.
+- **MT-Agentic-RL-v1 — trained negative-result candidate:** learn a three-stage
+  fitted-Q policy over stop, replan/delegate, review and human-abstain actions
+  from development counterfactuals. On fresh online development states it
+  chooses the exact PlanExecute fallback on all 30 tasks.
 
-Both sequential controllers are hand-written and are not Agentic RL. The v2
-state/action contract is designed so that a later learned policy can be trained
-and compared in exactly the same TeamBench harness.
+MT-Sequential-v1 and MT-Replan-v2.1 are hand-written and are not Agentic RL.
+MT-Agentic-RL-v1 is trained from finite-horizon trajectories, but its learned
+no-op result provides no performance-advantage claim.
 
 No system can inspect hidden grader outcomes when making a decision. The
 Solo-TB protocol is frozen separately in
@@ -165,6 +169,16 @@ Same-trajectory shadow grading does establish one real repair: `DIST4` improves
 from 0.5833 to 0.9167. Across six escalations, however, four roll back, one adds
 no score and none creates a full pass. See the
 [`v2.1 development record`](records/TEAMBENCH_REPLAN_DEV_V2.1.md).
+
+The subsequent Agentic RL v1 experiment collects 28 complete three-stage
+counterfactual episodes and trains a finite-horizon fitted-Q policy. Forced
+recovery improves three tasks and creates one new pass, but review rejects all
+three gains. Leave-one-task-out selection is therefore conservative, and the
+frozen policy chooses `stop` for all 30 fresh online development states. It is
+exactly equal to the same-trajectory PlanExecute prefix in passes, partial score
+and tokens, with only 1.454 ms/task of policy overhead. This is a real trained
+controller and a negative performance result, not a benchmark win. See the
+[`Agentic RL v1 record`](records/TEAMBENCH_AGENTIC_RL_DEV_V1.md).
 
 ## Historical v1.2 A4/A8 result
 

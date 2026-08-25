@@ -134,19 +134,27 @@ The subsequent matched seed-2 pair rejects this controller: it produces 16/89
 passes versus PlanExecute-TB's 17/89, adds 52.31% tokens and 33.02% latency,
 and its +0.01135 partial-score difference has a 95% CI of [-0.01247, +0.03955].
 Only one of 80 reviews changes the final workspace, with zero score benefit.
-The required same-seed Solo rank anchor remains pending, and v1 is not a
-benchmark winner. See the
+The same-seed Solo anchor records 13/89 passes, 0.62390 partial score and 84,971
+tokens/task; v1 is not a benchmark winner. See the
 [seed-2 paired record](public_bench/records/TEAMBENCH_SEQUENTIAL_SEED2.md).
 
-The next unscored candidate, `MT-Replan-v2.1`, preserves the efficient
+The completed `MT-Replan-v2.1` candidate preserves the efficient
 Planner→Executor baseline but moves intervention into execution: repeated
 failed or timed-out commands can stop early, the strong Planner gets one
 read-only replan, and the weak Executor receives one bounded recovery. It
-removes the broad post-hoc Verifier that made v1 expensive. This is still a
-frozen deterministic controller—not Agentic RL—and it has no result claim yet.
-An offline trigger audit narrowed the unrun v2 draft from 44 projected
-escalations to 16 before any candidate model call. See the
-[v2.1 protocol](public_bench/docs/TEAMBENCH_REPLAN_V2.1_PROTOCOL.md).
+removes the broad post-hoc Verifier that made v1 expensive. It found one real
+partial-score repair, but lost two full passes and increased tokens and latency,
+so it did not advance. See the
+[v2.1 record](public_bench/records/TEAMBENCH_REPLAN_DEV_V2.1.md).
+
+`MT-Agentic-RL-v1` then trains a finite-horizon fitted-Q orchestration policy
+from 28 complete TeamBench development counterfactuals. On a fresh online
+development seed, it chooses the exact PlanExecute fallback on all 30 tasks:
+6/30 passes, 0.62299 mean partial score and 45,682 tokens/task for both arms.
+This validates the trained-policy pipeline and eliminates unprofitable
+interventions, but provides no benchmark advantage and does not advance to
+seed 3. See the
+[Agentic RL v1 record](public_bench/records/TEAMBENCH_AGENTIC_RL_DEV_V1.md).
 
 ## Public TeamBench transfer result (historical v1.2)
 
@@ -222,6 +230,7 @@ replace A8 unless they pass the stated quality, cost and safety checks.
 
 | Study | Main result | Required interpretation |
 | --- | --- | --- |
+| TeamBench Agentic RL v1 — fitted-Q orchestration | 30/30 fresh states choose PlanExecute fallback; identical quality and tokens | Genuine trained controller, but negative performance result; not benchmark-best |
 | A9-v1 — offline fitted-Q controller | 75.00% success vs 72.22% for the matched A8 baseline | Difference interval crossed zero; no significant advantage claim |
 | A9-v2 — masked PPO controller | Success 23.83% → 34.00%; +10.17 pp (95% CI +7.87 to +12.47); tokens −25.41% | Train-only controller result; unsafe episodes rose 15.73% → 66.00% |
 | A9-v3 — hard review shield | Unsafe episodes 66.00% → 5.84% | Autonomous success fell 34.00% → 0%; safety–utility negative result |

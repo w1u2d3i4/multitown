@@ -101,6 +101,30 @@ def test_replan_dev_record_does_not_overstate_advancement() -> None:
     }
 
 
+def test_agentic_rl_dev_record_preserves_learned_noop_result() -> None:
+    summary = json.loads(
+        (RECORDS / "teambench-agentic-rl-dev-v1-summary.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert summary["training_exploration"]["tasks"] == 30
+    assert summary["training_exploration"]["complete_counterfactual_episodes"] == 28
+    assert summary["training"]["algorithm"].startswith("finite-horizon fitted Q")
+    online = summary["online_development_evaluation"]
+    assert online["paired_tasks"] == 30
+    assert online["candidate"]["passes"] == 6
+    assert online["same_trajectory_plan_execute"]["passes"] == 6
+    assert online["candidate_minus_plan_execute"]["partial_score"]["mean"] == 0
+    assert online["candidate_minus_plan_execute"]["tokens"]["mean"] == 0
+    assert online["selected_hash_mismatches"] == 0
+    assert summary["decision"] == {
+        "trained_agentic_rl_supported": True,
+        "performance_advantage_supported": False,
+        "benchmark_best_supported": False,
+        "advance_to_seed3": False,
+    }
+
+
 def test_public_records_do_not_expose_machine_local_paths() -> None:
     for path in RECORDS.iterdir():
         if path.suffix not in {".json", ".md", ".csv"}:

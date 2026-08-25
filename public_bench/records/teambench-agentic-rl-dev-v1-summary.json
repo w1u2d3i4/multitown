@@ -1,0 +1,125 @@
+{
+  "schema_version": "multitown-teambench-agentic-rl-dev-summary-v1",
+  "status": "completed_negative_learned_controller",
+  "training_exploration": {
+    "tasks": 30,
+    "complete_counterfactual_episodes": 28,
+    "skipped": {"incomplete_sequential_states": 2},
+    "invocation_errors": 0,
+    "routes": {
+      "review_kept_recovery": 7,
+      "review_rollback_plan_execute": 21,
+      "replan_failed_or_not_delegated": 2
+    },
+    "monitored_energy_wh": 43.0252445854,
+    "complete_episode_prefix": {
+      "passes": 5,
+      "mean_partial_score": 0.6428428571,
+      "mean_tokens": 47034.0714285714,
+      "mean_latency_s": 61.1657243046
+    },
+    "complete_episode_recovery": {
+      "passes": 6,
+      "mean_partial_score": 0.6653571429,
+      "mean_tokens": 69780.7142857143,
+      "mean_latency_s": 86.96670312
+    },
+    "recovery_minus_prefix": {
+      "partial_score": {
+        "mean": 0.0225142857,
+        "ci95_lower": 0.0,
+        "ci95_upper": 0.0539892857
+      },
+      "tokens": {
+        "mean": 22746.6428571429,
+        "ci95_lower": 20757.9866071429,
+        "ci95_upper": 24860.9330357143
+      },
+      "latency_s": {
+        "mean": 25.8009788153,
+        "ci95_lower": 18.3169190321,
+        "ci95_upper": 37.9432615723
+      },
+      "better_tied_worse_partial": [3, 25, 0],
+      "prefix_only_passes": 0,
+      "recovery_only_passes": 1,
+      "mcnemar_two_sided_exact_p": 1.0
+    },
+    "reviewed_minus_prefix": {
+      "pass_delta": 0,
+      "mean_partial_delta": 0.0,
+      "mean_token_delta": 39330.6428571429,
+      "mean_latency_delta_s": 39.8573358824
+    }
+  },
+  "training": {
+    "algorithm": "finite-horizon fitted Q iteration with ridge regression",
+    "episodes": 28,
+    "alpha": 100.0,
+    "conservative_margin": 0.05,
+    "policy_parameter_sha256": "18ebd78ae9dca90522e46bc3280c399e253c8955e70e39550e49aaab679b1942",
+    "logical_dataset_sha256": "caab66a5631ce6918075f33b7de10f36a826c111cd1038e7698bcb72ea8c9955",
+    "leave_one_task_out": {
+      "passes": 5,
+      "mean_partial_score": 0.6428428571,
+      "mean_tokens": 47082.75,
+      "mean_latency_s": 61.3144724706,
+      "routes": {"stop": 27, "escalate_then_stop": 1}
+    },
+    "full_fit_training_routes": {"stop": 28}
+  },
+  "online_development_evaluation": {
+    "paired_tasks": 30,
+    "sampling_seed": 20260826,
+    "candidate": {
+      "passes": 6,
+      "mean_partial_score": 0.6229866667,
+      "mean_tokens": 45681.9333333333,
+      "median_latency_s": 51.0403018559,
+      "p95_latency_s": 99.6748869269,
+      "routes": {"stop": 30}
+    },
+    "same_trajectory_plan_execute": {
+      "passes": 6,
+      "mean_partial_score": 0.6229866667,
+      "mean_tokens": 45681.9333333333,
+      "median_latency_s": 51.0369589395,
+      "p95_latency_s": 99.6731341778
+    },
+    "candidate_minus_plan_execute": {
+      "partial_score": {"mean": 0.0, "ci95_lower": 0.0, "ci95_upper": 0.0},
+      "tokens": {"mean": 0.0, "ci95_lower": 0.0, "ci95_upper": 0.0},
+      "policy_decision_latency_s": {
+        "mean": 0.0014544301,
+        "ci95_lower": 0.0011663697,
+        "ci95_upper": 0.0017939711
+      },
+      "candidate_only_passes": 0,
+      "plan_execute_only_passes": 0,
+      "mcnemar_two_sided_exact_p": 1.0
+    },
+    "selected_hash_mismatches": 0,
+    "score_mismatches": 0,
+    "token_mismatches": 0,
+    "invocation_errors": 0,
+    "monitored_energy_wh": 20.8583930064
+  },
+  "provenance": {
+    "runner_revision": "add29cac26922fbf2b92e7b9168c892f906c435a",
+    "source_revision": "2f060a33501b19fbc8d26f8ccdad7580e3b04635",
+    "docker_image_id": "sha256:d218bef3a99b863f630a66bca9a8d8b7bd0e6218078bcf856bf374a14ad06397",
+    "controller_sha256": "daf4a8c6e4563d483fa1530c556d9b611848be20ba6e3368bab449d8319fe157",
+    "policy_payload_sha256": "ae03c443e150231a4fac2337180671b4837ecce0dd7151ec4195202b51a18505",
+    "exploration_results_sha256": "df5f4787a9f1a8eb7c1627e5b8019603396c6c83a5d122c401ba96ea1c775881",
+    "dataset_file_sha256": "2905bfef79df38a6da30f2ba6a64f26870344f6034f9daea0aeaff54dfa46dab",
+    "policy_file_sha256": "64693a99bed4a70b8d313301eaeda61affcfa51dad4949e4bf9efc4045455863",
+    "evaluation_config_sha256": "18780e5ccc98b06d938f35efa36d4e626dccfba6044163eeed31dca92fceb664",
+    "evaluation_results_sha256": "c69fbd55825a4a8c1c02c1888de5b113c3fb9853b5f04cbdb1b6afa24b42d6f7"
+  },
+  "decision": {
+    "trained_agentic_rl_supported": true,
+    "performance_advantage_supported": false,
+    "benchmark_best_supported": false,
+    "advance_to_seed3": false
+  }
+}

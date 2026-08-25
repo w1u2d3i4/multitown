@@ -154,11 +154,18 @@ MultiTown 合成任务集和本地 Qwen/llama.cpp 推理，不能外推为通用
 
 MultiTown 同时保留优化收益和安全失败：
 
+TeamBench 上的 MT-Agentic-RL-v1 从 28 条完整反事实轨迹训练三阶段 fitted-Q
+策略。在新 sampling seed 的 30 个开发任务上，策略全部选择 `stop`，因此与同轨迹
+PlanExecute 的 6/30 通过、0.62299 部分分和 45,682 Token/任务完全一致。它验证了
+真实训练与部署链路，但没有形成性能优势，也不会进入 seed 3。详见
+[Agentic RL v1 正式记录](public_bench/records/TEAMBENCH_AGENTIC_RL_DEV_V1.md)。
+
 后续的 A9、A22 是学习型控制器尝试的时间顺序研究编号，不是大模型版本；只有同时
 通过质量、成本和安全门，它们才能替代 A8。
 
 | 实验 | 主要结果 | 必须保留的解释边界 |
 | --- | --- | --- |
+| TeamBench Agentic RL v1——fitted-Q 编排控制器 | 新 sampling seed 的 30/30 个状态均选择 PlanExecute 回退；质量与 Token 完全相同 | 属于真正训练的控制器，但性能结果为负，不能声称 benchmark 最优 |
 | A9-v1——离线 fitted-Q 控制器 | 成功率 75.00%，对应 A8 基线为 72.22% | 差值区间跨零，不能声称显著优于 A8 |
 | A9-v2——带动作屏蔽的 PPO 控制器 | 成功率 23.83% → 34.00%，提高 10.17 pp（95% CI +7.87 至 +12.47），Token −25.41% | 仅为 train-only 控制器结果；unsafe episode 从 15.73% 上升至 66.00% |
 | A9-v3——强制复核安全盾 | unsafe episode 从 66.00% 降至 5.84% | autonomous success 从 34.00% 降至 0%，属于安全—效用负结果 |
