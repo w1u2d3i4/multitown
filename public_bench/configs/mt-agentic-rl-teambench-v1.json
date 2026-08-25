@@ -1,0 +1,39 @@
+{
+  "schema_version": "multitown-agentic-rl-controller-v1",
+  "policy_id": "mt-agentic-rl-v1",
+  "policy_kind": "trained offline finite-horizon fitted-Q sequential controller",
+  "replan_action_space": [
+    "stop",
+    "delegate",
+    "escalate",
+    "review",
+    "human/abstain"
+  ],
+  "replan_command_timeout_s": 120,
+  "replan_interrupt_timeouts": 1,
+  "replan_interrupt_failed_command_repetitions": 3,
+  "replan_workspace_unchanged_requires_no_success": true,
+  "replan_failed_without_success": 2,
+  "replan_max_total_tokens": 90000,
+  "replan_planner_turns": 3,
+  "replan_executor_turns": 6,
+  "agentic_review_turns": 6,
+  "high_risk_categories": [
+    "Adversarial",
+    "Cross-System Integration",
+    "Distributed Systems",
+    "Data Engineering",
+    "Long-Horizon",
+    "Multi-language",
+    "Operations",
+    "Security"
+  ],
+  "high_risk_difficulties": [
+    "expert"
+  ],
+  "rollback_surfaces": [
+    "workspace",
+    "reports"
+  ],
+  "shadow_grade_plan_execute_prefix": true
+}
