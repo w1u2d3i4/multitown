@@ -1,6 +1,7 @@
 # TeamBench strong-executor v1 protocol
 
-Status: frozen before the first development invocation.
+Status: completed negative development result; independent confirmation was
+not opened.
 
 Protocol date: 2026-08-26.
 
@@ -50,3 +51,16 @@ the strongest completed same-harness quality result rather than only the old
 Raw prompts, workspaces, model messages and telemetry stay private. Only
 aggregate results, artifact hashes, protocol code and non-sensitive plots may
 be published.
+
+## Frozen decision
+
+Both development runs completed all 30 unique tasks with zero invocation
+errors. `StrongPlanExecute-TB` tied the baseline at 6 passes, but reduced mean
+partial score from 0.68732 to 0.67688. Candidate-minus-baseline partial score
+was -0.01044 (95% paired-bootstrap CI [-0.06011, +0.03556]). The candidate
+also used 4.13% more tokens, took 20.67% longer on mean task latency and used
+21.97% more monitored energy. It failed the predeclared development gate and
+therefore was not evaluated on generator seed 5.
+
+The full result and provenance boundary are recorded in
+[`../records/TEAMBENCH_STRONG_EXECUTOR_DEV_V1.md`](../records/TEAMBENCH_STRONG_EXECUTOR_DEV_V1.md).
