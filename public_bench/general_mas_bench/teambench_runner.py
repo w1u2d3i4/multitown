@@ -95,6 +95,9 @@ DEFAULT_CONTROLLER = {
     "replan_max_total_tokens": 90_000,
     "replan_planner_turns": 3,
     "replan_executor_turns": 6,
+    "capacity_route_strong_categories": [
+        "Distributed Systems", "Operations", "Security",
+    ],
 }
 
 
@@ -937,9 +940,17 @@ def _executor_tier(
     *,
     strong: dict[str, Any],
     weak: dict[str, Any],
+    category: str | None = None,
+    controller: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Select the fixed Executor model tier without changing role privileges."""
-    return strong if execution_method == "StrongPlanExecute" else weak
+    if execution_method == "StrongPlanExecute":
+        return strong
+    if execution_method == "MTCapacityRoute":
+        policy = controller or DEFAULT_CONTROLLER
+        strong_categories = set(policy.get("capacity_route_strong_categories", []))
+        return strong if category in strong_categories else weak
+    return weak
 
 
 def run_task(
@@ -1034,7 +1045,8 @@ def run_task(
         )
         route = "single_strong_full_access"
     elif execution_method in {
-        "PlanExecute", "StrongPlanExecute", "MTSequential", "MTReplan",
+        "PlanExecute", "StrongPlanExecute", "MTCapacityRoute",
+        "MTSequential", "MTReplan",
         "MTAgenticRL", "MTAgenticRLExplore", "MTAgenticRLExploreV2",
     }:
         # TeamBench's official no-verifier ablation: a strong Planner transfers
@@ -1042,10 +1054,14 @@ def run_task(
         # independent review, so the controller supplies the protocol-required
         # attestation after execution without consulting the hidden grader.
         planner = adapter("planner", strong)
-        executor = adapter(
-            "executor",
-            _executor_tier(execution_method, strong=strong, weak=weak),
+        selected_executor_tier = _executor_tier(
+            execution_method,
+            strong=strong,
+            weak=weak,
+            category=str(row.get("category") or "Other"),
+            controller=controller,
         )
+        executor = adapter("executor", selected_executor_tier)
         role_counts.update(planner=1, executor=1)
         _run_phase(
             role="planner", adapter=planner, prompt=prompts["planner"],
@@ -1123,23 +1139,41 @@ def run_task(
             max_turns=12,
         )
         validators.append(execution_validator)
-        if execution_method in {"PlanExecute", "StrongPlanExecute"}:
-            strong_executor = execution_method == "StrongPlanExecute"
+        if execution_method in {
+            "PlanExecute", "StrongPlanExecute", "MTCapacityRoute",
+        }:
+            strong_executor = selected_executor_tier is strong
+            capacity_routed = execution_method == "MTCapacityRoute"
             _controller_attestation(
                 submission,
                 str(row["task_id"]),
                 (
-                    "fixed_strong_plan_execute_without_independent_review"
-                    if strong_executor
-                    else "fixed_plan_execute_without_independent_review"
+                    "capacity_routed_plan_execute_without_independent_review"
+                    if capacity_routed
+                    else (
+                        "fixed_strong_plan_execute_without_independent_review"
+                        if strong_executor
+                        else "fixed_plan_execute_without_independent_review"
+                    )
                 ),
-                source="fixed_strategy_protocol_controller",
+                source=(
+                    "frozen_capacity_router"
+                    if capacity_routed
+                    else "fixed_strategy_protocol_controller"
+                ),
             )
-            route = (
-                "fixed_strong_plan_execute"
-                if strong_executor
-                else "fixed_plan_execute"
-            )
+            if capacity_routed:
+                route = (
+                    "capacity_route:strong_executor"
+                    if strong_executor
+                    else "capacity_route:weak_executor"
+                )
+            else:
+                route = (
+                    "fixed_strong_plan_execute"
+                    if strong_executor
+                    else "fixed_plan_execute"
+                )
         elif execution_method == "MTSequential":
             candidates = run_dir / "candidates"
             plan_execute_snapshot = candidates / "plan_execute"
@@ -2041,8 +2075,8 @@ def main() -> None:
     parser.add_argument(
         "--method",
         choices=(
-            "Solo", "PlanExecute", "StrongPlanExecute", "ExecuteReview", "A4", "A8",
-            "MTSelector", "MTSequential", "MTReplan",
+            "Solo", "PlanExecute", "StrongPlanExecute", "MTCapacityRoute",
+            "ExecuteReview", "A4", "A8", "MTSelector", "MTSequential", "MTReplan",
             "MTAgenticRLExplore", "MTAgenticRLExploreV2", "MTAgenticRL",
         ),
         required=True,

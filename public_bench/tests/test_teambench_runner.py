@@ -442,3 +442,24 @@ def test_runner_exposes_strong_plan_execute_method() -> None:
 
     assert _executor_tier("StrongPlanExecute", strong=strong, weak=weak) is strong
     assert _executor_tier("PlanExecute", strong=strong, weak=weak) is weak
+
+
+def test_capacity_router_uses_strong_only_for_frozen_categories() -> None:
+    strong = {"model": "strong"}
+    weak = {"model": "weak"}
+
+    for category in ("Distributed Systems", "Operations", "Security"):
+        assert _executor_tier(
+            "MTCapacityRoute",
+            strong=strong,
+            weak=weak,
+            category=category,
+            controller=DEFAULT_CONTROLLER,
+        ) is strong
+    assert _executor_tier(
+        "MTCapacityRoute",
+        strong=strong,
+        weak=weak,
+        category="Data Engineering",
+        controller=DEFAULT_CONTROLLER,
+    ) is weak
