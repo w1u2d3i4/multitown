@@ -26,6 +26,7 @@ from types import ModuleType
 from typing import Any
 
 from multitown.agentic_data import DEFAULT_DATA_ROOT
+from multitown.magrpo_prompts import budgeted_formatters
 
 RUN_SCHEMA = "multitown-magrpo-run-v1"
 DEFAULT_MODEL = Path(os.environ.get("MULTITOWN_AGENTIC_MODEL", "models/Qwen3-0.6B"))
@@ -78,13 +79,13 @@ def _git_provenance(root: Path) -> dict[str, Any]:
     }
 
 
-def _load_writing_module(writing_root: Path) -> ModuleType:
-    entrypoint = writing_root / "train_magrpo.py"
+def _load_writing_module(writing_root: Path, method: str = "magrpo") -> ModuleType:
+    entrypoint = writing_root / f"train_{method}.py"
     if not entrypoint.is_file():
         raise FileNotFoundError(f"official writing entrypoint not found: {entrypoint}")
     sys.path.insert(0, str(writing_root))
     spec = importlib.util.spec_from_file_location(
-        "multitown_upstream_magrpo_writing", entrypoint
+        f"multitown_upstream_{method}_writing", entrypoint
     )
     if spec is None or spec.loader is None:
         raise RuntimeError(f"could not import official writing code: {entrypoint}")
@@ -295,6 +296,11 @@ def _record_generation_metrics(trainer: Any) -> dict[str, Any]:
         "generation_calls": 0,
         "prompt_tokens": 0,
         "completion_tokens": 0,
+        "completion_text_count": 0,
+        "completion_word_count_sum": 0,
+        "completion_word_count_min": None,
+        "completion_word_count_max": None,
+        "paragraph_split_delimiter_count": 0,
         "reward_values": [],
     }
     original_generate = trainer._generate_completions
@@ -307,6 +313,21 @@ def _record_generation_metrics(trainer: Any) -> dict[str, Any]:
         sequences = sum(len(batch) for batch in value["completion_input_ids"])
         metrics["prompt_tokens"] += prompt_tokens * sequences
         metrics["completion_tokens"] += sum(value["response_lens"])
+        for batch in value["completions"]:
+            for completion in batch:
+                words = len(completion.split())
+                metrics["completion_text_count"] += 1
+                metrics["completion_word_count_sum"] += words
+                current_min = metrics["completion_word_count_min"]
+                current_max = metrics["completion_word_count_max"]
+                metrics["completion_word_count_min"] = (
+                    words if current_min is None else min(current_min, words)
+                )
+                metrics["completion_word_count_max"] = (
+                    words if current_max is None else max(current_max, words)
+                )
+                if "[PARAGRAPH_SPLIT]" in completion:
+                    metrics["paragraph_split_delimiter_count"] += 1
         return value
 
     def rewards(*arguments: Any, **keywords: Any) -> list[float]:
@@ -323,9 +344,39 @@ def _safe_mean(values: Sequence[float]) -> float | None:
     return sum(values) / len(values) if values else None
 
 
+def _grpo_reward_function(writing: ModuleType, dataset: str, split_policy: str) -> Any:
+    official = writing.make_reward_function(dataset)
+    if split_policy == "official-fallback":
+        return official
+    if split_policy != "strict-delimiter":
+        raise ValueError(f"unsupported GRPO split policy: {split_policy}")
+
+    def strict_reward(*agent_completions: Any, **_: Any) -> list[float]:
+        if not agent_completions:
+            return []
+        values = []
+        for response in agent_completions[0]:
+            if "[PARAGRAPH_SPLIT]" not in response:
+                values.append(0.0)
+            else:
+                values.append(float(official([response])[0]))
+        return values
+
+    return strict_reward
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--method", choices=("magrpo", "grpo"), default="magrpo")
     parser.add_argument("--dataset", choices=("tldr", "arxiv"), default="tldr")
+    parser.add_argument(
+        "--prompt-profile", choices=("official", "budgeted"), default="official"
+    )
+    parser.add_argument(
+        "--grpo-split-policy",
+        choices=("official-fallback", "strict-delimiter"),
+        default="official-fallback",
+    )
     parser.add_argument("--data-root", type=Path, default=DEFAULT_DATA_ROOT)
     parser.add_argument("--model", type=Path, default=DEFAULT_MODEL)
     parser.add_argument("--writing-root", type=Path, default=DEFAULT_WRITING_ROOT)
@@ -352,6 +403,10 @@ def _validate_args(args: argparse.Namespace) -> None:
             raise ValueError(f"--{field.replace('_', '-')} must be positive")
     if args.generations < 2:
         raise ValueError("--generations must be at least two for group advantages")
+    if args.method == "grpo" and args.prompt_profile != "official":
+        raise ValueError("the budgeted prompt profile is a two-agent MAGRPO profile")
+    if args.method == "magrpo" and args.grpo_split_policy != "official-fallback":
+        raise ValueError("GRPO split policy does not apply to MAGRPO")
     if args.max_new_tokens < 1:
         raise ValueError("--max-new-tokens must be positive")
     if args.output.exists() and any(args.output.iterdir()):
@@ -370,7 +425,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "schema": RUN_SCHEMA,
         "status": "running",
         "started_at": started,
-        "method": "official-magrpo",
+        "method": f"official-{args.method}",
         "dataset": args.dataset,
         "config": {
             key: str(value) if isinstance(value, Path) else value
@@ -391,7 +446,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             train_path, args.train_start, args.train_samples
         )
         eval_rows = _load_parquet_rows(eval_path, args.eval_start, args.eval_samples)
-        writing = _load_writing_module(args.writing_root)
+        writing = _load_writing_module(args.writing_root, args.method)
         reward_module = importlib.import_module(f"rewards.{args.dataset}_rewards")
         reward_module.VERBOSE = False
 
@@ -402,6 +457,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             tokenizer.pad_token = tokenizer.eos_token
         tokenizer.padding_side = "left"
 
+        num_agents = 2 if args.method == "magrpo" else 1
         trainer_args = MAGRPOConfig(
             num_turns=1,
             num_train_epochs=args.epochs,
@@ -412,7 +468,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             temperature=args.temperature,
             top_p=args.top_p,
             top_k=None,
-            num_agents=2,
+            num_agents=num_agents,
             parallel_training="none",
             agent_devices=["cuda:0"],
             early_termination_threshold=None,
@@ -425,9 +481,21 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             reference_kl_enabled=False,
         )
         _seed_everything(args.seed)
+        if args.method == "magrpo":
+            reward_function = writing.make_reward_function(args.dataset)
+            formatters = (
+                writing.get_formatters(args.dataset)
+                if args.prompt_profile == "official"
+                else budgeted_formatters(args.dataset)
+            )
+        else:
+            reward_function = _grpo_reward_function(
+                writing, args.dataset, args.grpo_split_policy
+            )
+            formatters = writing.get_formatter(args.dataset)
         trainer = MAGRPOTrainer(
             agent_model=str(args.model),
-            num_agents=2,
+            num_agents=num_agents,
             tokenizer=tokenizer,
             model_config={
                 "torch_dtype": torch.bfloat16,
@@ -436,8 +504,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             train_dataset=train_rows,
             eval_dataset=eval_rows,
             dataset_type=args.dataset,
-            reward_func=writing.make_reward_function(args.dataset),
-            formatters=writing.get_formatters(args.dataset),
+            reward_func=reward_function,
+            formatters=formatters,
             args=trainer_args,
             wandb_config=None,
         )

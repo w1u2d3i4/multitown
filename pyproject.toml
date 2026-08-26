@@ -115,6 +115,8 @@ multitown-a27-tail-diagnostic = "multitown.a27_tail_diagnostic:main"
 multitown-a28-conservative-router = "multitown.a28_conservative_router:main"
 multitown-agentic-data-audit = "multitown.agentic_data:main"
 multitown-magrpo = "multitown.magrpo_runner:main"
+multitown-magrpo-eval = "multitown.magrpo_eval:main"
+multitown-magrpo-report = "multitown.magrpo_report:main"
 multitown-audit-public-release = "multitown.public_release:main"
 
 [build-system]

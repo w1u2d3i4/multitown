@@ -102,6 +102,37 @@ The output directory contains `result.json`, one-second `monitor.jsonl`, and a
 resource curve. Add `--save-model` only when the two policy checkpoints are
 needed; the runner refuses to overwrite a non-empty artifact directory.
 
+For an equal-output-budget comparison, evaluate two-agent MAGRPO at 64 output
+tokens per agent and single-agent GRPO at 128:
+
+```bash
+multitown-magrpo-eval --method magrpo --models /path/to/shared-or-agent-models \
+  --eval-samples 32 --seeds 20260830 20260831 20260832 \
+  --max-new-tokens 64 --output /path/to/base-eval
+
+multitown-magrpo-eval --method grpo --models /path/to/grpo-model \
+  --grpo-split-policy strict-delimiter \
+  --eval-samples 32 --seeds 20260830 20260831 20260832 \
+  --max-new-tokens 128 --output /path/to/grpo-eval
+
+multitown-magrpo-report \
+  --base /path/to/base-eval/result.json \
+  --magrpo /path/to/magrpo-eval/result.json \
+  --grpo /path/to/grpo-eval/result.json \
+  --output /path/to/new-comparison
+```
+
+The upstream GRPO evaluator falls back to splitting a response at one third of
+its character length when `[PARAGRAPH_SPLIT]` is absent. Because that fallback
+can mechanically satisfy the length-ratio reward, MultiTown exposes both the
+upstream-compatible `official-fallback` policy and the format-conforming
+`strict-delimiter` policy. Reports record delimiter adherence and must state
+which policy produced a score.
+
+`--prompt-profile budgeted` is an experimental two-agent profile that makes
+role and length contracts explicit while retaining the official task reward.
+It is a MultiTown optimization, not part of the original MAGRPO protocol.
+
 ## Claim boundary
 
 Passing the audit proves only that the inputs are present, parseable, and pinned.

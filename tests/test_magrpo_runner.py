@@ -2,10 +2,13 @@ import argparse
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 from multitown.magrpo_runner import (
     ResourceMonitor,
     _dataset_paths,
+    _grpo_reward_function,
+    _load_writing_module,
     _tree_digest,
     _validate_args,
 )
@@ -22,6 +25,28 @@ class MagrpoRunnerTests(unittest.TestCase):
         self.assertEqual(arxiv_eval.name, "val-00000-of-00001.parquet")
         with self.assertRaises(ValueError):
             _dataset_paths(root, "unknown")
+
+    def test_writing_loader_requires_method_entrypoint(self) -> None:
+        with (
+            tempfile.TemporaryDirectory() as directory,
+            self.assertRaises(FileNotFoundError),
+        ):
+            _load_writing_module(Path(directory), "grpo")
+
+    def test_strict_grpo_reward_rejects_fallback_split(self) -> None:
+        writing = SimpleNamespace(
+            make_reward_function=lambda _dataset: (
+                lambda responses: [1.0 for _ in responses]
+            )
+        )
+        reward = _grpo_reward_function(writing, "tldr", "strict-delimiter")
+        values = reward(
+            [
+                "first without delimiter",
+                "first [PARAGRAPH_SPLIT] second",
+            ]
+        )
+        self.assertEqual(values, [0.0, 1.0])
 
     def test_tree_digest_is_content_and_path_bound(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -53,6 +78,9 @@ class MagrpoRunnerTests(unittest.TestCase):
                 epochs=1,
                 generations=2,
                 max_new_tokens=8,
+                method="magrpo",
+                prompt_profile="official",
+                grpo_split_policy="official-fallback",
                 output=output,
                 model=model,
             )
