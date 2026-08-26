@@ -87,6 +87,18 @@ A26 subsequently failed its OOD gates. Its frozen successor,
 changed the unsafe disagreement path, used a new confirmation bank, and passed
 all pre-registered gates. A28 is still not full Agentic RL.
 
+## External benchmark track
+
+The next phase no longer evaluates only MultiTown's private town distribution.
+It has a separate, frozen external benchmark protocol for AgentConductor,
+MAGRPO, and MATTRL. See
+[External Agentic Benchmark Protocol](EXTERNAL_AGENTIC_BENCHMARKS.md).
+
+This track does not reuse TeamBench as an RL environment. TeamBench remains the
+non-RL public evidence on the `public-bench` branch; the three method-family
+benchmarks here measure training or test-time experience mechanisms under their
+own task rewards.
+
 ## Explore the public entry points
 
 ```bash

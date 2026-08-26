@@ -1,0 +1,46 @@
+{
+  "schema": "multitown-agentic-benchmark-protocol-v1",
+  "frozen_on": "2026-08-26",
+  "audit_schema": "multitown-agentic-data-manifest-v1",
+  "expected_audit_manifest_sha256": "156f21e8e52df3982c28a6036176908c4b3af7ff51c294d29949a54ecdcf0672",
+  "payload_digest_rule": "sha256(concat(raw file sha256 digests in protocol order))",
+  "payloads": {
+    "apps_train": "2055b7b7b7b093f533f0dcf190e3fcc8e0b4405f018185c48f045e1f7244910b",
+    "apps_test": "8f7f0374dc3dee77160bff7aba086f98c6556ce9d10566a8dee01ddd3d932bdc",
+    "humaneval_test": "c15474f5e9dc1964a60231c394f52f4ab1127aae1f897557748bf94993a3a865",
+    "mbpp_test": "dca515f1e1a3b68604583fcbc9d62a477c10e4697b96b98360e83af7a2652dd6",
+    "livecodebench_release_v4": "0d6657ad5c1369564b8a500a2689fbdd79df86a908a68e1a207d6fd518e12d34",
+    "codecontests_train": "932a70c3277c298147be1d9f8577a3eec32628f1aac89810eacc11fb0fba1e9b",
+    "codecontests_validation": "ba43790e5cd645ed4d0a1bdd98749938f279055614970f420f87ce42b558017d",
+    "codecontests_test": "1d85a3e31d8ea151074d4a1d4f6cff8c8275c5732577f8c7b34d45a52aa6ee21",
+    "magrpo_tldr_train": "e0e7607f74b65738a9c15ad0b074de34e729a6ca39d95ae6dba48ebe1f883428",
+    "magrpo_tldr_test": "6e39a77f17523c136073b77e1b1f4f46ae0b9b7965f326e2159fb52258f27445",
+    "magrpo_tldr_validation": "b149fd6e054e586c6adc2b77dd3e35edf79ee26c668e61a6fbf507dd61d83874",
+    "magrpo_arxiv_train": "26b833de259c8cfca8714444034469a9785c052b89088927ad3ce420ff2a0544",
+    "magrpo_arxiv_validation": "22520ccb3c90e266ae50d31fb864b705950b846d9ee64e4fc97bce25baab7f9b",
+    "magrpo_arxiv_test": "395780331eb8dedc44dd0ad035f7c4d139a882c7848ffdb45f81bc57c26a08fc",
+    "mattrl_rarebench_public_task4": "7d707e5fba099dee521c8974ccb6b198d04c9c6f9396515796eda676890001d1",
+    "mattrl_supergpqa_all": "47a9b6409c1611634608851afd2026e209b91b636c8ea2ed72d173cd7773c0bf"
+  },
+  "selections": {
+    "magrpo_tldr_v1": {
+      "train": "train[0:1000]",
+      "evaluation": "test[0:1000]"
+    },
+    "magrpo_arxiv_v1": {
+      "train": "train[0:1000]",
+      "evaluation": "validation[0:1000]"
+    },
+    "mattrl_supergpqa_300_v1": {
+      "algorithm": "proportional discipline+difficulty, sha256 rank v1",
+      "count": 300,
+      "ids_sha256": "c20bcff7eea1078b3275246f89a2535c6033126c41403d70013ff1fdad203b9b"
+    }
+  },
+  "declared_gaps": {
+    "hle": "gated; payload unavailable until the user accepts its terms",
+    "mattrl_rarebench": "public Task-4 payload has 1,122 cases, not the paper's unreleased 2,185-case set",
+    "agentconductor_code": "paper public; no official executable training repository found",
+    "mattrl_code": "official repository contains documentation but no executable implementation"
+  }
+}
