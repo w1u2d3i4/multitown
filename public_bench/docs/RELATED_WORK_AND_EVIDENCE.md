@@ -131,6 +131,14 @@ organization design, not the slogan that adding agents is inherently better.
 The full numbers and provenance boundary are in
 [`../records/TEAMBENCH_STRATEGY_QUALITY_V2.md`](../records/TEAMBENCH_STRATEGY_QUALITY_V2.md).
 
+That seed-0 matrix is discovery evidence. Its only non-dominated anchors were
+rerun on fresh generator seed 5 against the pre-frozen `MT-CapacityRoute-v1`.
+The candidate records 20/89 passes, 0.64180 mean partial and 48,296 tokens/task,
+versus PlanExecute's 16/89, 0.61603 and 49,579 and Solo's 14/89, 0.63989 and
+84,085. It is therefore the strongest local point under that exact harness.
+The partial-score confidence intervals still cross zero, and cross-paper
+leaderboard claims remain prohibited.
+
 Required outputs are pass rate, deterministic partial score, paired bootstrap
 intervals, exact McNemar tests, tokens, latency, monitored energy, route mix,
 role activations and invocation failures. Solo-TB was protocol-frozen on

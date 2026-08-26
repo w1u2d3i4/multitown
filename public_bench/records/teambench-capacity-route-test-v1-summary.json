@@ -1,0 +1,60 @@
+{
+  "schema_version": "general-mas-teambench-capacity-route-public-summary-v1",
+  "paired_tasks": 89,
+  "protocol": "TEAMBENCH_CAPACITY_ROUTE_V1_PROTOCOL.md",
+  "generator_seed": 5,
+  "sampling_seed": 20260841,
+  "methods": {
+    "PlanExecute": {
+      "passes": 16,
+      "mean_partial_score": 0.6160299625468165,
+      "mean_tokens": 49579.15730337079,
+      "mean_latency_s": 69.2142984858306,
+      "p95_latency_s": 151.95880347085142,
+      "energy_wh": 67.89422535875217
+    },
+    "Solo": {
+      "passes": 14,
+      "mean_partial_score": 0.6398872659176029,
+      "mean_tokens": 84084.77528089887,
+      "mean_latency_s": 75.59700333347199,
+      "p95_latency_s": 237.0629893281961,
+      "energy_wh": 90.94320037829735
+    },
+    "MTCapacityRoute": {
+      "passes": 20,
+      "mean_partial_score": 0.6417985018726592,
+      "mean_tokens": 48295.69662921348,
+      "mean_latency_s": 68.2427074939112,
+      "p95_latency_s": 91.05811151582748,
+      "energy_wh": 63.31966547573286,
+      "strong_routes": 14,
+      "weak_routes": 75
+    }
+  },
+  "paired_partial_score": {
+    "capacity_minus_plan_execute": {
+      "mean": 0.025768539325842697,
+      "ci95_lower": -0.0060301404494381905,
+      "ci95_upper": 0.0614247191011236
+    },
+    "capacity_minus_solo": {
+      "mean": 0.0019112359550561833,
+      "ci95_lower": -0.03524269662921348,
+      "ci95_upper": 0.039477528089887644
+    }
+  },
+  "claim": "strongest tested local operating point under the frozen seed-5 harness",
+  "literature_sota_supported": false,
+  "invocation_errors": 0,
+  "grader_timeouts": 0,
+  "provenance": {
+    "upstream_revision": "2f060a33501b19fbc8d26f8ccdad7580e3b04635",
+    "runner_revision": "523de00870d8932f5abb98164fc2b5efa603e02b",
+    "split_sha256": "376c01ba6c78819bc22b53b9ba6561b5cae5e4db9133b7f307e834755b964809",
+    "task_instances_sha256": "7923eddc70ce9739e887ce472afb070f420eb89d2e83b441878c290b0f14ed37",
+    "plan_execute_results_sha256": "32a772510a925d09cd4177a74d47f900006d0b079c0dafd2d4a58a38876c6128",
+    "solo_results_sha256": "4ac2c25a40ad8c7e9001d58e5476778489f9c3191a06ac61dba6bf5a672a32a5",
+    "capacity_route_results_sha256": "6e2b652ea3cd33003fe2c66cf83fda813b7c29eb57c0cece9d0d508adb1676a1"
+  }
+}

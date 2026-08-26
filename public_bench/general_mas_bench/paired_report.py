@@ -15,10 +15,29 @@ import numpy as np
 
 from .baseline_report import _mcnemar
 from .common import read_json, sha256_file, write_json
-from .report import _latest_results, _method_summary, _monitor_summary, _paired_bootstrap
+from .report import (
+    _latest_results,
+    _method_summary,
+    _monitor_summary,
+    _paired_bootstrap,
+)
 
-
-MATCHED_CONFIG_FIELDS = ("split", "sampling_seed", "temperature", "max_tokens", "tasks")
+MATCHED_CONFIG_FIELDS = (
+    "split",
+    "split_sha256",
+    "seed_override",
+    "sampling_seed",
+    "temperature",
+    "max_tokens",
+    "task_instances_sha256",
+    "tasks",
+    "source",
+    "docker_image_id",
+    "strong",
+    "weak",
+    "runner_source",
+    "controller_sha256",
+)
 
 
 def _assert_matched_configs(
@@ -45,9 +64,7 @@ def _paired_statistics(
             [
                 float(candidate_row.get("partial_score", 0))
                 - float(baseline_row.get("partial_score", 0))
-                for baseline_row, candidate_row in zip(
-                    baseline, candidate, strict=True
-                )
+                for baseline_row, candidate_row in zip(baseline, candidate, strict=True)
             ],
             dtype=float,
         ),
@@ -55,9 +72,7 @@ def _paired_statistics(
             [
                 float(candidate_row.get("total_tokens", 0))
                 - float(baseline_row.get("total_tokens", 0))
-                for baseline_row, candidate_row in zip(
-                    baseline, candidate, strict=True
-                )
+                for baseline_row, candidate_row in zip(baseline, candidate, strict=True)
             ],
             dtype=float,
         ),
@@ -65,9 +80,7 @@ def _paired_statistics(
             [
                 float(candidate_row.get("latency_s", 0))
                 - float(baseline_row.get("latency_s", 0))
-                for baseline_row, candidate_row in zip(
-                    baseline, candidate, strict=True
-                )
+                for baseline_row, candidate_row in zip(baseline, candidate, strict=True)
             ],
             dtype=float,
         ),
@@ -87,7 +100,9 @@ def _paired_statistics(
     quality = differences["partial_score"]
     return {
         "candidate_minus_baseline": {
-            name: _paired_bootstrap(values, samples=bootstrap_samples, seed=seed + index)
+            name: _paired_bootstrap(
+                values, samples=bootstrap_samples, seed=seed + index
+            )
             for index, (name, values) in enumerate(differences.items())
         },
         "partial_score_outcomes": {
@@ -173,9 +188,7 @@ def _plot_quality_cost(
         (candidate_label, "#FF7A45"),
     ):
         row = summaries[label]
-        ax.scatter(
-            row["mean_tokens"], row["mean_partial_score"], s=140, color=color
-        )
+        ax.scatter(row["mean_tokens"], row["mean_partial_score"], s=140, color=color)
         ax.annotate(
             label,
             (row["mean_tokens"], row["mean_partial_score"]),
@@ -300,12 +313,16 @@ def build_paired_report(
             "",
             "## Paired result",
             "",
-            f"Candidate minus baseline partial score: {difference['mean']:+.5f} "
-            f"(95% paired bootstrap CI [{difference['ci95_lower']:+.5f}, "
-            f"{difference['ci95_upper']:+.5f}]).",
+            (
+                f"Candidate minus baseline partial score: {difference['mean']:+.5f} "
+                f"(95% paired bootstrap CI [{difference['ci95_lower']:+.5f}, "
+                f"{difference['ci95_upper']:+.5f}])."
+            ),
             "",
-            f"Mean token reduction: {paired['mean_token_reduction']:+.2%}. "
-            f"Mean latency reduction: {paired['mean_latency_reduction']:+.2%}.",
+            (
+                f"Mean token reduction: {paired['mean_token_reduction']:+.2%}. "
+                f"Mean latency reduction: {paired['mean_latency_reduction']:+.2%}."
+            ),
             "",
             "Positive reduction means the candidate used fewer resources.",
             "",

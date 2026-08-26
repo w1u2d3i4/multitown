@@ -23,6 +23,11 @@ separated into task quality and tokens. Runtime and energy are compared only
 between post-fix runs with compatible provenance; a cost advantage is never
 presented as universal method superiority.
 
+The branch now also includes **MT-CapacityRoute-v1**, the frozen successor to
+that discovery matrix. It keeps the Planner→Executor separation, assigns the
+strong Executor only to three development-selected public task categories, and
+uses the economical Executor everywhere else. It is deterministic and non-RL.
+
 The underlying multi-agent value proposition is separation of duties: unlike
 Solo-TB, no role-separated organization lets one agent read the full
 specification, modify the workspace and certify its own result. A8-TB tests
@@ -85,7 +90,36 @@ frozen results. The animated work order is a deterministic explanatory scenario,
 not a raw experimental episode. See [`demo/`](demo/) for the automatic GIF
 generation command.
 
-## Public TeamBench mainstream-strategy result
+## Current TeamBench result: capacity-aware role assignment
+
+On 89 newly generated test instances (generator seed 5), all three methods use
+the same task-instance hash, sampling seed, model endpoints, container image,
+temperature and output cap:
+
+| Strategy | Fully passed | Mean partial | Mean tokens/task | p95 latency | Energy |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| PlanExecute-TB | 16 / 89 | 0.61603 | 49,579 | 151.96 s | 67.89 Wh |
+| Solo-TB | 14 / 89 | 0.63989 | 84,085 | 237.06 s | 90.94 Wh |
+| **MT-CapacityRoute-v1** | **20 / 89** | **0.64180** | **48,296** | **91.06 s** | **63.32 Wh** |
+
+MT-CapacityRoute is the **strongest tested local operating point**: it has the
+most full passes and highest mean partial score while using the fewest mean
+tokens. Relative to Solo it adds six passes and loses none (exact two-sided
+McNemar p=0.03125), cuts tokens by 42.56%, and cuts monitored energy by 30.37%.
+Relative to PlanExecute it adds four net passes, raises partial score by
++0.02577, cuts tokens by 2.59%, and cuts energy by 6.74%.
+
+The claim boundary matters. The paired partial-score intervals versus both
+anchors include zero, and the 75 unchanged weak-route tasks show residual local
+inference variation. The separately reported 14-task action-changing subset is
+directionally positive (+0.11096 partial; 6 wins / 7 ties / 1 loss), while the
+baseline-anchored audit estimate is 18 passes and 0.63348 partial. Therefore we
+claim a **same-harness point winner**, not statistical partial-score superiority
+or literature-wide SOTA. See the
+[formal record](public_bench/records/TEAMBENCH_CAPACITY_ROUTE_TEST_V1.md) and
+[frozen protocol](public_bench/docs/TEAMBENCH_CAPACITY_ROUTE_V1_PROTOCOL.md).
+
+## Historical TeamBench mainstream-strategy matrix (seed 0)
 
 The completed 89-task paired matrix now includes a strong Solo anchor and four
 role-separated organizations:
@@ -107,10 +141,11 @@ partial score (-0.07494, 95% CI [-0.11236, -0.04090]) while using 36.30% more
 tokens. FixedTeam-TB used 120.44% more tokens than PlanExecute-TB without a
 clear partial-score gain.
 
-The practical result is sharper than “multi-agent is better”: **planning and
+This discovery result is sharper than “multi-agent is better”: **planning and
 handoff can be efficient, while adding roles without a repair path can make the
-system worse**. The current MultiTown-TB dynamic controller is not the winner;
-it remains a useful negative result and redesign target. See the
+system worse**. The original MultiTown-TB dynamic controller was not the winner;
+it remains a useful negative result and motivated the frozen capacity-aware
+successor above. See the
 [formal comparison](public_bench/records/TEAMBENCH_STRATEGY_QUALITY_V2.md) and
 [mainstream-strategy mapping](public_bench/docs/RELATED_WORK_AND_EVIDENCE.md).
 

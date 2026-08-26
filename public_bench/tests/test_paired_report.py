@@ -3,7 +3,6 @@ import json
 from pathlib import Path
 
 import pytest
-
 from general_mas_bench.paired_report import build_paired_report
 
 
@@ -24,9 +23,18 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path]:
     config = {
         "tasks": task_ids,
         "split": "dev",
+        "split_sha256": "split-hash",
+        "seed_override": 5,
         "sampling_seed": 9,
         "temperature": 0,
         "max_tokens": 2048,
+        "task_instances_sha256": "instances-hash",
+        "source": {"revision": "upstream", "dirty": False},
+        "docker_image_id": "sha256:image",
+        "strong": {"model": "strong"},
+        "weak": {"model": "weak"},
+        "runner_source": {"revision": "runner", "dirty": False},
+        "controller_sha256": "controller-hash",
     }
     common = {
         "category": "Test",
@@ -101,6 +109,38 @@ def test_paired_report_rejects_unmatched_config(tmp_path: Path) -> None:
     baseline, candidate = _fixture(tmp_path)
     config = json.loads((candidate / "config.json").read_text(encoding="utf-8"))
     config["sampling_seed"] = 10
+    _write_json(candidate / "config.json", config)
+
+    with pytest.raises(ValueError, match="unmatched experiment configuration"):
+        build_paired_report(
+            baseline_dir=baseline,
+            candidate_dir=candidate,
+            baseline_label="PlanExecute",
+            candidate_label="StrongPlanExecute",
+            output=tmp_path / "report",
+            expected_count=2,
+            bootstrap_samples=100,
+            seed=7,
+        )
+
+
+@pytest.mark.parametrize(
+    "field,replacement",
+    [
+        ("split_sha256", "other-split"),
+        ("seed_override", 6),
+        ("task_instances_sha256", "other-instances"),
+        ("docker_image_id", "sha256:other-image"),
+        ("runner_source", {"revision": "other", "dirty": False}),
+        ("controller_sha256", "other-controller"),
+    ],
+)
+def test_paired_report_rejects_hard_provenance_mismatch(
+    tmp_path: Path, field: str, replacement: object
+) -> None:
+    baseline, candidate = _fixture(tmp_path)
+    config = json.loads((candidate / "config.json").read_text(encoding="utf-8"))
+    config[field] = replacement
     _write_json(candidate / "config.json", config)
 
     with pytest.raises(ValueError, match="unmatched experiment configuration"):

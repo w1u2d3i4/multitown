@@ -39,5 +39,8 @@ be reported in separate columns.
 External results remain separate from the synthetic town evaluation. A positive
 TeamBench result would support transfer to public engineering teamwork tasks;
 it would not retroactively change the synthetic score or establish trained
-Agentic RL. The current formal transfer result is mixed/negative because its
-quality non-inferiority gate failed.
+Agentic RL. The historical A4/A8 transfer was mixed/negative. The subsequent
+frozen, non-RL MT-CapacityRoute seed-5 confirmation is positive at the local
+operating-point level (20/89 passes, 0.64180 partial, 48,296 tokens/task), but
+its partial-score confidence intervals cross zero and it is not a literature
+SOTA claim.

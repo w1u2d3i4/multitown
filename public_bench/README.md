@@ -49,6 +49,12 @@ may request one repair:
   specification, edits and tests the workspace, and certifies its own result.
 - **PlanExecute-TB — plan then act:** call a strong Planner and a weak Executor,
   but no independent Verifier. This mirrors TeamBench's no-verifier ablation.
+- **MT-CapacityRoute-v1 — capacity-aware plan then act:** preserve the same
+  Planner→Executor access boundary, but assign the strong Executor only to
+  `Distributed Systems`, `Operations` and `Security`; use the weak Executor in
+  all other categories. The three categories were frozen from development
+  evidence before the seed-5 test run. This is deterministic metadata routing,
+  not RL.
 - **ExecuteReview-TB — act then review:** call a weak Executor and an independent
   strong Verifier, but no Planner or repair loop. This mirrors TeamBench's
   no-planner ablation.
@@ -110,7 +116,46 @@ compared fairly under TeamBench role isolation. Debate, independent voting and
 free-form peer-chat systems are documented as related families, not falsely
 reported as reproduced experiments.
 
-## Mainstream-strategy result
+## Current result: frozen capacity-aware routing
+
+The fresh seed-5 confirmation uses 89 paired test instances. The task-instance
+hash, sampling seed, models, sandbox image, temperature and per-call output cap
+are identical across all methods.
+
+| Strategy | Fully passed | Mean partial | Mean tokens/task | p95 latency | Energy |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| PlanExecute-TB | 16 / 89 | 0.61603 | 49,579 | 151.96 s | 67.89 Wh |
+| Solo-TB | 14 / 89 | 0.63989 | 84,085 | 237.06 s | 90.94 Wh |
+| **MT-CapacityRoute-v1** | **20 / 89** | **0.64180** | **48,296** | **91.06 s** | **63.32 Wh** |
+
+The candidate point-dominates both anchors on full passes, mean partial score
+and mean tokens. Against Solo it gains six passes and loses none (two-sided
+exact McNemar p=0.03125), with 42.56% fewer tokens and 30.37% less monitored
+energy. Against PlanExecute it gains four net passes, +0.02577 mean partial,
+2.59% fewer tokens and 6.74% less energy.
+
+This supports the narrow claim **strongest tested local operating point under
+the frozen harness**. It does not support a cross-paper SOTA claim: both paired
+partial-score confidence intervals include zero. The report also separates the
+14 action-changing strong routes (+0.11096 partial; 6/7/1 wins/ties/losses)
+from repeat variation on 75 unchanged weak routes. A baseline-anchored audit
+estimate has 18 passes and 0.63348 partial and is explicitly not presented as a
+fourth executed system. See the
+[`formal record`](records/TEAMBENCH_CAPACITY_ROUTE_TEST_V1.md) and
+[`frozen protocol`](docs/TEAMBENCH_CAPACITY_ROUTE_V1_PROTOCOL.md).
+
+The aggregate audit can be reproduced from private run directories with:
+
+```bash
+general-mas-capacity-route-report \
+  --plan-execute-dir /path/to/plan-execute \
+  --solo-dir /path/to/solo \
+  --capacity-route-dir /path/to/capacity-route \
+  --output-dir /path/to/report \
+  --expected-task-count 89 --bootstrap-samples 100000
+```
+
+## Historical mainstream-strategy result (seed 0)
 
 | Strategy | Fully passed | Mean partial score | Mean tokens/task |
 | --- | ---: | ---: | ---: |
@@ -128,10 +173,10 @@ PlanExecute-TB by -0.07494 partial-score points (95% CI [-0.11236, -0.04090])
 while using 36.30% more tokens. FixedTeam-TB used 120.44% more tokens than
 PlanExecute-TB without a clear partial-score improvement.
 
-The current MultiTown-TB controller did not beat Solo-TB or PlanExecute-TB. The
-publishable contribution is therefore the controlled strategy matrix, Pareto
-evidence and negative finding that **more roles—and especially review without a
-repair path—can hurt**. See the
+The original MultiTown-TB controller did not beat Solo-TB or PlanExecute-TB.
+This controlled discovery matrix, and especially the negative finding that
+**more roles—and review without a repair path—can hurt**, motivated the frozen
+capacity-aware successor above. See the
 [`formal record`](records/TEAMBENCH_STRATEGY_QUALITY_V2.md).
 
 The next frozen static router also failed causal confirmation.  Although its
