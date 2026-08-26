@@ -6,6 +6,7 @@ from general_mas_bench.teambench_runner import (
     _attestation,
     _command_failure_evidence,
     _controller_attestation,
+    _executor_tier,
     _logged_command_signals,
     _phase_config,
     _replan_decision,
@@ -433,3 +434,11 @@ def test_fixed_strategy_controller_attestation_is_explicit(tmp_path: Path) -> No
     assert value["verdict"] == "pass"
     assert value["source"] == "fixed_strategy_protocol_controller"
     assert value["reason"] == "fixed_plan_execute_without_independent_review"
+
+
+def test_runner_exposes_strong_plan_execute_method() -> None:
+    strong = {"model": "strong"}
+    weak = {"model": "weak"}
+
+    assert _executor_tier("StrongPlanExecute", strong=strong, weak=weak) is strong
+    assert _executor_tier("PlanExecute", strong=strong, weak=weak) is weak

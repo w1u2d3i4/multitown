@@ -932,6 +932,16 @@ def _usage(adapters: list[RecordedAdapter]) -> dict[str, int]:
     }
 
 
+def _executor_tier(
+    execution_method: str,
+    *,
+    strong: dict[str, Any],
+    weak: dict[str, Any],
+) -> dict[str, Any]:
+    """Select the fixed Executor model tier without changing role privileges."""
+    return strong if execution_method == "StrongPlanExecute" else weak
+
+
 def run_task(
     *,
     method: str,
@@ -1024,7 +1034,7 @@ def run_task(
         )
         route = "single_strong_full_access"
     elif execution_method in {
-        "PlanExecute", "MTSequential", "MTReplan",
+        "PlanExecute", "StrongPlanExecute", "MTSequential", "MTReplan",
         "MTAgenticRL", "MTAgenticRLExplore", "MTAgenticRLExploreV2",
     }:
         # TeamBench's official no-verifier ablation: a strong Planner transfers
@@ -1032,7 +1042,10 @@ def run_task(
         # independent review, so the controller supplies the protocol-required
         # attestation after execution without consulting the hidden grader.
         planner = adapter("planner", strong)
-        executor = adapter("executor", weak)
+        executor = adapter(
+            "executor",
+            _executor_tier(execution_method, strong=strong, weak=weak),
+        )
         role_counts.update(planner=1, executor=1)
         _run_phase(
             role="planner", adapter=planner, prompt=prompts["planner"],
@@ -1110,14 +1123,23 @@ def run_task(
             max_turns=12,
         )
         validators.append(execution_validator)
-        if execution_method == "PlanExecute":
+        if execution_method in {"PlanExecute", "StrongPlanExecute"}:
+            strong_executor = execution_method == "StrongPlanExecute"
             _controller_attestation(
                 submission,
                 str(row["task_id"]),
-                "fixed_plan_execute_without_independent_review",
+                (
+                    "fixed_strong_plan_execute_without_independent_review"
+                    if strong_executor
+                    else "fixed_plan_execute_without_independent_review"
+                ),
                 source="fixed_strategy_protocol_controller",
             )
-            route = "fixed_plan_execute"
+            route = (
+                "fixed_strong_plan_execute"
+                if strong_executor
+                else "fixed_plan_execute"
+            )
         elif execution_method == "MTSequential":
             candidates = run_dir / "candidates"
             plan_execute_snapshot = candidates / "plan_execute"
@@ -2019,7 +2041,7 @@ def main() -> None:
     parser.add_argument(
         "--method",
         choices=(
-            "Solo", "PlanExecute", "ExecuteReview", "A4", "A8",
+            "Solo", "PlanExecute", "StrongPlanExecute", "ExecuteReview", "A4", "A8",
             "MTSelector", "MTSequential", "MTReplan",
             "MTAgenticRLExplore", "MTAgenticRLExploreV2", "MTAgenticRL",
         ),
