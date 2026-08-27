@@ -7,13 +7,29 @@
 </p>
 
 <p align="center">
-  <strong>SimCity for AI agents — build an AI company, watch it spend, validate, escalate, and adapt.</strong>
+  <strong>A visual cyber town for AI agents — build an AI company, watch it work, spend, validate, escalate, and adapt.</strong>
 </p>
 
-MultiTown is an **AI organization digital twin** and Python runtime for studying
-cost-aware multi-agent control. Its Arena turns otherwise invisible routing,
-model calls, validation, escalation, token use, and results into a town you can
-watch and compare.
+MultiTown is a **visual cyber town**, an AI-organization digital twin, and a
+Python runtime for cost-aware multi-agent control. Planner, Worker, Specialist,
+Validator and Router agents become buildings and residents with different
+information, permissions and costs. The Arena turns otherwise invisible model
+calls, hand-offs, validation, escalation, token use and outcomes into a replay
+you can watch and compare.
+
+## What the cyber town can do
+
+| Capability | What it looks like in MultiTown |
+| --- | --- |
+| Visual organization replay | Watch task packets move through two towns, see active buildings, queues, alerts, validation and final delivery in the browser Arena. |
+| Role and permission isolation | Give Planner, Executor and Verifier different context, tools and authority instead of letting one agent propose, modify and certify its own work. |
+| Cost-aware dispatch | Start with an economical worker and activate a strong specialist or review only when the controller's evidence and budget allow it. |
+| Validation and recovery | Inspect observable runtime evidence, trigger review or escalation, enforce token guards, and preserve deterministic fallback/rollback paths. |
+| Comparable experiments | Replay fixed and adaptive organizations on frozen tasks while recording success, tokens, latency, energy and safety outcomes. |
+| Product path | Use the same town abstraction as the foundation for future characters, plots, missions and player intervention on `agentic-rpg`. |
+
+The current Arena is a deterministic visualization and comparison surface, not
+yet a free-form game. The RPG branch is where the cyber town becomes playable.
 
 ## Why Multi-Agent?
 
@@ -103,6 +119,27 @@ Under the preregistered paired comparison:
 A8 is a deterministic heuristic controller, not a trained RL policy. These
 results are local Qwen/llama.cpp measurements on the frozen synthetic
 MultiTown population; they do not establish general multi-agent superiority.
+
+## Public transfer result: TeamBench
+
+The `public-bench` branch transfers MultiTown's organization ideas to 89 public
+TeamBench tasks with OS-level role isolation and matched model, task, seed,
+container and token settings:
+
+| Strategy | Fully passed | Mean partial | Tokens/task | p95 latency | Energy |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| PlanExecute-TB | 16/89 | 0.61603 | 49,579 | 151.96 s | 67.89 Wh |
+| Solo-TB | 14/89 | 0.63989 | 84,085 | 237.06 s | 90.94 Wh |
+| **MT-CapacityRoute-v1** | **20/89** | **0.64180** | **48,296** | **91.06 s** | **63.32 Wh** |
+
+MT-CapacityRoute keeps Planner–Executor separation, routes strong execution to
+three development-selected task categories and uses the economical Executor
+elsewhere. It is the strongest tested point under this local frozen harness:
+relative to Solo it adds six passes with no lost Solo passes, cuts tokens by
+42.56%, and cuts monitored energy by 30.37%. Mean-partial confidence intervals
+against both anchors still include zero, so this is not a literature-wide SOTA
+claim. Protocols, negative results and transferable runtime controls live on
+[`public-bench`](https://github.com/w1u2d3i4/multitown/tree/public-bench).
 
 ## Agentic RL and safety findings
 
