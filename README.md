@@ -34,12 +34,33 @@ specification, modify the workspace and certify its own result. A8-TB tests
 whether that governance boundary can be retained without paying for every role
 on every task.
 
+## What MultiTown transfers into TeamBench
+
+The cyber town is not just a visualization theme. Its buildings correspond to
+runtime boundaries that the TeamBench adapter can execute and audit:
+
+| Cyber-town capability | TeamBench implementation | Evidence status |
+| --- | --- | --- |
+| Separate offices and authority | Planner receives the full specification; Executor receives a brief and runs inside an OS-isolated sandbox; Verifier cannot silently become the Executor. | Active in the fixed and routed baselines. |
+| Cost-aware dispatch | `MT-CapacityRoute-v1` preserves Planner→Executor separation, uses the strong Executor only for three development-selected categories and otherwise uses the economical Executor. | Confirmed on the fresh 89-task seed-5 harness. |
+| Observable validation | Deterministic validators record workspace changes, test commands, failures, timeouts, repeated commands and turn-budget exhaustion without exposing the hidden grader to the controller. | Active as auditable runtime evidence; not used to rewrite the v1 outcome after execution. |
+| Budget governance | Request-level token accounting, hard budget adapters and `stop/delegate/escalate/review/human` action contracts are implemented for sequential experiments. | Tested infrastructure; learned variants have not beaten the deterministic route. |
+| Recovery and rollback | Candidate workspaces are snapshotted, recovery paths are bounded, and failed review/replanning can deterministically restore the PlanExecute candidate. | Exercised by research variants; current public performance results are negative or gate-failing. |
+| Town telemetry | Every formal run records tokens, latency, route/action counts, validation state, failure modes and compatible energy monitoring. | Active in published compact records. |
+
+The confirmed headline deliberately uses only the controls supported by frozen
+evidence. Development results rejected “always use the stronger Executor,” and
+the sequential/RL studies rejected several seemingly attractive escalation
+rules. MultiTown therefore transfers governance components without claiming
+that every additional component improves quality. See the
+[transfer audit](public_bench/docs/MULTITOWN_TRANSFER.md).
+
 <p align="center">
   <img src="demo/assets/multitown-arena.gif" alt="MultiTown Arena: fixed and adaptive AI organizations solve the same task" width="960" />
 </p>
 
 <p align="center">
-  <strong>SimCity for AI agents — build an AI company, watch it spend, validate, escalate, and adapt.</strong>
+  <strong>A visual cyber town for AI agents — build an AI company, watch it work, spend, validate, escalate, and adapt.</strong>
 </p>
 
 MultiTown is an **AI organization digital twin** and Python runtime for studying

@@ -26,12 +26,31 @@ Executor，其余任务使用经济型 Executor。它是确定性非 RL 方法�
 同时读取完整要求、修改工作区并自我验收。A8-TB 要检验的是，能否保留这条治理边界，
 同时避免每个任务都启用全部角色的成本。
 
+## 从赛博小镇迁移到 TeamBench 的能力
+
+赛博小镇不只是可视化主题。小镇中的不同建筑对应 TeamBench 适配器中可执行、可审计的
+运行时边界：
+
+| 赛博小镇能力 | TeamBench 中的实现 | 当前证据状态 |
+| --- | --- | --- |
+| 独立办公室与权限 | Planner 读取完整要求；Executor 只接收 brief 并在操作系统隔离沙箱中执行；Verifier 不能悄悄变成 Executor。 | 已用于固定与路由基线。 |
+| 成本感知调度 | `MT-CapacityRoute-v1` 保留 Planner→Executor 分工，只在三个开发集选定类别上启用强 Executor，其余任务使用经济型 Executor。 | 已在新的 seed-5、89 题协议上确认。 |
+| 可观察验证 | 确定性 Validator 记录工作区变化、测试命令、失败、超时、重复命令与回合预算耗尽；控制器看不到隐藏 Grader。 | 已作为运行审计证据启用；不会在执行后篡改 v1 结果。 |
+| 预算治理 | 顺序实验实现请求级 Token 计数、硬预算适配器以及 `stop/delegate/escalate/review/human` 动作契约。 | 基础设施测试通过，但学习型版本尚未胜过确定性路由。 |
+| 恢复与回滚 | 候选工作区使用快照，恢复路径有明确上限；复核或重规划失败时可以确定性恢复 PlanExecute 候选。 | 已在研究版本中执行；当前公开性能结果为负或未通过门限。 |
+| 小镇遥测 | 正式运行记录 Token、延迟、路由/动作次数、验证状态、失败模式和来源兼容的能耗。 | 已进入公开的紧凑正式记录。 |
+
+正式结论只启用冻结证据支持的控制。开发实验已经否定“所有任务都换强 Executor”，顺序
+控制和 RL 实验也否定了多种看似合理的升级规则。因此 MultiTown 迁移的是可验证的治理
+组件，而不是宣称每增加一个组件都会提高质量。详见
+[迁移审计](public_bench/docs/MULTITOWN_TRANSFER.md)。
+
 <p align="center">
   <img src="demo/assets/multitown-arena.gif" alt="MultiTown Arena：固定组织与动态组织处理同一个任务" width="960" />
 </p>
 
 <p align="center">
-  <strong>AI Agent 的模拟城市——建立一家 AI 公司，看它花钱、质检、升级并动态调整。</strong>
+  <strong>一座可观看的 AI Agent 赛博小镇——建立 AI 公司，看它工作、花钱、质检、升级并动态调整。</strong>
 </p>
 
 MultiTown 是一个 **AI 组织数字孪生** 与 Python 运行时。Arena 把原本不可见的任务

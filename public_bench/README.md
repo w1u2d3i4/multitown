@@ -20,6 +20,11 @@ full-access quality anchor but does not provide that governance boundary. The
 method question is therefore whether MultiTown can preserve role isolation
 while avoiding the cost of activating every specialist on every task.
 
+The mapping from the visual cyber-town runtime to this public adapter—including
+which controls are active in the confirmed result and which remain
+research-only—is documented in
+[`docs/MULTITOWN_TRANSFER.md`](docs/MULTITOWN_TRANSFER.md).
+
 ## Current scope
 
 - Primary benchmark: [TeamBench](https://github.com/ybkim95/TeamBench), using
